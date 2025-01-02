@@ -1,2 +1,3 @@
-# rikkeisoft-chatbot
-Rikkeisoft - Documents Chatbot Assistant for Employees
+# Rikkeisoft - Documents Chatbot Assistant for Employees | Backend
+Language: Python
+Framework: FastAPI
