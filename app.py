@@ -7,7 +7,7 @@ app = FastAPI()
 
 # GroqCloud API endpoint
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions" 
-GROQ_API_KEY = "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"  # Groq API Key
+GROQ_API_KEY = "api_key"  # Groq API Key
 
 # Function to interact with GroqCloud API
 async def get_groq_answer(query: str):
