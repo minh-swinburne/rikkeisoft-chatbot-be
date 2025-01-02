@@ -6,7 +6,7 @@ import json
 app = FastAPI()
 
 # GroqCloud API endpoint
-GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"  # Update to correct Groq API endpoint
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions" 
 GROQ_API_KEY = "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"  # Groq API Key
 
 # Function to interact with GroqCloud API
