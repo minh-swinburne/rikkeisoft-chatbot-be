@@ -1,16 +1,20 @@
 from fastapi import FastAPI, HTTPException
 import httpx
-import json
+# import json
+
+def get_api_key():
+    with open("api_key.txt") as f:
+        return f.read().strip()
 
 # Initialize FastAPI
 app = FastAPI()
 
 # GroqCloud API endpoint
-GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions" 
-GROQ_API_KEY = "api_key"  # Groq API Key
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_API_KEY = get_api_key()  # Groq API Key
 
 # Function to interact with GroqCloud API
-async def get_groq_answer(query: str):
+async def get_answer(query: str):
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
         "Content-Type": "application/json"
@@ -36,5 +40,5 @@ async def generate_answer(query: str):
     if not query:
         raise HTTPException(status_code=400, detail="Query parameter is required")
 
-    answer = await get_groq_answer(query)
+    answer = await get_answer(query)
     return {"answer": answer}
