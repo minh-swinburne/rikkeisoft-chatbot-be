@@ -1,0 +1,36 @@
+Folder PATH listing for volume Acer
+Volume serial number is B680-DD4E
+C:\USERS\XMAS4\ONEDRIVE - SWINBURNE UNIVERSITY\PROJECTS\RIKKEISOFT - EMPLOYEE CHATBOT\RIKKEISOFT-CHATBOT-BE\APP
+|   main.py
+|   
++---api
+|   |   __init__.py
+|   |   
+|   \---v1
+|           chat.py
+|           upload.py
+|           __init__.py
+|           
++---bot
+|       __init__.py
+|       
++---controllers
+|       user.py
+|       __init__.py
+|       
++---core
+|       security.py
+|       __init__.py
+|       
++---models
+|       user.py
+|       __init__.py
+|       
++---schemas
+|       user.py
+|       __init__.py
+|       
+\---services
+        user.py
+        __init__.py
+        
