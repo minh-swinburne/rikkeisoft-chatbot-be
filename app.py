@@ -54,6 +54,11 @@ async def get_answer(query: str):
         )
 
 
+@app.get("/")
+def read_root():
+    return {"Hello": "World"}
+
+
 # Define a FastAPI endpoint to handle queries
 @app.get("/generate-answer")
 async def generate_answer(query: str):
