@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from pathlib import Path
 from app.core.config import settings
 import re
+import json
 import uuid
 import datetime
 import requests
@@ -26,12 +27,16 @@ async def upload_doc(
     description: Optional[str] = Form(None),
     categories: List[str] = Form(...),
     creator: Optional[str] = Form(None),
+    created_date: Optional[datetime.date] = Form(None),
     restricted: bool = Form(...),
     uploader: str = Form(...),  # Admin ID / Model
 ):
     # Prepare directory and file path
-    file_dir = Path(settings.upload_dir)
+    file_dir = settings.upload_dir
     file_dir.mkdir(exist_ok=True)
+
+    if not file_dir.exists():
+        raise HTTPException(status_code=500, detail="Upload directory does not exist.")
 
     if file:
         # Define supported MIME types
@@ -54,6 +59,12 @@ async def upload_doc(
         file_type = supported_types[file.content_type]
         file_path = file_dir / file.filename
 
+        if file_path.exists():
+            raise HTTPException(
+                status_code=400,
+                detail=f"File {file_path.resolve()} already exists.",
+            )
+
         # Save the uploaded file
         with file_path.open("wb") as f:
             content = await file.read()
@@ -73,9 +84,11 @@ async def upload_doc(
 
             # Save crawled content as an .html file
             filename = f"{sanitized_title}.html"
-            file_path = file_dir / filename
-            file_path.write_text(soup.prettify(), encoding="utf-8")
             file_type = "web_content"
+            file_path = file_dir / filename
+
+            with file_path.open("w", encoding="utf-8") as f:
+                f.write(soup.prettify())
 
         except requests.RequestException as e:
             raise HTTPException(
@@ -95,17 +108,20 @@ async def upload_doc(
         "title": title,
         "description": description,
         "categories": categories,
-        "creator": creator,
+        "creator": creator, # Should find user ID from username
+        "created_date": created_date,
         "restricted": restricted,
-        "uploader": uploader,
+        "uploader": uploader, # Should find user ID from username
         "uploaded_time": datetime.datetime.now().isoformat(),
     }
 
     # Save metadata as a JSON file (should be changed to DB later)
     metadata_path = file_path.with_suffix(".json")
-    metadata_path.write_text(str(metadata), encoding="utf-8")
+
+    with metadata_path.open("w", encoding="utf-8") as f:
+        json.dump(metadata, f, indent=4)
 
     return {
-        "message": f"{"File" if file else "Link"} uploaded successfully",
+        "message": f"{"File" if file else "Link"} uploaded {"successfully" if file_path.exists() else "failed"}. Upload path: {file_path}",
         "metadata": metadata,
     }
