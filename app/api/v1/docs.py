@@ -106,6 +106,6 @@ async def upload_doc(
     metadata_path.write_text(str(metadata), encoding="utf-8")
 
     return {
-        "message": "File uploaded successfully",
+        "message": f"{"File" if file else "Link"} uploaded successfully",
         "metadata": metadata,
     }
