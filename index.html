@@ -19,13 +19,29 @@
             margin-bottom: 10px;
             padding: 10px;
         }
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <h1>Upload a Document</h1>
+    <h1>Upload a Document or Web Link</h1>
     <form id="uploadForm">
-        <label for="file">File:</label>
-        <input type="file" id="file" name="file" required>
+        <label for="uploadType">Upload Type:</label>
+        <select id="uploadType" name="uploadType" required>
+            <option value="file">File</option>
+            <option value="link">Web Link</option>
+        </select>
+
+        <div id="fileUpload">
+            <label for="file">File:</label>
+            <input type="file" id="file" name="file">
+        </div>
+
+        <div id="linkUpload" class="hidden">
+            <label for="url">Web Link:</label>
+            <input type="url" id="url" name="url" placeholder="https://example.com">
+        </div>
 
         <label for="title">Document Title:</label>
         <input type="text" id="title" name="title" required>
@@ -54,23 +70,53 @@
     </form>
 
     <script>
+        const uploadType = document.getElementById('uploadType');
+        const fileUpload = document.getElementById('fileUpload');
+        const linkUpload = document.getElementById('linkUpload');
         const form = document.getElementById('uploadForm');
+
+        // Toggle file or link upload fields based on user selection
+        uploadType.addEventListener('change', () => {
+            if (uploadType.value === 'file') {
+                fileUpload.classList.remove('hidden');
+                linkUpload.classList.add('hidden');
+                document.getElementById('file').required = true;
+                document.getElementById('url').required = false;
+            } else {
+                fileUpload.classList.add('hidden');
+                linkUpload.classList.remove('hidden');
+                document.getElementById('file').required = false;
+                document.getElementById('url').required = true;
+            }
+        });
+
+        // Handle form submission
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const formData = new FormData(form);
-            const response = await fetch('http://127.0.0.1:8000/upload/', {
-                method: 'POST',
-                body: formData,
-            });
 
-            const result = await response.json();
-            if (response.ok) {
+            // Set the endpoint
+            const endpoint = 'http://127.0.0.1:8000/upload/';
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const result = await response.json();
+                if (!response.ok) {
+                    alert(`Error: ${result.detail || 'Failed to upload.'}`);
+                    console.error(result);
+                    return;
+                }
+
                 alert('Upload successful!');
                 console.log(result);
-            } else {
-                alert('Error uploading file!');
-                console.error(result);
+            } catch (error) {
+                console.error('Network Error:', error);
+                alert('Error communicating with the server!');
             }
         });
     </script>
