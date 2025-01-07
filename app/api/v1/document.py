@@ -15,12 +15,12 @@ router = APIRouter()
 
 
 @router.get("/{doc_id}")
-async def get_doc(doc_id: str):
+async def get_document(doc_id: str):
     return {"doc_id": doc_id}
 
 
 @router.post("/")
-async def upload_doc(
+async def upload_document(
     file: Optional[UploadFile] = File(None),
     link: Optional[str] = Form(None),
     title: str = Form(...),
