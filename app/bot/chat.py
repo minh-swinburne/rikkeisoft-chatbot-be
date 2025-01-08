@@ -43,11 +43,15 @@ def suggest_questions(chat_history: list, context: str = None):
         "Can you provide a detailed explanation?",
     ]
 
+    print(chat_history)
+
     system_prompt = f"""
 Instructions:
 - Suggest 3 to 4 helpful and contextually relevant questions that the user may ask next.
 - Base your suggestions on the user's chat history and provided context.
-- Return suggested questions as a simple list without any additional information or justification.
+- Keep the questions concise and relevant to the conversation.
+- Return suggested questions as a simple ordered list of the questions themselves only, without any additional information, justification or formatting.
+Format: "1. [Question 1]?\n2. [Question 2]?\n3. [Question 3]?"
 Chat History: {chat_history}
 {"Context: " + context if context else ""}
 Examples: {message_template}
@@ -60,7 +64,6 @@ Examples: {message_template}
                 "content": system_prompt,
             },
             {"role": "user", "content": ""},
-            # *chat_history[-4:],
         ],
         model="llama-3.2-1b-preview",
         max_tokens=128,

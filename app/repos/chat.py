@@ -7,6 +7,7 @@ from datetime import datetime
 class ChatRepository:
     def __init__(self):
         self._storage: dict[str, dict] = {}
+        self.load()
 
 
     def load(self):
