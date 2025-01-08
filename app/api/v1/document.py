@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile, HTTPException, File, Form
 from fastapi.responses import JSONResponse
-from typing import List, Optional
+from typing import Optional
 from bs4 import BeautifulSoup
 from pathlib import Path
 from app.core.config import settings
@@ -25,7 +25,7 @@ async def upload_document(
     link: Optional[str] = Form(None),
     title: str = Form(...),
     description: Optional[str] = Form(None),
-    categories: List[str] = Form(...),
+    categories: list[str] = Form(...),
     creator: Optional[str] = Form(None),
     created_date: Optional[datetime.date] = Form(None),
     restricted: bool = Form(...),

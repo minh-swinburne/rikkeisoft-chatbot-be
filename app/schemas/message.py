@@ -1,9 +1,10 @@
 from pydantic import BaseModel
 
-class ChatRequest(BaseModel):
+
+class MessageRequest(BaseModel):
     query: str
 
 
-class ChatResponse(BaseModel):
+class MessageResponse(BaseModel):
     role: str
     content: str

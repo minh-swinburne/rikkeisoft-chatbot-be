@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Form
 from app.bot.chat import generate_answer, suggest_questions
-from app.schemas.chat import ChatRequest, ChatResponse
+from app.schemas.message import MessageRequest, MessageResponse
 
 
 router = APIRouter()
@@ -15,7 +15,7 @@ async def get_chat(chat_id: str):
 
 # Send a message to the chat (Should add chat_id later for multiple chats)
 @router.post("/{chat_id}")
-async def send_query(chat_id: str, request: ChatRequest) -> ChatResponse:
+async def send_query(chat_id: str, request: MessageRequest) -> MessageResponse:
     if not request:
         raise HTTPException(status_code=400, detail="Message cannot be empty")
 
@@ -23,7 +23,7 @@ async def send_query(chat_id: str, request: ChatRequest) -> ChatResponse:
     chat_history = []
     answer = generate_answer(request.query, chat_history)
     # Add the bot's response to the chat history in the database
-    return ChatResponse.model_validate({"role": "assistant", "content": answer})
+    return MessageResponse.model_validate({"role": "assistant", "content": answer})
 
 
 @router.post("/{chat_id}/suggestions")
