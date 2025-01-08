@@ -119,7 +119,7 @@ async def upload_document(
     metadata_path = file_path.with_suffix(".json")
 
     with metadata_path.open("w", encoding="utf-8") as f:
-        json.dump(metadata, f, indent=4)
+        json.dump(metadata, f, indent=4, default=str)
 
     return {
         "message": f"{"File" if file else "Link"} uploaded {"successfully" if file_path.exists() else "failed"}. Upload path: {file_path}",
