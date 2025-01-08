@@ -8,7 +8,7 @@ client = Groq(
     timeout=httpx.Timeout(20.0, read=5.0, write=10.0, connect=2.0),
 )
 
-def generate_answer(query: str, chat_history: list):
+def generate_answer(chat_history: list):
     system_prompt = f"""
 Instructions:
 - Be helpful and answer questions concisely. If you don't know the answer or can't find the relevant documents, let the user know.
@@ -21,8 +21,7 @@ Context: Answer the following question.
     chat_completion = client.chat.completions.create(
         messages=[
             {"role": "system", "content": system_prompt},
-            *chat_history[-10:],  # Include the last 10 messages in the chat history (to be fetched from the database)
-            {"role": "user", "content": query},
+            *chat_history,  # Include the last 10 messages in the chat history including the new query (to be fetched from the database)
         ],
         model="llama-3.3-70b-versatile",
         max_tokens=1024,
