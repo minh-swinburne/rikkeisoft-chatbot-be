@@ -118,7 +118,7 @@ def main():
         "--aggregation", type=str, default="mean", choices=["mean", "max"], help="Aggregation method for document embeddings."
     )
     parser.add_argument(
-        "--format", type=str, default="npy", choices=["npy", "txt", "json"], help="File format to save embeddings."
+        "--format", type=str, default="npy", choices=["txt", "json"], help="File format to save embeddings."
     )
 
     args = parser.parse_args()
