@@ -8,7 +8,7 @@ import uuid
 
 # CRUD operation to create a new chat
 async def create_chat(db: AsyncSession, user_id: str, name: str):
-    chat = Chat(user_id=user_id, name=name)
+    chat = Chat(id=str(uuid.uuid4()), user_id=user_id, name=name,last_access=datetime.now())
     db.add(chat)
     await db.commit()
     await db.refresh(chat)
