@@ -1,6 +1,6 @@
 import os
 from pymilvus import model
-import fitz  # PyMuPDF for PDF
+import pymupdf  # PyMuPDF for PDF
 from docx import Document  # python-docx for DOCX
 
 # Initialize SentenceTransformerEmbeddingFunction
@@ -11,7 +11,7 @@ sentence_transformer_ef = model.dense.SentenceTransformerEmbeddingFunction(
 
 def extract_text_from_pdf(pdf_path):
     """Extract text from a PDF document."""
-    doc = fitz.open(pdf_path)
+    doc = pymupdf.open(pdf_path)
     text = ""
     for page in doc:
         text += page.get_text()
