@@ -34,6 +34,10 @@ Context: Answer the following question.
     bot_response = chat_completion.choices[0].message.content
     return bot_response
 
+    import random
+    return random.choice(["yes", "no", "50-50"])
+
+
 def suggest_questions(chat_history: list, context: str = None):
     message_template = [
         "What is the summary of the document?",

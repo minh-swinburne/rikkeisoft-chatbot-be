@@ -1,79 +1,77 @@
-from fastapi import APIRouter, HTTPException, Form
+from fastapi import APIRouter, HTTPException, Depends
+from app.schemas.messages import MessageRequest, MessageResponse
+from app.services.chats import create_chat, list_chats, create_message, list_messages
+from app.core.database import get_db
 from app.bot.chat import generate_answer, suggest_questions
-from app.repos.chat import ChatRepository
-from app.schemas.message import MessageRequest, MessageResponse
-from datetime import datetime
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 router = APIRouter()
-repository = ChatRepository()
 
 
 @router.get("/")
-async def get_history():
-    return repository.list_chats()
+async def get_history(db: AsyncSession = Depends(get_db)):
+    # Fetch the chats for a user (replace with actual user ID)
+    user_id = "c24d9619-848d-4af6-87c8-718444421762"
+    chats = await list_chats(db, user_id)
+    print(chats)
+    return chats
 
 
 @router.post("/")
-async def create_chat():
-    chat = repository.create_chat({
-        "user_id": "c24d9619-848d-4af6-87c8-718444421762",
-        "name": "New Chat",
-    })
-    return {"chat_id": chat["id"]}
+async def create_chat_endpoint(db: AsyncSession = Depends(get_db)):
+    user_id = "c24d9619-848d-4af6-87c8-718444421762"
+    chat = await create_chat(db, user_id, "New Chat")
+    return {"chat_id": chat.id}
 
 
-# Return current chat (Should add chat_id later for multiple chats)
 @router.get("/{chat_id}")
-async def get_chat(chat_id: str):
-    # Should return messages from the chat
-    return repository.list_messages(chat_id)
+async def get_chat(chat_id: str, db: AsyncSession = Depends(get_db)):
+    messages = await list_messages(db, chat_id)
+    return messages
 
 
-# Send a message to the chat (Should add chat_id later for multiple chats)
 @router.post("/{chat_id}")
-async def send_query(chat_id: str, request: MessageRequest) -> MessageResponse:
+async def send_query(chat_id: str, request: MessageRequest, db: AsyncSession = Depends(get_db)) -> MessageResponse:
     if not request:
         raise HTTPException(status_code=400, detail="Message cannot be empty")
 
-    # print(f"Received chat_id: {chat_id}")
-    # print(f"Received request body: {request}")
-
-    repository.create_message({
+    # Create user message
+    await create_message(db, {
         "chat_id": chat_id,
-        "time": datetime.now(),
         "role": "user",
         "content": request.query
     })
 
-    # Should fetch the chat history from the database / cache with the chat_id
-    chat_history = [{
-        "role": message["role"],
-        "content": message["content"],
-    } for message in repository.list_messages(chat_id)][-10:]
+    # Get the chat history (limit to the last 10 messages)
+    chat_history = [{"role": message.role, "content": message.content} for message in await list_messages(db, chat_id)][-10:]
 
+    # Generate the bot's response
     answer = generate_answer(chat_history)
 
-    # Add the bot's response to the chat history in the database / cache
-    message = repository.create_message({
+    # Create bot message
+    message = await create_message(db, {
         "chat_id": chat_id,
-        "time": datetime.now(),
         "role": "assistant",
-        "content": answer,
+        "content": answer
     })
 
-    return MessageResponse.model_validate(message)
+    print("FXXKing message!!!: ", message.__dict__)
+
+    return MessageResponse.model_validate({
+        "id": message.id,
+        "chat_id": message.chat_id,
+        "time": message.time,
+        "role": message.role,
+        "content": message.content
+    })
 
 
 @router.post("/{chat_id}/suggestions")
-async def get_suggested_questions(chat_id: str):
-    # Should fetch the chat history from the database / cache with the chat_id
-    chat_history = [
-        {
-            "role": message["role"],
-            "content": message["content"],
-        }
-        for message in repository.list_messages(chat_id)
-    ][-4:]
+async def get_suggested_questions(chat_id: str, db: AsyncSession = Depends(get_db)):
+    # Get chat history for suggestions (limit to the last 4 messages)
+    chat_history = [{"role": message.role, "content": message.content} for message in await list_messages(db, chat_id)][-4:]
 
-    return {"suggestions": suggest_questions(chat_history)}
+    # Generate suggestions based on chat history
+    suggestions = suggest_questions(chat_history)
+    return {"suggestions": suggestions}
