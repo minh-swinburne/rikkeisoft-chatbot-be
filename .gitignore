@@ -1,3 +1,6 @@
+# Milvus generated files
+volumes/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -169,6 +172,3 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
-
-# API files
-api_key.txt
