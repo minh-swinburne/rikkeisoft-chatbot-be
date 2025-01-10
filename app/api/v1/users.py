@@ -5,14 +5,18 @@ from datetime import datetime, timedelta
 from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
 from passlib.context import CryptContext
+from app.core.config import settings
 import requests
 
+
 router = APIRouter()
+
 
 # Constants for JWT
 SECRET_KEY = "your_secret_key"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
 
 # FastAPI instance
 app = FastAPI()
@@ -23,6 +27,7 @@ origins = [
     "http://localhost:8080",  # Vue frontend URL
     "http://127.0.0.1:8000",  # Local development URL (optional)
 ]
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -45,9 +50,9 @@ fake_users_db = {
     }
 }
 
-GOOGLE_CLIENT_ID = "1047088098330-2d17mgbf5bdugkvkh69i0ah65c40hp65.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET = "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"
-GOOGLE_REDIRECT_URI = "http://127.0.0.1:8000/auth/google"
+GOOGLE_CLIENT_ID = settings.google_client_id
+GOOGLE_CLIENT_SECRET = settings.google_client_secret
+GOOGLE_REDIRECT_URI = settings.google_redirect_uri
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -68,18 +73,20 @@ def authenticate_user(username: str, password: str):
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.now() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
 
 @router.get("/login/google")
 async def login_google():
     return {
         "url": f"https://accounts.google.com/o/oauth2/auth?response_type=code&client_id={GOOGLE_CLIENT_ID}&redirect_uri={GOOGLE_REDIRECT_URI}&scope=openid%20profile%20email&access_type=offline"
     }
+
 
 @router.get("/auth/google")
 async def auth_google(code: str):
@@ -124,6 +131,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -141,6 +149,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     if user is None:
         raise credentials_exception
     return user
+
 
 @router.get("/users/me/")
 async def read_users_me(current_user: dict = Depends(get_current_user)):
