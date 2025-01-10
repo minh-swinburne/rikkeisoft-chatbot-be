@@ -17,26 +17,6 @@ SECRET_KEY = "your_secret_key"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-
-# FastAPI instance
-app = FastAPI()
-
-
-# Allow CORS from the frontend
-origins = [
-    "http://localhost:8080",  # Vue frontend URL
-    "http://127.0.0.1:8000",  # Local development URL (optional)
-]
-
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,  # List of allowed origins
-    allow_credentials=True,
-    allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
-    allow_headers=["*"],  # Allow all headers
-)
-
 # OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
