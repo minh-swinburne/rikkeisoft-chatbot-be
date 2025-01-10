@@ -8,7 +8,7 @@
     "lastName": "Nguyen",
     "admin": true,
     "provider": "native",
-    "providerUid": null
+    "provider_uid": null
   },
   {
     "id": "86ce47d5-0bf4-47c4-adb4-2be068e73580",
@@ -19,6 +19,6 @@
     "lastName": "Duong",
     "admin": false,
     "provider": "native",
-    "providerUid": null
+    "provider_uid": null
   }
 ]
