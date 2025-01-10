@@ -45,7 +45,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 @router.get("/login/google")
 async def login_google():
     return {
-        "url": f"https://accounts.google.com/o/oauth2/auth?response_type=code&client_id={GOOGLE_CLIENT_ID}&redirect_uri={GOOGLE_REDIRECT_URI}&scope=openid%20profile%20email&access_type=offline"
+        "url": f"https://accounts.google.com/o/oauth2/auth?response_type=token&client_id={GOOGLE_CLIENT_ID}&redirect_uri={GOOGLE_REDIRECT_URI}"
     }
 
 
@@ -80,8 +80,9 @@ async def auth_google(token: str):
         # "redirect_uri": GOOGLE_REDIRECT_URI,
         # "grant_type": "authorization_code",
     }
+    print(f"data: {token_url},{data}")
     response = requests.post(token_url, data=data)
-    return response
+    print(f"Token response: {response}")
     print(f"Token response status: {response.status_code}")
     print(f"Token response body: {response.json()}")
 
