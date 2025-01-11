@@ -5,7 +5,7 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
 from passlib.context import CryptContext
-from app.services.users import get_user, authenticate_user
+from app.services.users import authenticate_user
 from app.core.database import get_db
 from app.core.config import settings
 import requests
@@ -68,9 +68,9 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 
 @router.get("/auth/google")
-async def auth_google(code: str):
-    print(f"Received code: {code}")    
-    user_info = requests.get("https://www.googleapis.com/oauth2/v1/userinfo", headers={"Authorization": f"Bearer {code}"})
+async def auth_google(token: str):
+    print(f"Received token: {token}")
+    user_info = requests.get("https://www.googleapis.com/oauth2/v1/userinfo", headers={"Authorization": f"Bearer {token}"})
 
 
     user_data = user_info.json()
@@ -85,9 +85,9 @@ async def auth_google(code: str):
     print(f"User Picture: {user_picture}")
 
 
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"id":user_id ,"username": user_name, "email": user_email}, expires_delta=access_token_expires
+        data={"id":user_id ,"username": user_name, "email": user_email}, expires_delta=token_expires
     )
 
 
@@ -169,4 +169,3 @@ async def get_current_user(
 async def read_users_me(current_user: dict = Depends(get_current_user)):
     print("Debug: Token validated and current user retrieved.")
     return current_user
-

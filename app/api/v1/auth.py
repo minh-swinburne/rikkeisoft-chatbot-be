@@ -1,0 +1,158 @@
+from fastapi import Depends, Cookie, Header, HTTPException, status, APIRouter
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.responses import JSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.services.users import authenticate_user, create_access_token, create_refresh_token, validate_token
+from app.core.database import get_db
+from app.core.config import settings
+from app.utils import parse_timedelta
+import requests
+
+
+router = APIRouter()
+# OAuth2 scheme
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+GOOGLE_CLIENT_ID = settings.google_client_id
+GOOGLE_CLIENT_SECRET = settings.google_client_secret
+GOOGLE_REDIRECT_URI = settings.google_redirect_uri
+
+
+def grant_access(
+    user_id: str,
+    firstname: str,
+    lastname: str,
+    email: str,
+    roles: list,
+):
+    access_token = create_access_token(
+        user_id,
+        firstname,
+        lastname,
+        email,
+        roles,
+    )
+
+    refresh_token = create_refresh_token(user_id)
+    response = JSONResponse({"message": "Login successful"})
+
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=False,  # Set to True in production (requires HTTPS)
+        samesite="none",
+        max_age=parse_timedelta(settings.jwt_access_expires_in).seconds,
+    )
+
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=False, # Set to True in production (requires HTTPS)
+        samesite="none",
+        max_age=parse_timedelta(settings.jwt_refresh_expires_in).seconds,
+    )
+    return response
+
+
+@router.post("/native")
+async def authenticate_native(
+    form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)
+):
+    user = await authenticate_user(db, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return JSONResponse({
+        "access_token": create_access_token(
+            user.id,
+            user.firstname,
+            user.lastname,
+            user.email,
+            ["user"].extend(["admin"] if user.admin else []),
+        ),
+        "refresh_token": create_refresh_token(user.id),
+        "token_type": "bearer"
+    })
+
+
+@router.get("/google")
+async def authenticate_google(access_token: str):
+    user_info = requests.get(
+        settings.google_user_info_url,
+        headers={"Authorization": f"Bearer {access_token}"},
+    ).json()
+
+    return JSONResponse({
+        "access_token": create_access_token(
+            user_info.get("sub"),
+            user_info.get("given_name"),
+            user_info.get("family_name"),
+            user_info.get("email"),
+            ["user"],
+        ),
+        "refresh_token": create_refresh_token(user_info.get("sub")),
+        "token_type": "bearer"
+    })
+
+
+@router.post("/refresh")
+# async def refresh_access_token(refresh_token: str = Cookie(None)):
+async def refresh_access_token(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token missing"
+        )
+
+    refresh_token = authorization.split(" ")[1]  # Extract the token
+
+    # Verify the refresh token
+    try:
+        payload = validate_token(refresh_token)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e)
+        )
+    if payload["type"] != "refresh":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type"
+        )
+
+    # Create a new access token
+    return JSONResponse({
+        "access_token": create_access_token(
+            payload["sub"],
+            payload["firstname"],
+            payload["lastname"],
+            payload["email"],
+            payload["roles"],
+        )
+    })
+
+
+@router.get("/validate")
+# async def validate_token(token: str = Cookie(None)):
+async def validate_access(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Access token missing"
+        )
+
+    token = authorization.split(" ")[1]  # Extract the token
+
+    try:
+        payload = validate_token(token)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e)
+        )
+
+    return JSONResponse({
+        "valid": True,
+        "payload": payload
+    })
