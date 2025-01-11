@@ -1,0 +1,24 @@
+[
+  {
+    "id": "c24d9619-848d-4af6-87c8-718444421762",
+    "username": "tminh1512",
+    "email": "minh@gmail.com",
+    "password": "$2a$12$mC5B97wgqzv05s8PBilQDODpRZ.wjwyh1bWSRua7ODBO8H60yjFSu",
+    "firstName": "Minh",
+    "lastName": "Nguyen",
+    "admin": true,
+    "provider": "native",
+    "provider_uid": null
+  },
+  {
+    "id": "86ce47d5-0bf4-47c4-adb4-2be068e73580",
+    "username": "hoangdvm",
+    "email": "hoang@gmail.com",
+    "password": "$2a$12$PN2JGhYknKGU2e2oXNA0beW5V760Z7eNWg8q9lLPRzYClBGcfXKNK",
+    "firstName": "Hoang",
+    "lastName": "Duong",
+    "admin": false,
+    "provider": "native",
+    "provider_uid": null
+  }
+]

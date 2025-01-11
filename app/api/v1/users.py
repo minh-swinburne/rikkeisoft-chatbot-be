@@ -1,16 +1,19 @@
-from fastapi import FastAPI, Depends, HTTPException, status, Form, APIRouter
+from fastapi import Depends, HTTPException, status, APIRouter
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from sqlalchemy.ext.asyncio import AsyncSession
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
-from fastapi.middleware.cors import CORSMiddleware
 from passlib.context import CryptContext
+from app.services.users import get_user, authenticate_user
+from app.core.database import get_db
 from app.core.config import settings
 import requests
+# from google.oauth2 import id_token
+# from google.auth.transport import requests
 
 
 router = APIRouter()
-
 
 # Constants for JWT
 SECRET_KEY = "your_secret_key"
@@ -50,21 +53,6 @@ fake_users_db = {
 GOOGLE_CLIENT_ID = settings.google_client_id
 GOOGLE_CLIENT_SECRET = settings.google_client_secret
 GOOGLE_REDIRECT_URI = settings.google_redirect_uri
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-def authenticate_user(username: str, password: str):
-    user = fake_users_db.get(username)
-    print(f"Authenticating user: {username}, provided password: {password}")
-    print(f"User: {user}")
-    if user:
-        # Verify the provided password against the hashed password
-        if pwd_context.verify(password, user['password']):
-            print("Authentication successful")
-            return user
-    print("Authentication failed")
-    return None
-
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
@@ -118,14 +106,20 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    print(f"User: {user}")
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
     access_token = create_access_token(
         data={"id":user_id ,"username": user_name, "email": user_email}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_db)
+):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",

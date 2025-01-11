@@ -11,10 +11,10 @@ class ChatRepository:
 
 
     def load(self):
-        with open("app/data/chats.json", "r") as f:
+        with open("data/chats.json", "r") as f:
             chats = json.load(f)
 
-        with open("app/data/messages.json", "r") as f:
+        with open("data/messages.json", "r") as f:
             messages = json.load(f)
 
         for chat in chats:
@@ -31,14 +31,14 @@ class ChatRepository:
 
     def save(self):
         chats = list(self._storage.values())
-        with open("app/data/chats.json", "w") as f:
+        with open("data/chats.json", "w") as f:
             json.dump(chats, f, indent=4)
 
         messages = []
         for chat in self._storage.values():
             messages.extend(chat["messages"])
 
-        with open("app/data/messages.json", "w") as f:
+        with open("data/messages.json", "w") as f:
             json.dump(messages, f, indent=4)
 
 

@@ -1,6 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Text, DATETIME
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
 from app.models.base import Base
 
 class User(Base):
@@ -14,6 +13,6 @@ class User(Base):
     lastname = Column(String(50), nullable=False)
     admin = Column(Boolean, default=False)
     provider = Column(String(50))
-    providerUid = Column(String(100))
+    provider_uid = Column(String(100))
 
     chats = relationship("Chat", back_populates="user")

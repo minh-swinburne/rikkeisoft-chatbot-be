@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.messages import MessageRequest, MessageResponse
 from app.services.chats import create_chat, list_chats, create_message, list_messages
 from app.core.database import get_db
 from app.bot.chat import generate_answer, suggest_questions
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 router = APIRouter()
@@ -14,7 +14,6 @@ async def get_history(db: AsyncSession = Depends(get_db)):
     # Fetch the chats for a user (replace with actual user ID)
     user_id = "c24d9619-848d-4af6-87c8-718444421762"
     chats = await list_chats(db, user_id)
-    print(chats)
     return chats
 
 
@@ -55,8 +54,6 @@ async def send_query(chat_id: str, request: MessageRequest, db: AsyncSession = D
         "role": "assistant",
         "content": answer
     })
-
-    print("FXXKing message!!!: ", message.__dict__)
 
     return MessageResponse.model_validate({
         "id": message.id,
