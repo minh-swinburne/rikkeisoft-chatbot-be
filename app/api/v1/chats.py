@@ -1,27 +1,38 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.schemas.chats import ChatBase, ChatResponse
 from app.schemas.messages import MessageRequest, MessageResponse
-from app.services.chats import create_chat, list_chats, create_message, list_messages
+from app.services.chats import (
+    create_chat,
+    list_chats,
+    update_chat_name,
+    update_chat_last_access,
+    create_message,
+    list_messages,
+)
 from app.core.database import get_db
-from app.bot.chat import generate_answer, suggest_questions
+from app.bot.chat import generate_answer, suggest_questions, generate_name
 
 
 router = APIRouter()
 
 
 @router.get("/")
-async def get_history(db: AsyncSession = Depends(get_db)):
-    # Fetch the chats for a user (replace with actual user ID)
-    user_id = "c24d9619-848d-4af6-87c8-718444421762"
+async def get_history(user_id: str, db: AsyncSession = Depends(get_db)):
+    # Fetch the chats for a given user
     chats = await list_chats(db, user_id)
     return chats
 
 
 @router.post("/")
-async def create_chat_endpoint(db: AsyncSession = Depends(get_db)):
-    user_id = "c24d9619-848d-4af6-87c8-718444421762"
-    chat = await create_chat(db, user_id, "New Chat")
-    return {"chat_id": chat.id}
+async def create_new_chat(request: ChatBase, db: AsyncSession = Depends(get_db)):
+    chat = await create_chat(db, request.user_id, request.name)
+    return ChatResponse.model_validate({
+        "id": chat.id,
+        "user_id": chat.user_id,
+        "name": chat.name,
+        "last_access": chat.last_access
+    })
 
 
 @router.get("/{chat_id}")
@@ -54,6 +65,14 @@ async def send_query(chat_id: str, request: MessageRequest, db: AsyncSession = D
         "role": "assistant",
         "content": answer
     })
+
+    if len(chat_history) == 1:
+        new_chat_name = generate_name(chat_history + [{"role": "assistant", "content": answer}])
+        new_chat_name.replace("\'", "")
+        
+        await update_chat_name(db, chat_id, new_chat_name)
+
+    await update_chat_last_access(db, chat_id)
 
     return MessageResponse.model_validate({
         "id": message.id,

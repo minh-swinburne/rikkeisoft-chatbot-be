@@ -3,8 +3,8 @@ from datetime import datetime
 
 class ChatBase(BaseModel):
     name: str
+    user_id: str
 
 class ChatResponse(ChatBase):
-    id: int
-    user_id: int
+    id: str
     last_access: datetime

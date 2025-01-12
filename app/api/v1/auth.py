@@ -4,7 +4,14 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from jose import jwt
 from app.schemas.auth import GoogleAuthRequest, MicrosoftAuthRequest
-from app.services.users import authenticate_user, create_access_token, create_refresh_token, validate_token
+from app.services.users import (
+    create_user,
+    get_user_by_provider_uid,
+    authenticate_user,
+    create_access_token,
+    create_refresh_token,
+    validate_token,
+)
 from app.core.database import get_db
 from app.core.config import settings
 from app.utils import parse_timedelta
@@ -90,15 +97,30 @@ async def authenticate_native(
 
 
 @router.post("/google")
-async def authenticate_google(request: GoogleAuthRequest):
+async def authenticate_google(request: GoogleAuthRequest, db: AsyncSession = Depends(get_db)):
     user_info = requests.get(
         settings.google_user_info_url,
         headers={"Authorization": f"Bearer {request.access_token}"},
     ).json()
 
+    user = await get_user_by_provider_uid(db, "google", user_info.get("sub"))
+
+    if not user:
+        user = await create_user(
+            db,
+            "", # No username
+            user_info.get("email"),
+            "", # No password
+            user_info.get("given_name"),
+            user_info.get("family_name"),
+            False,
+            "google",
+            user_info.get("sub"),
+        )
+
     return JSONResponse({
         "access_token": create_access_token(
-            user_info.get("sub"),
+            user.id,
             user_info.get("given_name"),
             user_info.get("family_name"),
             user_info.get("email"),
@@ -111,7 +133,7 @@ async def authenticate_google(request: GoogleAuthRequest):
 
 
 @router.post("/microsoft")
-async def authenticate_microsoft(request: MicrosoftAuthRequest):
+async def authenticate_microsoft(request: MicrosoftAuthRequest, db: AsyncSession = Depends(get_db)):
     try:
         header = jwt.get_unverified_header(request.id_token)
         key = next(key for key in MICROSOFT_PUBLIC_KEYS["keys"] if key["kid"] == header["kid"])
@@ -127,10 +149,25 @@ async def authenticate_microsoft(request: MicrosoftAuthRequest):
             status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e)
         )
 
-    print(f"Received token: {payload}")
+    # print(f"Received token: {payload}")
+    user = await get_user_by_provider_uid(db, "microsoft", payload["sub"])
+
+    if not user:
+        user = await create_user(
+            db,
+            "",
+            payload["email"],
+            "",
+            payload["given_name"],
+            payload["family_name"],
+            False,
+            "microsoft",
+            payload["sub"],
+        )
+
     return JSONResponse({
         "access_token": create_access_token(
-            payload["sub"],
+            user.id,
             payload["given_name"],
             payload["family_name"],
             payload["email"],

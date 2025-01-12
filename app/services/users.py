@@ -6,14 +6,34 @@ from datetime import datetime, timedelta
 from app.core.config import settings
 from app.utils import parse_timedelta
 from app.models import User
-import uuid6
+import uuid
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-async def create_user(db: AsyncSession, name: str, email: str):
-    user = User(id=str(uuid6.uuid7()), name=name, email=email)
+async def create_user(
+    db: AsyncSession,
+    username: str,
+    email: str,
+    password: str,
+    firstname: str,
+    lastname: str,
+    admin: bool,
+    provider: str,
+    provider_uid: str,
+) -> User:
+    user = User(
+        id=str(uuid.uuid4()),
+        username=username,
+        email=email,
+        password=pwd_context.hash(password),
+        firstname=firstname,
+        lastname=lastname,
+        admin=admin,
+        provider=provider,
+        provider_uid=provider_uid,
+        )
     db.add(user)
     await db.commit()
     await db.refresh(user)
@@ -23,19 +43,25 @@ async def create_user(db: AsyncSession, name: str, email: str):
 async def get_user_by_id(db: AsyncSession, user_id: str) -> User:
     stmt = select(User).where(User.id == user_id)
     result = await db.execute(stmt)
-    return result.scalars().first()
+    return result.scalar_one_or_none()
 
 
 async def get_user_by_username(db: AsyncSession, username: str) -> User:
     stmt = select(User).where(User.username == username)
     result = await db.execute(stmt)
-    return result.scalars().first()
+    return result.scalar_one_or_none()
 
 
 async def get_user_by_email(db: AsyncSession, email: str) -> User:
     stmt = select(User).where(User.email == email)
     result = await db.execute(stmt)
-    return result.scalars().first()
+    return result.scalar_one_or_none()
+
+
+async def get_user_by_provider_uid(db: AsyncSession, provider: str, provider_uid: str) -> User:
+    stmt = select(User).where(User.provider == provider, User.provider_uid == provider_uid)
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
 
 
 async def list_users(db: AsyncSession):
@@ -47,7 +73,7 @@ async def list_users(db: AsyncSession):
 async def authenticate_user(db: AsyncSession, username: str, password: str) -> User:
     stmt = select(User).where(User.username == username)
     result = await db.execute(stmt)
-    user = result.scalars().first()
+    user = result.scalar_one_or_none()
 
     if user and pwd_context.verify(password, user.password):
         return user

@@ -16,5 +16,5 @@ class UserCreate(UserBase):
 
 
 class UserResponse(UserBase):
-    id: int
+    id: str
     admin: bool
