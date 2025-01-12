@@ -2,6 +2,8 @@ from fastapi import Depends, Cookie, Header, HTTPException, status, APIRouter
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from jose import jwt
+from app.schemas.auth import GoogleAuthRequest, MicrosoftAuthRequest
 from app.services.users import authenticate_user, create_access_token, create_refresh_token, validate_token
 from app.core.database import get_db
 from app.core.config import settings
@@ -13,9 +15,14 @@ router = APIRouter()
 # OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-GOOGLE_CLIENT_ID = settings.google_client_id
-GOOGLE_CLIENT_SECRET = settings.google_client_secret
-GOOGLE_REDIRECT_URI = settings.google_redirect_uri
+
+def get_microsoft_public_keys():
+    discovery_url = f"{settings.microsoft_authority}/v2.0/.well-known/openid-configuration"
+    response = requests.get(discovery_url)
+    jwks_uri = response.json()["jwks_uri"]
+    return requests.get(jwks_uri).json()
+
+MICROSOFT_PUBLIC_KEYS = get_microsoft_public_keys()
 
 
 def grant_access(
@@ -75,17 +82,18 @@ async def authenticate_native(
             user.lastname,
             user.email,
             ["user"].extend(["admin"] if user.admin else []),
+            "native"
         ),
         "refresh_token": create_refresh_token(user.id),
         "token_type": "bearer"
     })
 
 
-@router.get("/google")
-async def authenticate_google(access_token: str):
+@router.post("/google")
+async def authenticate_google(request: GoogleAuthRequest):
     user_info = requests.get(
         settings.google_user_info_url,
-        headers={"Authorization": f"Bearer {access_token}"},
+        headers={"Authorization": f"Bearer {request.access_token}"},
     ).json()
 
     return JSONResponse({
@@ -95,8 +103,41 @@ async def authenticate_google(access_token: str):
             user_info.get("family_name"),
             user_info.get("email"),
             ["user"],
+            "google"
         ),
         "refresh_token": create_refresh_token(user_info.get("sub")),
+        "token_type": "bearer"
+    })
+
+
+@router.post("/microsoft")
+async def authenticate_microsoft(request: MicrosoftAuthRequest):
+    try:
+        header = jwt.get_unverified_header(request.id_token)
+        key = next(key for key in MICROSOFT_PUBLIC_KEYS["keys"] if key["kid"] == header["kid"])
+        payload = jwt.decode(
+            request.id_token,
+            key=key,
+            algorithms=["RS256"],
+            audience=settings.microsoft_client_id
+            )
+    except Exception as e:
+        print(f"Error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e)
+        )
+
+    print(f"Received token: {payload}")
+    return JSONResponse({
+        "access_token": create_access_token(
+            payload["sub"],
+            payload["given_name"],
+            payload["family_name"],
+            payload["email"],
+            ["user"],
+            "microsoft"
+        ),
+        "refresh_token": create_refresh_token(payload["sub"]),
         "token_type": "bearer"
     })
 

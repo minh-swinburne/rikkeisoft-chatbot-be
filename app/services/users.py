@@ -43,23 +43,25 @@ async def authenticate_user(db: AsyncSession, username: str, password: str) -> U
 
 
 def create_access_token(
-    user_id: str,
+    sub: str,   # Subject / User ID
     # username: str,
     firstname: str,
     lastname: str,
     email: str,
     roles: list,
+    provider: str,
 ):
     expires_delta = parse_timedelta(settings.jwt_access_expires_in)
 
     # Define token claims (payload)
     payload = {
-        "sub": user_id,  # Subject
+        "sub": sub,  # Subject
         # "username": username,  # Optional claim
         "firstname": firstname,  # Optional claim
         "lastname": lastname,  # Optional
         "email": email,  # Optional claim
         "roles": roles,  # Optional claim
+        "provider": provider,  # Optional claim
         "type": "access",  # Custom claim
         "iat": datetime.now(),  # Issued at
         "exp": datetime.now() + expires_delta,  # Expiration time
@@ -70,12 +72,12 @@ def create_access_token(
     )
 
 
-def create_refresh_token(user_id: str):
+def create_refresh_token(sub: str):
     expires_delta = parse_timedelta(settings.jwt_refresh_expires_in)
 
     # Define token claims (payload)
     payload = {
-        "sub": user_id,  # Subject
+        "sub": sub,  # Subject
         "type": "refresh",  # Custom claim
         "iat": datetime.now(),  # Issued at
         "exp": datetime.now() + expires_delta,  # Expiration time

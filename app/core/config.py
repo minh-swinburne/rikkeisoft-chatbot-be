@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     google_redirect_uri: str = os.getenv("GOOGLE_REDIRECT_URI")
     google_user_info_url: str = os.getenv("GOOGLE_USER_INFO_URL")
 
+    microsoft_client_id: str = os.getenv("MICROSOFT_CLIENT_ID")
+    microsoft_client_secret: str = os.getenv("MICROSOFT_CLIENT_SECRET")
+    microsoft_redirect_uri: str = os.getenv("MICROSOFT_REDIRECT_URI")
+    microsoft_authority: str = os.getenv("MICROSOFT_AUTHORITY")
+
     db_dialect: str = os.getenv("DB_DIALECT")
     db_driver: str = os.getenv("DB_DRIVER")
     db_username: str = os.getenv("DB_USERNAME")

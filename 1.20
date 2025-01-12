@@ -1,0 +1,16 @@
+Requirement already satisfied: msal[broker] in c:\users\xmas4\onedrive - swinburne university\projects\rikkeisoft - employee chatbot\rikkeisoft-chatbot-be\.venv\lib\site-packages (1.31.1)
+Requirement already satisfied: requests<3,>=2.0.0 in c:\users\xmas4\onedrive - swinburne university\projects\rikkeisoft - employee chatbot\rikkeisoft-chatbot-be\.venv\lib\site-packages (from msal[broker]) (2.32.3)
+Requirement already satisfied: PyJWT<3,>=1.0.0 in c:\users\xmas4\onedrive - swinburne university\projects\rikkeisoft - employee chatbot\rikkeisoft-chatbot-be\.venv\lib\site-packages (from PyJWT[crypto]<3,>=1.0.0->msal[broker]) (2.10.1)
+Requirement already satisfied: cryptography<46,>=2.5 in c:\users\xmas4\onedrive - swinburne university\projects\rikkeisoft - employee chatbot\rikkeisoft-chatbot-be\.venv\lib\site-packages (from msal[broker]) (44.0.0)
+Collecting pymsalruntime<0.18,>=0.14 (from msal[broker])
+  Downloading pymsalruntime-0.17.1-cp312-cp312-win_amd64.whl.metadata (274 bytes)
+Requirement already satisfied: cffi>=1.12 in c:\users\xmas4\onedrive - swinburne university\projects\rikkeisoft - employee chatbot\rikkeisoft-chatbot-be\.venv\lib\site-packages (from cryptography<46,>=2.5->msal[broker]) (1.17.1)
+Requirement already satisfied: charset-normalizer<4,>=2 in c:\users\xmas4\onedrive - swinburne university\projects\rikkeisoft - employee chatbot\rikkeisoft-chatbot-be\.venv\lib\site-packages (from requests<3,>=2.0.0->msal[broker]) (3.4.1)
+Requirement already satisfied: idna<4,>=2.5 in c:\users\xmas4\onedrive - swinburne university\projects\rikkeisoft - employee chatbot\rikkeisoft-chatbot-be\.venv\lib\site-packages (from requests<3,>=2.0.0->msal[broker]) (3.10)
+Requirement already satisfied: urllib3<3,>=1.21.1 in c:\users\xmas4\onedrive - swinburne university\projects\rikkeisoft - employee chatbot\rikkeisoft-chatbot-be\.venv\lib\site-packages (from requests<3,>=2.0.0->msal[broker]) (2.3.0)
+Requirement already satisfied: certifi>=2017.4.17 in c:\users\xmas4\onedrive - swinburne university\projects\rikkeisoft - employee chatbot\rikkeisoft-chatbot-be\.venv\lib\site-packages (from requests<3,>=2.0.0->msal[broker]) (2024.12.14)
+Requirement already satisfied: pycparser in c:\users\xmas4\onedrive - swinburne university\projects\rikkeisoft - employee chatbot\rikkeisoft-chatbot-be\.venv\lib\site-packages (from cffi>=1.12->cryptography<46,>=2.5->msal[broker]) (2.22)
+Downloading pymsalruntime-0.17.1-cp312-cp312-win_amd64.whl (1.2 MB)
+   ---------------------------------------- 1.2/1.2 MB 3.0 MB/s eta 0:00:00
+Installing collected packages: pymsalruntime
+Successfully installed pymsalruntime-0.17.1
