@@ -44,7 +44,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES ('86ce47d5-0bf4-47c4-adb4-2be068e73580','hoangdvm','hoang@gmail.com','$2a$12$PN2JGhYknKGU2e2oXNA0beW5V760Z7eNWg8q9lLPRzYClBGcfXKNK','Hoang','Duong',0,'native',NULL),('c24d9619-848d-4af6-87c8-718444421762','tminh1512','minh@gmail.com','$2a$12$mC5B97wgqzv05s8PBilQDODpRZ.wjwyh1bWSRua7ODBO8H60yjFSu','Minh','Nguyen',1,'native',NULL);
+INSERT INTO `users` VALUES ('1642be2a-e3a9-4679-87eb-1365f9f470d0','','104169617@student.swin.edu.au','$2b$12$gUr08tFVl1Fvae78DwrEAefIXQGxYdCeqe6TERd.kBoDlkr3hUVNq','Nguyen','Minh',0,'google','107360694239114519362'),('86ce47d5-0bf4-47c4-adb4-2be068e73580','hoangdvm','hoang@gmail.com','$2a$12$PN2JGhYknKGU2e2oXNA0beW5V760Z7eNWg8q9lLPRzYClBGcfXKNK','Hoang','Duong',0,'native',NULL),('c24d9619-848d-4af6-87c8-718444421762','tminh1512','minh@gmail.com','$2a$12$mC5B97wgqzv05s8PBilQDODpRZ.wjwyh1bWSRua7ODBO8H60yjFSu','Minh','Nguyen',1,'native',NULL);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -57,4 +57,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-01-13  5:03:52
+-- Dump completed on 2025-01-13  6:24:02
