@@ -20,8 +20,20 @@ async def create_user(db: AsyncSession, name: str, email: str):
     return user
 
 
-async def get_user(db: AsyncSession, user_id: str):
+async def get_user_by_id(db: AsyncSession, user_id: str) -> User:
     stmt = select(User).where(User.id == user_id)
+    result = await db.execute(stmt)
+    return result.scalars().first()
+
+
+async def get_user_by_username(db: AsyncSession, username: str) -> User:
+    stmt = select(User).where(User.username == username)
+    result = await db.execute(stmt)
+    return result.scalars().first()
+
+
+async def get_user_by_email(db: AsyncSession, email: str) -> User:
+    stmt = select(User).where(User.email == email)
     result = await db.execute(stmt)
     return result.scalars().first()
 

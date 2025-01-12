@@ -1,5 +1,5 @@
 from typing import Optional
-from app.schemas.document import Document
+from app.schemas.docs import Document
 import uuid
 
 

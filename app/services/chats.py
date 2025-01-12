@@ -4,11 +4,11 @@ from app.models import Chat, Message
 from app.schemas import MessageResponse
 from datetime import datetime
 
-import uuid
+import uuid6
 
 # CRUD operation to create a new chat
 async def create_chat(db: AsyncSession, user_id: str, name: str):
-    chat = Chat(id=str(uuid.uuid4()), user_id=user_id, name=name,last_access=datetime.now())
+    chat = Chat(id=str(uuid6.uuid7()), user_id=user_id, name=name,last_access=datetime.now())
     db.add(chat)
     await db.commit()
     await db.refresh(chat)
@@ -23,12 +23,12 @@ async def list_chats(db: AsyncSession, user_id: str):
 
 # CRUD operation to create a new message
 async def create_message(db: AsyncSession, message: dict):
-    message_id = str(uuid.uuid4())
+    message_id = str(uuid6.uuid7())
     item = Message(
-        id=message_id, 
-        chat_id=message["chat_id"], 
-        time=datetime.now(), 
-        role=message["role"], 
+        id=message_id,
+        chat_id=message["chat_id"],
+        time=datetime.now(),
+        role=message["role"],
         content=message["content"]
         )
 

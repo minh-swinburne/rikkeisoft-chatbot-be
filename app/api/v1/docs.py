@@ -1,8 +1,13 @@
-from fastapi import APIRouter, UploadFile, HTTPException, File, Form
+from fastapi import APIRouter, UploadFile, HTTPException, Depends, File, Form
 from fastapi.responses import JSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from bs4 import BeautifulSoup
 from pathlib import Path
+from app.schemas.docs import Document
+from app.services.docs import create_document, get_document_by_id
+from app.services.users import get_user_by_email
+from app.core.database import get_db
 from app.core.config import settings
 import re
 import json
@@ -15,8 +20,11 @@ router = APIRouter()
 
 
 @router.get("/{doc_id}")
-async def get_document(doc_id: str):
-    return {"doc_id": doc_id}
+async def get_document(doc_id: str, db: AsyncSession = Depends(get_db)):
+    document = await get_document_by_id(db, doc_id)
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return document
 
 
 @router.post("/")
@@ -27,9 +35,10 @@ async def upload_document(
     description: Optional[str] = Form(None),
     categories: list[str] = Form(...),
     creator: Optional[str] = Form(None),
-    created_date: Optional[datetime.date] = Form(None),
+    created_date: Optional[datetime.date] = Form(None, alias="createdDate"),
     restricted: bool = Form(...),
     uploader: str = Form(...),  # Admin ID / Model
+    db: AsyncSession = Depends(get_db),
 ):
     # Prepare directory and file path
     file_dir = settings.upload_dir
@@ -100,28 +109,21 @@ async def upload_document(
             status_code=400, detail="Either a file or a link must be provided."
         )
 
-    # Should be replaced with Pydantic model later
-    metadata = {
-        "id": str(uuid.uuid4()),
-        "filename": filename,
-        "file_type": file_type,
-        "title": title,
-        "description": description,
-        "categories": categories,
-        "creator": creator, # Should find user ID from username
-        "created_date": created_date,
-        "restricted": restricted,
-        "uploader": uploader, # Should find user ID from username
-        "uploaded_time": datetime.datetime.now().isoformat(),
-    }
+    creator_user = await get_user_by_email(db, creator)
+    uploader_user = await get_user_by_email(db, uploader)
 
-    # Save metadata as a JSON file (should be changed to DB later)
-    metadata_path = file_path.with_suffix(".json")
+    # Create the document entry in the database
+    document = await create_document(
+        db=db,
+        filename=filename,
+        file_type=file_type,
+        title=title,
+        description=description,
+        categories=categories,
+        creator=creator_user.id,
+        created_date=created_date,
+        restricted=restricted,
+        uploader=uploader_user.id,
+    )
 
-    with metadata_path.open("w", encoding="utf-8") as f:
-        json.dump(metadata, f, indent=4, default=str)
-
-    return {
-        "message": f"{"File" if file else "Link"} uploaded {"successfully" if file_path.exists() else "failed"}. Upload path: {file_path}",
-        "metadata": metadata,
-    }
+    return {"message": "Upload successful", "document": document}

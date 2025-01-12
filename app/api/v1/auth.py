@@ -81,7 +81,7 @@ async def authenticate_native(
             user.firstname,
             user.lastname,
             user.email,
-            ["user"].extend(["admin"] if user.admin else []),
+            ["user"] + (["admin"] if user.admin else []),
             "native"
         ),
         "refresh_token": create_refresh_token(user.id),
