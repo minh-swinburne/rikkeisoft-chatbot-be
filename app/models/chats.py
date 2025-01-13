@@ -13,4 +13,4 @@ class Chat(Base):
     last_access = Column(DateTime(timezone=True), server_default=func.now(), server_onupdate=func.now())
 
     user = relationship("User", back_populates="chats")
-    messages = relationship("Message", back_populates="chat")
+    messages = relationship("Message", back_populates="chat", cascade="all, delete-orphan")
