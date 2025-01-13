@@ -5,7 +5,7 @@ import csv
 # Connect to Milvus
 connections.connect("my_database", host="localhost", port="19530")
 
-client = MilvusClient (
+client = MilvusClient(
     uri="http://localhost:19530",
     token="root:Milvus"
 )
@@ -19,14 +19,15 @@ schema = MilvusClient.create_schema(
     enable_dynamic_field=True,
 )
 
-schema.add_field(field_name="my_id", datatype=DataType.INT64, is_primary=True)
+# Update field names in the schema
+schema.add_field(field_name="document_id", datatype=DataType.INT64, is_primary=True)
+schema.add_field(field_name="document_name", datatype=DataType.VARCHAR, max_length=512)
 schema.add_field(field_name="my_vector", datatype=DataType.FLOAT_VECTOR, dim=384)
-schema.add_field(field_name="my_varchar", datatype=DataType.VARCHAR, max_length=512)
 
 index_params = client.prepare_index_params()
 
 index_params.add_index(
-    field_name="my_id",
+    field_name="document_id",
     index_type="STL_SORT"
 )
 
@@ -46,17 +47,16 @@ if collection_name not in client.list_collections():
 
 # Load data from the CSV
 def load_csv_data(csv_path):
-    # data = {"my_id": [], "my_vector": [], "my_varchar": []}
     data = []
     with open(csv_path, mode="r", encoding="utf-8") as csv_file:
         csv_reader = csv.DictReader(csv_file)
         for row in csv_reader:
-            # Convert my_id to int and my_vector back to a list
+            # Convert document_id to int and my_vector back to a list
             try:
                 data.append({
-                    "my_id": int(row["my_id"]),
-                    "my_vector": ast.literal_eval(row["my_vector"]),
-                    "my_varchar": row["my_varchar"]
+                    "document_id": int(row["document_id"]),
+                    "document_name": row["document_name"],
+                    "my_vector": ast.literal_eval(row["my_vector"])
                 })
             except Exception as e:
                 print(f"Skipping invalid row: {row}. Error: {e}")
@@ -69,7 +69,7 @@ def insert_data_into_milvus(client, data):
     client.insert(
         collection_name=collection_name,
         data=data
-        )
+    )
     print(f"Inserted {len(data)} records into the collection.")
 
 

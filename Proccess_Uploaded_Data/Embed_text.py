@@ -43,8 +43,8 @@ def process_files(file_paths):
             with open(output_csv_path, mode='r', encoding='utf-8', newline='') as csv_file:
                 csv_reader = csv.DictReader(csv_file)
                 for row in csv_reader:
-                    if "my_id" in row:
-                        existing_ids.add(int(row["my_id"]))
+                    if "document_id" in row:
+                        existing_ids.add(int(row["document_id"]))
                         output_data.append(row)
         except Exception as e:
             print(f"Warning: Could not load existing CSV file: {e}. Starting fresh.")
@@ -66,7 +66,7 @@ def process_files(file_paths):
 
                 # Append the chunk metadata and embedding to output
                 output_data.append({
-                    "my_id": chunk_id,
+                    "document_id": chunk_id,
                     "document_name": os.path.basename(file_path),  # Keep track of the document name
                     "my_vector": embedding.tolist(),  # Store only embeddings
                 })
@@ -77,7 +77,7 @@ def process_files(file_paths):
 
     # Save the updated data to the CSV file
     with open(output_csv_path, mode='w', encoding='utf-8', newline='') as csv_file:
-        fieldnames = ["my_id", "document_name", "my_vector"]
+        fieldnames = ["document_id", "document_name", "my_vector"]
         csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
 
         # Write the header only if the file is empty
@@ -93,5 +93,5 @@ def process_files(file_paths):
 
 # Example usage
 if __name__ == "__main__":
-    file_paths = ["example.pdf"]  # List of file paths to process
+    file_paths = ["example_2.pdf"]  # List of file paths to process
     process_files(file_paths)
