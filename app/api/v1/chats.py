@@ -9,6 +9,7 @@ from app.services.chats import (
     update_chat_last_access,
     create_message,
     list_messages,
+    delete_chat,
 )
 from app.core.database import get_db
 from app.bot.chat import generate_answer, suggest_questions, generate_name
@@ -91,3 +92,22 @@ async def get_suggested_questions(chat_id: str, db: AsyncSession = Depends(get_d
     # Generate suggestions based on chat history
     suggestions = suggest_questions(chat_history)
     return {"suggestions": suggestions}
+
+
+from fastapi import HTTPException
+
+@router.delete("/{chat_id}/delete")
+async def delete_chat_endpoint(chat_id: str, db: AsyncSession = Depends(get_db)):
+    await delete_chat(db, chat_id)
+    return {"message": "Chat deleted successfully"}
+
+
+@router.put("/{chat_id}/rename")
+async def rename_chat(chat_id: str, request: ChatBase, db: AsyncSession = Depends(get_db)):
+    chat = await update_chat_name(db, chat_id, request.name)
+    return ChatResponse.model_validate({
+        "id": chat.id,
+        "user_id": chat.user_id,
+        "name": chat.name,
+        "last_access": chat.last_access
+    })

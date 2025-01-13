@@ -3,6 +3,7 @@ from sqlalchemy.future import select
 from app.models import Chat, Message
 from app.schemas import MessageResponse
 from datetime import datetime
+from sqlalchemy import delete
 
 import uuid6
 
@@ -71,3 +72,12 @@ async def create_message(db: AsyncSession, message: dict) -> Message:
 async def list_messages(db: AsyncSession, chat_id: str) -> list[Message]:
     result = await db.execute(select(Message).where(Message.chat_id == chat_id))
     return result.scalars().all()
+
+
+async def delete_chat(db: AsyncSession, chat_id: str):
+    chat = await get_chat_by_id(db, chat_id)
+    if chat:
+        await db.delete(chat)
+        await db.commit()
+    else:
+        raise ValueError("Chat not found")
