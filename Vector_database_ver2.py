@@ -1,4 +1,4 @@
-from pymilvus import connections, utility, FieldSchema, CollectionSchema, DataType, Collection, MilvusClient
+from pymilvus import connections, DataType, MilvusClient
 import ast
 import csv
 
@@ -58,16 +58,8 @@ def load_csv_data(csv_path):
                     "my_vector": ast.literal_eval(row["my_vector"]),
                     "my_varchar": row["my_varchar"]
                 })
-                # data["my_id"].append(int(row["my_id"]))  # Convert my_id to integer
-                # data["my_vector"].append(ast.literal_eval(row["my_vector"]))  # Convert string back to list
-                # data["my_varchar"].append(row["my_varchar"])
             except Exception as e:
                 print(f"Skipping invalid row: {row}. Error: {e}")
-
-    # Ensure all fields have the same length
-    # if not (len(data["my_id"]) == len(data["my_vector"]) == len(data["my_varchar"])):
-    #     raise ValueError("Mismatch in the number of rows for my_id, my_vector, and my_varchar fields.")
-
     return data
 
 
