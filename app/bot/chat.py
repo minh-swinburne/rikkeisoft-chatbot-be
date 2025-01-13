@@ -1,5 +1,5 @@
 from groq import Groq
-from app.bot.rag import search_context
+from app.bot.vector_db import search_context
 from app.core.config import settings
 from app.utils import extract_content
 import httpx

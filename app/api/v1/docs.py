@@ -141,7 +141,4 @@ async def upload_document(
         "uploaded_time": document.uploaded_time
     })
 
-    # data = json_to_milvus(output_path)
-    # insert_data_to_milvus(data)
-
     return {"message": "Upload successful", "document": document}

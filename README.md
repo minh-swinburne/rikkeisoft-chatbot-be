@@ -45,7 +45,7 @@ Framework: FastAPI
 
 8. Launch the FastAPI server:
   ```
-    fastapi dev app.py
+    fastapi dev app/main.py
   ```
 
 9. Server should be running at <http://127.0.0.1:8000>. APIs can be tested at <http://127.0.0.1:8000/docs>
@@ -55,4 +55,9 @@ Framework: FastAPI
 To save tree structure of a directory, run command:
   ```
     tree /f /a [<drive>:][<path>] > [<drive>:]/[<file_path>]/<filename>.txt
+  ```
+
+To run server without reloading a certain directory/file, e.g. the embedding model, run command:
+  ```
+    uvicorn app.main:app --reload --reload-exclude app/bot/rag.py
   ```
