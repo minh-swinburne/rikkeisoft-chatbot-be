@@ -10,6 +10,10 @@ load_dotenv(override=True)
 class Settings(BaseSettings):
     root_dir: Path = Path(__file__).resolve().parent.parent
     upload_dir: Path = Path(os.getenv("UPLOAD_DIR"))
+    tesseract_cmd: str = os.getenv("TESSERACT_CMD")
+
+    embedding_model: str = os.getenv("EMBEDDING_MODEL")
+    embedding_dimension: int = os.getenv("EMBEDDING_DIMENSION")
 
     groq_api_key: str = os.getenv("GROQ_API_KEY")
     google_client_id: str = os.getenv("GOOGLE_CLIENT_ID")

@@ -5,7 +5,9 @@ import pytesseract
 from docx import Document  # python-docx for DOCX
 import io
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\Users\Admin\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'
+pytesseract.pytesseract.tesseract_cmd = (
+    r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+)
 
 def extract_images_from_pdf(pdf_path):
     """Extract images from a PDF."""
@@ -55,3 +57,7 @@ def extract_text_from_file(file_path):
         raise ValueError("Unsupported file format")
 
 # You can export this module if needed, but this file mainly handles extraction.
+if __name__ == "__main__":
+    pdf_path = "uploads/image.pdf"
+    text = extract_text_from_pdf(pdf_path)
+    print(text)

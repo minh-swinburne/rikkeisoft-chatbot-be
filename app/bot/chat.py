@@ -1,4 +1,5 @@
 from groq import Groq
+from app.bot.rag import search_context
 from app.core.config import settings
 from app.utils import extract_content
 import httpx
@@ -10,13 +11,18 @@ client = Groq(
 )
 
 def generate_answer(chat_history: list):
+    user_query = chat_history[-1]["content"]
+    context = search_context(user_query)
+
     system_prompt = f"""
 Instructions:
 - Be helpful and answer questions concisely. If you don't know the answer or can't find the relevant documents, let the user know.
 - Utilize the context provided for accurate and specific information.
 - Incorporate your pre-existing knowledge to enhance the depth and relevance of your response.
 - Cite your sources and relevant documents when providing information.
-Context: Answer the following question.
+
+Context:
+{ "\n".join(f"- Title: '{doc["title"]}'\nExcerpt: {doc["text"]}\nScore: {doc["score"]}" for doc in context) }
     """
 
     chat_completion = client.chat.completions.create(

@@ -69,7 +69,7 @@ async def send_query(chat_id: str, request: MessageRequest, db: AsyncSession = D
     if len(chat_history) == 1:
         new_chat_name = generate_name(chat_history + [{"role": "assistant", "content": answer}])
         new_chat_name.replace("\'", "")
-        
+
         await update_chat_name(db, chat_id, new_chat_name)
 
     await update_chat_last_access(db, chat_id)

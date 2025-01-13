@@ -1,5 +1,9 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 import re
+
+
+executor = ThreadPoolExecutor(max_workers=5)
 
 
 def extract_content(

@@ -18,8 +18,22 @@ def generate_file_id(existing_ids):
         return max(existing_ids) + 1
     return 1
 
+def chunk_document(text, max_chunk_size=500):
+    """
+    Split a document into chunks based on paragraphs and word count.
+    Each paragraph is processed, and long paragraphs are further split by length.
+    """
+    paragraphs = text.split("\n\n")  # Split text into paragraphs based on double newlines
+    chunks = []
+    for paragraph in paragraphs:
+        words = paragraph.split()
+        for i in range(0, len(words), max_chunk_size):
+            chunk = " ".join(words[i:i + max_chunk_size])
+            chunks.append(chunk)
+    return chunks
+
 def process_files(file_paths):
-    """Process files to extract text and create embeddings."""
+    """Process files to extract text, chunk it by document structure, and create embeddings."""
     output_data = []
 
     # Load existing data from CSV if the file exists
@@ -36,31 +50,34 @@ def process_files(file_paths):
             print(f"Warning: Could not load existing CSV file: {e}. Starting fresh.")
 
     for file_path in file_paths:
-        file_id = generate_file_id(existing_ids)
-        if file_id in existing_ids:
-            print(f"File with ID {file_id} has already been processed. Skipping.")
-            continue
-
         try:
             # Extract text from the file
             text = extract_text_from_file(file_path)
 
-            # Create embeddings from the extracted text
-            embedding = sentence_transformer_ef.encode_documents([text])[0]  # Encode the text and get the first embedding
+            # Chunk the document based on structure
+            chunks = chunk_document(text)
 
-            # Append the data to output
-            output_data.append({
-                "my_id": file_id,
-                "my_vector": embedding.tolist(),  # Convert NumPy array to list for serialization
-                "my_varchar": text[:100]  # Example: store the first 100 characters of the text
-            })
-            existing_ids.add(file_id)  # Add the new ID to the set
+            # Process each chunk
+            for chunk in chunks:
+                chunk_id = generate_file_id(existing_ids)
+
+                # Create embeddings for the chunk
+                embedding = sentence_transformer_ef.encode_documents([chunk])[0]
+
+                # Append the chunk metadata and embedding to output
+                output_data.append({
+                    "my_id": chunk_id,
+                    "document_name": os.path.basename(file_path),  # Keep track of the document name
+                    "my_vector": embedding.tolist(),  # Store only embeddings
+                })
+                existing_ids.add(chunk_id)  # Add the new ID to the set
+
         except ValueError as e:
             print(f"Error processing {file_path}: {e}")
 
     # Save the updated data to the CSV file
     with open(output_csv_path, mode='w', encoding='utf-8', newline='') as csv_file:
-        fieldnames = ["my_id", "my_vector", "my_varchar"]
+        fieldnames = ["my_id", "document_name", "my_vector"]
         csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
 
         # Write the header only if the file is empty
@@ -76,5 +93,5 @@ def process_files(file_paths):
 
 # Example usage
 if __name__ == "__main__":
-    file_paths = ["example_2.pdf"]  # List of file paths to process
+    file_paths = ["example.pdf"]  # List of file paths to process
     process_files(file_paths)

@@ -7,8 +7,10 @@ from pathlib import Path
 from app.schemas.docs import Document
 from app.services.docs import create_document, get_document_by_id
 from app.services.users import get_user_by_email
+from app.bot.rag import process_document
 from app.core.database import get_db
 from app.core.config import settings
+from app.utils import executor
 import re
 import json
 import uuid
@@ -51,9 +53,9 @@ async def upload_document(
         # Define supported MIME types
         supported_types = {
             "application/pdf": "pdf",
-            "application/msword": "doc",
+            # "application/msword": "doc",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
-            "application/vnd.ms-excel": "xls",
+            # "application/vnd.ms-excel": "xls",
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
         }
 
@@ -125,5 +127,21 @@ async def upload_document(
         restricted=restricted,
         uploader=uploader_user.id,
     )
+
+    # subprocess.Popen(["python", "app/bot/rag.py", file_path, file_type, json.dumps(document.__dict__)])
+    await process_document(file_path, file_type, {
+        "document_id": document.id,
+        "title": title,
+        "description": description,
+        "categories": categories,
+        "creator": creator_user.id,
+        "created_date": created_date,
+        "restricted": restricted,
+        "uploader": uploader_user.id,
+        "uploaded_time": document.uploaded_time
+    })
+
+    # data = json_to_milvus(output_path)
+    # insert_data_to_milvus(data)
 
     return {"message": "Upload successful", "document": document}

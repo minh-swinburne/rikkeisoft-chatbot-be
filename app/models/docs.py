@@ -3,7 +3,7 @@ from sqlalchemy.sql import func
 from app.models.base import Base
 
 
-class Document(Base):
+class DocumentBase(Base):
     __tablename__ = "documents"
 
     id = Column(String(36), primary_key=True, index=True)
