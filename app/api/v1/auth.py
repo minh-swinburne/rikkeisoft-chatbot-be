@@ -108,9 +108,9 @@ async def authenticate_google(request: GoogleAuthRequest, db: AsyncSession = Dep
     if not user:
         user = await create_user(
             db,
-            "", # No username
+            user_info.get("sub"),  # Provider UID as the username
             user_info.get("email"),
-            "", # No password
+            "",  # No password
             user_info.get("given_name"),
             user_info.get("family_name"),
             False,
@@ -155,7 +155,7 @@ async def authenticate_microsoft(request: MicrosoftAuthRequest, db: AsyncSession
     if not user:
         user = await create_user(
             db,
-            "",
+            payload["sub"],  # Provider UID as the username
             payload["email"],
             "",
             payload["given_name"],
