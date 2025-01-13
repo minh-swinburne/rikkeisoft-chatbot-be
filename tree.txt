@@ -2,35 +2,110 @@ Folder PATH listing for volume Acer
 Volume serial number is B680-DD4E
 C:\USERS\XMAS4\ONEDRIVE - SWINBURNE UNIVERSITY\PROJECTS\RIKKEISOFT - EMPLOYEE CHATBOT\RIKKEISOFT-CHATBOT-BE\APP
 |   main.py
-|   
+|   tree.txt
+|   utils.py
+|   __init__.py
+|
 +---api
 |   |   __init__.py
-|   |   
-|   \---v1
-|           chat.py
-|           upload.py
-|           __init__.py
-|           
+|   |
+|   +---v1
+|   |   |   auth.py
+|   |   |   chats.py
+|   |   |   docs.py
+|   |   |   users.py
+|   |   |   __init__.py
+|   |   |
+|   |   \---__pycache__
+|   |           auth.cpython-312.pyc
+|   |           chat.cpython-312.pyc
+|   |           chats.cpython-312.pyc
+|   |           docs.cpython-312.pyc
+|   |           document.cpython-312.pyc
+|   |           d�c.cpython-312.pyc
+|   |           users.cpython-312.pyc
+|   |           __init__.cpython-312.pyc
+|   |
+|   \---__pycache__
+|           __init__.cpython-312.pyc
+|
 +---bot
-|       __init__.py
-|       
-+---controllers
-|       user.py
-|       __init__.py
-|       
+|   |   chat.py
+|   |   milvus.py
+|   |   rag.py
+|   |   __init__.py
+|   |
+|   \---__pycache__
+|           chat.cpython-312.pyc
+|           milvus.cpython-312.pyc
+|           rag.cpython-312.pyc
+|           __init__.cpython-312.pyc
+|
 +---core
-|       security.py
-|       __init__.py
-|       
+|   |   config.py
+|   |   database.py
+|   |   security.py
+|   |   __init__.py
+|   |
+|   \---__pycache__
+|           config.cpython-312.pyc
+|           database.cpython-312.pyc
+|           security.cpython-312.pyc
+|           __init__.cpython-312.pyc
+|
 +---models
-|       user.py
-|       __init__.py
-|       
+|   |   base.py
+|   |   chats.py
+|   |   docs.py
+|   |   messages.py
+|   |   users.py
+|   |   __init__.py
+|   |
+|   \---__pycache__
+|           base.cpython-312.pyc
+|           chats.cpython-312.pyc
+|           docs.cpython-312.pyc
+|           messages.cpython-312.pyc
+|           users.cpython-312.pyc
+|           __init__.cpython-312.pyc
+|
++---repos
+|   |   chat.py
+|   |   document.py
+|   |   user.py
+|   |   __init__.py
+|   |
+|   \---__pycache__
+|           chat.cpython-312.pyc
+|           __init__.cpython-312.pyc
+|
 +---schemas
-|       user.py
-|       __init__.py
-|       
+|   |   auth.py
+|   |   chats.py
+|   |   docs.py
+|   |   messages.py
+|   |   users.py
+|   |   __init__.py
+|   |
+|   \---__pycache__
+|           auth.cpython-312.pyc
+|           chat.cpython-312.pyc
+|           chats.cpython-312.pyc
+|           docs.cpython-312.pyc
+|           message.cpython-312.pyc
+|           messages.cpython-312.pyc
+|           __init__.cpython-312.pyc
+|
 \---services
-        user.py
-        __init__.py
-        
+    |   chats.py
+    |   docs.py
+    |   users.py
+    |   __init__.py
+    |
+    \---__pycache__
+            chat.cpython-312.pyc
+            chats.cpython-312.pyc
+            docs.cpython-312.pyc
+            users.cpython-312.pyc
+            __init__.cpython-312.pyc
+

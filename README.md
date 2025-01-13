@@ -49,3 +49,10 @@ Framework: FastAPI
   ```
 
 9. Server should be running at <http://127.0.0.1:8000>. APIs can be tested at <http://127.0.0.1:8000/docs>
+
+## Development Guidance
+
+To save tree structure of a directory, run command:
+  ```
+    tree /f /a [<drive>:][<path>] > [<drive>:]/[<file_path>]/<filename>.txt
+  ```
