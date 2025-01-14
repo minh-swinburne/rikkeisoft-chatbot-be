@@ -1,0 +1,20 @@
+{
+  "chat_config": {
+    "system_prompt": "Instructions:\n- Be helpful and answer questions concisely...",
+    "model": "llama-3.3-70b-versatile",
+    "max_tokens": 1024,
+    "temperature": 0.5
+  },
+  "suggest_questions_config": {
+    "system_prompt": "Instructions:\n- Suggest 3 to 4 helpful...",
+    "model": "llama-3.2-1b-preview",
+    "max_tokens": 128,
+    "temperature": 1.0
+  },
+  "generate_name_config": {
+    "system_prompt": "Instructions:\n- Generate a name for the chat...",
+    "model": "llama-3.2-1b-preview",
+    "max_tokens": 8,
+    "temperature": 1.0
+  }
+}

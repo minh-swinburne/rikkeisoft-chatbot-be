@@ -1,13 +1,60 @@
-from pymilvus import MilvusClient, DataType, connections
+from pymilvus import MilvusClient, DataType, connections, db
 from app.core.config import settings
 from app.bot.model import model
 import json
 
-collection_name = "document_embeddings"
-# Connect to Milvus
-connections.connect("default", host="localhost", port="19530")
+collection_name = settings.milvus_collection
 
-client = MilvusClient(uri="http://localhost:19530", token="root:Milvus")
+# Connect to Milvus
+connections.connect(host=settings.milvus_host, port=settings.milvus_port)
+
+database = db.create_database(settings.milvus_db)
+
+client = MilvusClient(uri="http://localhost:19530", token="root:Milvus", db_name=settings.milvus_db)
+
+
+def setup_db():
+    if collection_name not in client.list_collections():
+        # Define the schema
+        schema = MilvusClient.create_schema(
+            auto_id=False,
+            enable_dynamic_field=True,
+        )
+
+        # Add fields to the schema
+        schema.add_field(
+            field_name="embedding_id",
+            datatype=DataType.INT64,
+            is_primary=True,
+            auto_id=True,
+        )
+        schema.add_field(
+            field_name="document_id", datatype=DataType.VARCHAR, max_length=128
+        )
+        schema.add_field(field_name="title", datatype=DataType.VARCHAR, max_length=512)
+        schema.add_field(
+            field_name="description", datatype=DataType.VARCHAR, max_length=1024
+        )
+        schema.add_field(field_name="text", datatype=DataType.VARCHAR, max_length=8192)
+        schema.add_field(
+            field_name="embedding",
+            datatype=DataType.FLOAT_VECTOR,
+            dim=settings.embedding_dimension,
+        )
+        schema.add_field(field_name="meta", datatype=DataType.JSON)  # Metadata
+
+        index_params = client.prepare_index_params()
+
+        index_params.add_index(field_name="embedding", index_type="AUTOINDEX")
+
+        client.create_collection(
+            collection_name=collection_name,
+            schema=schema,
+            index_params=index_params
+        )
+
+    print(f"Connected to Milvus version {client.get_server_version()}.")
+    print(f"Available collections: {client.list_collections()}")
 
 
 def json_to_data(json_path: str):
@@ -42,46 +89,10 @@ def json_to_data(json_path: str):
 
 
 def insert_data_to_db(data):
-    # Define the schema
-    schema = MilvusClient.create_schema(
-        auto_id=False,
-        enable_dynamic_field=True,
-    )
-
-    # Add fields to the schema
-    schema.add_field(
-        field_name="embedding_id",
-        datatype=DataType.INT64,
-        is_primary=True,
-        auto_id=True,
-    )
-    schema.add_field(
-        field_name="document_id", datatype=DataType.VARCHAR, max_length=128
-    )
-    schema.add_field(field_name="title", datatype=DataType.VARCHAR, max_length=512)
-    schema.add_field(
-        field_name="description", datatype=DataType.VARCHAR, max_length=1024
-    )
-    schema.add_field(field_name="text", datatype=DataType.VARCHAR, max_length=8192)
-    schema.add_field(
-        field_name="embedding",
-        datatype=DataType.FLOAT_VECTOR,
-        dim=settings.embedding_dimension,
-    )
-    schema.add_field(field_name="meta", datatype=DataType.JSON)  # Metadata
-
-    index_params = client.prepare_index_params()
-
-    index_params.add_index(field_name="embedding", index_type="AUTOINDEX")
-
-    if collection_name not in client.list_collections():
-        client.create_collection(
-            collection_name=collection_name, schema=schema, index_params=index_params
-        )
-
     # Insert data
     client.insert(collection_name=collection_name, data=data)
     client.flush(collection_name=collection_name)
+
     print(f"Inserted {len(data)} records into '{collection_name}'.")
 
 
