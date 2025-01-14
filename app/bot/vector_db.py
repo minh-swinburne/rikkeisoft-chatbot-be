@@ -8,7 +8,8 @@ collection_name = settings.milvus_collection
 # Connect to Milvus
 connections.connect(host=settings.milvus_host, port=settings.milvus_port)
 
-database = db.create_database(settings.milvus_db)
+if settings.milvus_db not in db.list_database():
+    database = db.create_database(settings.milvus_db)
 
 client = MilvusClient(uri="http://localhost:19530", token="root:Milvus", db_name=settings.milvus_db)
 
