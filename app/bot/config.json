@@ -8,12 +8,19 @@
   "answer_generation": {
     "params": {
       "model": "llama-3.3-70b-versatile",
-      "max_tokens": 1024,
+      "max_tokens": 4096,
       "temperature": 0.5,
       "top_p": 1.0,
       "stop": null,
       "stream": false
     },
+    "model_options": [
+      "llama-3.3-70b-versatile",
+      "llama3-70b-8192",
+      "llama-3.1-8b-instant",
+      "llama-3.2-90b-vision-preview",
+      "gemma2-9b-it"
+    ],
     "system_prompt": "Instructions:\n- Be helpful and answer questions concisely. If you don't know the answer or can't find the relevant documents, let the user know.\n- Utilize the context provided for accurate and specific information.\n- Incorporate your pre-existing knowledge to enhance the depth and relevance of your response.\n- Cite your sources, including the title of relevant documents, as a list at the end of your answer.\n\nContext:\n{context}\n\nSources:\n{sources}"
   },
   "question_suggestion": {
@@ -32,6 +39,11 @@
       "What are the main points?",
       "When was this document uploaded?",
       "Can you provide a detailed explanation?"
+    ],
+    "model_options": [
+      "llama-3.2-1b-preview",
+      "llama-3.2-3b-preview",
+      "mixtral-8x7b-32768"
     ]
   },
   "name_generation": {
@@ -43,6 +55,11 @@
       "stop": null,
       "stream": false
     },
+    "model_options": [
+      "llama-3.2-1b-preview",
+      "llama-3.2-3b-preview",
+      "mixtral-8x7b-32768"
+    ],
     "system_prompt": "Instructions:\n- Generate a name for the chat based on the provided chat history.\n- The name should be concise, descriptive and relevant to the conversation.\n- Return ONLY the name as a single sentence or phrase, in plaintext. Nothing else should be included.\n\nChat History: {chat_history}"
   }
 }
