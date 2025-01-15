@@ -122,6 +122,17 @@ def search_context(user_query: str, top_k: int = 5):
     return context
 
 
+def query_document(title: str):
+    query_results = client.query(
+        collection_name=collection_name,
+        filter=f"title == \"{title}\"",
+        output_fields=["description", "meta"],
+        limit=1,
+    )
+
+    return query_results[0] if query_results else None
+
+
 if __name__ == "__main__":
     json_path = "uploads/COS40005_Unit_Outline_DN_Jan2025.docx.pdf.json"
     data = json_to_data(json_path)
