@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     milvus_host: str = os.getenv("MILVUS_HOST")
     milvus_port: str = os.getenv("MILVUS_PORT")
     milvus_db: str = os.getenv("MILVUS_DB")
+    milvus_uri: str = os.getenv("MILVUS_URI")
+    milvus_token: str = os.getenv("MILVUS_TOKEN")
+    # milvus_user: str = os.getenv("MILVUS_USER")
+    # milvus_password: str = os.getenv("MILVUS_PASSWORD")
     milvus_collection: str = os.getenv("MILVUS_COLLECTION")
 
     jwt_secret_key: str = os.getenv("JWT_SECRET_KEY")

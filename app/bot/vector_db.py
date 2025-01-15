@@ -6,19 +6,19 @@ import json
 collection_name = settings.milvus_collection
 
 # Connect to Milvus
-connections.connect(host=settings.milvus_host, port=settings.milvus_port)
+# connections.connect(host=settings.milvus_host, port=settings.milvus_port)
 
-if settings.milvus_db not in db.list_database():
-    database = db.create_database(settings.milvus_db)
+# if settings.milvus_db not in db.list_database():
+#     database = db.create_database(settings.milvus_db)
 
-client = MilvusClient(uri="http://localhost:19530", token="root:Milvus", db_name=settings.milvus_db)
+client = MilvusClient(uri=settings.milvus_uri, token=settings.milvus_token)
 
 
 def setup_db():
-    if collection_name not in client.list_collections():
+    if not client.has_collection(collection_name):
         # Define the schema
-        schema = MilvusClient.create_schema(
-            auto_id=False,
+        schema = client.create_schema(
+            auto_id=True,
             enable_dynamic_field=True,
         )
 
@@ -55,6 +55,7 @@ def setup_db():
         )
 
     print(f"Connected to Milvus version {client.get_server_version()}.")
+    print(f"Available databases: {client.list_databases()}")
     print(f"Available collections: {client.list_collections()}")
 
 
@@ -105,7 +106,7 @@ def search_context(user_query: str, top_k: int = 5):
         data=[query_embedding],
         anns_field="embedding",
         limit=top_k,
-        search_params={"metric_type": "IP"},
+        search_params={"metric_type": "COSINE"},
         output_fields=["title", "text"],  # Fetch relevant fields for context
     )
 
