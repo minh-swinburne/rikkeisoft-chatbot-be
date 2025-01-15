@@ -1,11 +1,19 @@
 from fastapi import APIRouter, UploadFile, HTTPException, Depends, File, Form
 from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional
+from sqlalchemy.future import select
+from typing import List, Optional
 from bs4 import BeautifulSoup
 from pathlib import Path
 from app.schemas.docs import Document
-from app.services.docs import create_document, get_document_by_id
+from app.models.docs import DocumentBase
+from app.services.docs import (
+    create_document,
+    get_document_by_id,
+    update_document,
+    delete_document,
+)
 from app.services.users import get_user_by_email
 from app.bot.rag import process_document
 from app.core.database import get_db
@@ -16,9 +24,94 @@ import json
 import uuid
 import datetime
 import requests
+import subprocess
+import os
+
 
 
 router = APIRouter()
+
+@router.get("/{doc_id}/download")
+async def download_file(doc_id: str, db: AsyncSession = Depends(get_db)):
+    document = await get_document_by_id(db, doc_id)
+    filename = document.filename
+    file_path = os.path.join("uploads", filename)  # Assuming your files are named with their IDs
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(file_path, media_type="application/octet-stream", filename=filename)
+
+@router.get("/{doc_id}/preview")
+async def get_pdf(doc_id: str, db: AsyncSession = Depends(get_db)):
+    document = await get_document_by_id(db, doc_id)
+    filename = document.filename
+    print("File name: ", filename)
+    file_path = os.path.join("uploads", filename)   
+    print("File path: ", file_path) 
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    file_extension = filename.split('.')[-1].lower()
+
+    # If the file is already a PDF, serve it directly
+    if file_extension == "pdf":
+        return FileResponse(file_path, media_type="application/pdf")
+
+    # If the file is DOCX, convert it to PDF using LibreOffice
+    if file_extension == "docx":
+        pdf_filename = filename.replace(".docx", ".pdf")
+        pdf_path = os.path.join("files", pdf_filename)
+        
+        # Convert DOCX to PDF using LibreOffice (headless)
+        subprocess.run(["libreoffice", "--headless", "--convert-to", "pdf", file_path], check=True)
+        
+        return FileResponse(pdf_path, media_type="application/pdf")
+
+    # If the file is XLSX, convert it to PDF using LibreOffice
+    if file_extension == "xlsx":
+        pdf_filename = filename.replace(".xlsx", ".pdf")
+        pdf_path = os.path.join("files", pdf_filename)
+        
+        # Convert XLSX to PDF using LibreOffice (headless)
+        subprocess.run(["libreoffice", "--headless", "--convert-to", "pdf", file_path], check=True)
+        
+        return FileResponse(pdf_path, media_type="application/pdf")
+
+    # If the file type is not supported, return an error
+    raise HTTPException(status_code=415, detail="Unsupported file type")
+
+
+@router.get("/")
+async def list_documents(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(DocumentBase))
+    return result.scalars().all()
+
+@router.put("/{doc_id}/edit")
+async def update_document_details(
+    doc_id: str,
+    title: Optional[str] = Form(None),
+    description: Optional[str] = Form(None),
+    categories: Optional[List[str]] = Form(None),
+    restricted: Optional[bool] = Form(None),
+    db: AsyncSession = Depends(get_db),
+):
+    print("Data recieved: ", doc_id, " ",title, " ",description, " ",categories, " ",restricted)
+    try:
+
+        document = await update_document(db, doc_id, title, description, categories, restricted)
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+        return document
+    except Exception as e:
+
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+
+@router.delete("/{doc_id}/delete")
+async def delete_document_entry(doc_id: str, db: AsyncSession = Depends(get_db)):
+    result = await delete_document(db, doc_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return JSONResponse(content={"message": "Document deleted successfully"})
 
 
 @router.get("/{doc_id}")

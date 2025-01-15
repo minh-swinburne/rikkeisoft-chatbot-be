@@ -2,15 +2,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.core.config import settings
 from app.models.docs import DocumentBase
-
+from typing import List, Optional
 from bs4 import BeautifulSoup  # For .html
-from docx import Document  # For .docx
+from docx import Document   # For .docx
 from PIL import Image
 import pytesseract
 import openpyxl  # For .xlsx
 import uuid
 import fitz  # PyMuPDF for PDF
 import io
+
+
 
 
 pytesseract.pytesseract.tesseract_cmd = settings.tesseract_cmd
@@ -51,7 +53,8 @@ async def create_document(
 
 # Retrieve a document by ID
 async def get_document_by_id(db: AsyncSession, doc_id: str):
-    result = await db.execute(select(Document).where(Document.id == doc_id))
+    result = await db.execute(select(DocumentBase).where(DocumentBase.id == doc_id))
+    print("Fetching document by ID:", result)
     return result.scalar_one_or_none()
 
 
@@ -108,3 +111,54 @@ def extract_text_from_html(file_path: str) -> str:
     with open(file_path, "r", encoding="utf-8") as file:
         soup = BeautifulSoup(file, "html.parser")
         return soup.get_text()
+
+
+async def update_document(
+    db: AsyncSession, 
+    doc_id: str, 
+    title: Optional[str] = None, 
+    description: Optional[str] = None, 
+    categories: Optional[List[str]] = None, 
+    restricted: Optional[bool] = None
+):
+    print("Updating document with ID: ", doc_id)
+    print("New values - title:", title, "description:", description, "categories:", categories, "restricted:", restricted)
+
+    # Retrieve the document by ID
+    document = await get_document_by_id(db, doc_id)
+    if not document:
+        print("Document not found for ID: ", doc_id)
+        return None
+
+    print("Document retrieved: ", document)
+
+    # Update fields only if new values are provided
+    print(f"Before update: {document}")
+    if title:
+        document.title = title
+    if description:
+        document.description = description
+    if categories:
+        document.categories = ",".join(categories)
+    if restricted is not None:
+        document.restricted = restricted
+
+    print(f"After update: {document}")
+
+
+    # Add and commit the updated document
+    db.add(document)
+    await db.commit()
+    await db.refresh(document)
+
+    print("Document updated successfully: ", document)
+    return document
+
+async def delete_document(db: AsyncSession, doc_id: str):
+
+    document = await get_document_by_id(db, doc_id)
+    if not document:
+        return False
+    await db.delete(document)
+    await db.commit()
+    return True
