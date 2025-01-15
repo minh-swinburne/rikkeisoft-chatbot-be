@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
+from typing import Optional
 from pathlib import Path
 import os
 
@@ -9,7 +10,7 @@ load_dotenv(override=True)
 
 class Settings(BaseSettings):
     root_dir: Path = Path(__file__).resolve().parent.parent
-    upload_dir: Path = Path(os.getenv("UPLOAD_DIR"))
+    upload_dir: Optional[Path] = Path(os.getenv("UPLOAD_DIR"))
     tesseract_cmd: str = os.getenv("TESSERACT_CMD")
 
     embedding_model: str = os.getenv("EMBEDDING_MODEL")
@@ -33,6 +34,15 @@ class Settings(BaseSettings):
     db_host: str = os.getenv("DB_HOST")
     db_port: str = os.getenv("DB_PORT")
     db_database: str = os.getenv("DB_DATABASE")
+
+    milvus_host: str = os.getenv("MILVUS_HOST")
+    milvus_port: str = os.getenv("MILVUS_PORT")
+    milvus_db: str = os.getenv("MILVUS_DB")
+    milvus_uri: str = os.getenv("MILVUS_URI")
+    milvus_token: str = os.getenv("MILVUS_TOKEN")
+    # milvus_user: str = os.getenv("MILVUS_USER")
+    # milvus_password: str = os.getenv("MILVUS_PASSWORD")
+    milvus_collection: str = os.getenv("MILVUS_COLLECTION")
 
     jwt_secret_key: str = os.getenv("JWT_SECRET_KEY")
     jwt_algorithm: str = os.getenv("JWT_ALGORITHM")

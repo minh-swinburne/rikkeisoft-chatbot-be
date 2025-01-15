@@ -2,15 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.chats import ChatBase, ChatResponse
 from app.schemas.messages import MessageRequest, MessageResponse
-from app.services.chats import (
-    create_chat,
-    list_chats,
-    update_chat_name,
-    update_chat_last_access,
-    create_message,
-    list_messages,
-    delete_chat,
-)
+from app.services.chats import *
 from app.core.database import get_db
 from app.bot.chat import generate_answer, suggest_questions, generate_name
 
