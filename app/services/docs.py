@@ -51,7 +51,7 @@ async def create_document(
 
 # Retrieve a document by ID
 async def get_document_by_id(db: AsyncSession, doc_id: str):
-    result = await db.execute(select(Document).where(Document.id == doc_id))
+    result = await db.execute(select(DocumentBase).where(DocumentBase.id == doc_id))
     return result.scalar_one_or_none()
 
 
