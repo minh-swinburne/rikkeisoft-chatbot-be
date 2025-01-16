@@ -9,8 +9,8 @@
     "params": {
       "model": "llama-3.3-70b-versatile",
       "max_tokens": 4096,
-      "temperature": 0.5,
-      "top_p": 1.0,
+      "temperature": 0.4,
+      "top_p": 1,
       "stop": null,
       "stream": false
     },
@@ -38,7 +38,8 @@
       "Who created this document?",
       "What are the main points?",
       "When was this document uploaded?",
-      "Can you provide a detailed explanation?"
+      "Can you provide a detailed explanation?",
+      "Who?"
     ],
     "model_options": [
       "llama-3.2-1b-preview",
