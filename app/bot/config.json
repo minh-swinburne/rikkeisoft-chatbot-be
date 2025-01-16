@@ -9,7 +9,10 @@
     "params": {
       "model": "llama-3.3-70b-versatile",
       "max_tokens": 4096,
-      "temperature": 0.6
+      "temperature": 0.4,
+      "top_p": 1,
+      "stop": null,
+      "stream": false
     },
     "model_options": [
       "llama-3.3-70b-versatile",
@@ -24,7 +27,10 @@
     "params": {
       "model": "llama-3.2-1b-preview",
       "max_tokens": 128,
-      "temperature": 0.5
+      "temperature": 0.5,
+      "top_p": 1,
+      "stop": null,
+      "stream": false
     },
     "system_prompt": "Instructions:\n- Suggest 3 to 4 helpful and contextually relevant questions that the user may ask next.\n- Base your suggestions on the user's chat history and provided context.\n- Keep the questions concise and relevant to the conversation.\n- Return suggested questions as a simple ordered list of the questions themselves only, without any additional information, justification or formatting.\n\nFormat: \n1. Question 1?\n2. Question 2?\n3. Question 3?\n\nChat History: {chat_history}\n{context}\nExamples: {message_template}",
     "message_template": [

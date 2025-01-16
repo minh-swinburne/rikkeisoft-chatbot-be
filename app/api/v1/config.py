@@ -34,13 +34,11 @@ async def update_config(config_name: str, updates: ConfigUpdate):
     print(updates)
 
     # Update the configuration section
-    config[config_name].update({
-        "system_prompt": updates.system_prompt,
-        "params": {
-            "model": updates.model,
-            "max_tokens": updates.max_tokens,
-            "temperature": updates.temperature,
-        },
+    config[config_name]["system_prompt"] = updates.system_prompt
+    config[config_name]["params"].update({
+        "model": updates.model,
+        "max_tokens": updates.max_tokens,
+        "temperature": updates.temperature,
     })
 
     if updates.message_template:
