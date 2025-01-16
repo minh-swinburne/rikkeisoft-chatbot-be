@@ -1,6 +1,6 @@
 from pymilvus import MilvusClient, DataType, connections, db
 from app.core.config import settings
-from app.bot.model import model
+from app.bot.embedding import get_embedding
 import json
 
 collection_name = settings.milvus_collection
@@ -49,9 +49,7 @@ def setup_db():
         index_params.add_index(field_name="embedding", index_type="AUTOINDEX")
 
         client.create_collection(
-            collection_name=collection_name,
-            schema=schema,
-            index_params=index_params
+            collection_name=collection_name, schema=schema, index_params=index_params
         )
 
     print(f"Connected to Milvus version {client.get_server_version()}.")
@@ -100,7 +98,7 @@ def insert_data_to_db(data):
 
 def search_context(user_query: str, top_k: int = 5):
     context = []
-    query_embedding = model.encode(user_query).tolist()
+    query_embedding = get_embedding(user_query)
     search_results = client.search(
         collection_name=collection_name,
         data=[query_embedding],
@@ -125,7 +123,7 @@ def search_context(user_query: str, top_k: int = 5):
 def query_document(title: str):
     query_results = client.query(
         collection_name=collection_name,
-        filter=f"title == \"{title}\"",
+        filter=f'title == "{title}"',
         output_fields=["description", "meta"],
         limit=1,
     )

@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     embedding_dimension: int = os.getenv("EMBEDDING_DIMENSION")
 
     groq_api_key: str = os.getenv("GROQ_API_KEY")
+    openai_api_key: str = os.getenv("OPENAI_API_KEY")
+
     google_client_id: str = os.getenv("GOOGLE_CLIENT_ID")
     google_client_secret: str = os.getenv("GOOGLE_CLIENT_SECRET")
     google_redirect_uri: str = os.getenv("GOOGLE_REDIRECT_URI")
