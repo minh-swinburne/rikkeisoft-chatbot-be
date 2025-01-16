@@ -16,7 +16,8 @@ def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]
 async def process_document(file_path: str, file_type: str, metadata: dict):
     text = extract_text(file_path, file_type)
     chunks = chunk_text(text)
-    embeddings = [get_embedding(chunk) for chunk in chunks]
+    embeddings = get_embedding(chunks)
+    
     metadata["chunks"] = [
         {"text": chunk, "embedding": embedding}
         for chunk, embedding in zip(chunks, embeddings)
