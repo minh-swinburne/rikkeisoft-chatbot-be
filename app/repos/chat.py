@@ -1,103 +1,64 @@
-# Just temporary, will be replaced in the future when we have a database
-import json
-import uuid
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, delete
+from app.repos import _commit_and_refresh
+from app.schemas import ChatBase
+from app.models import Chat
 from datetime import datetime
+import uuid6
 
 
 class ChatRepository:
-    def __init__(self):
-        self._storage: dict[str, dict] = {}
-        self.load()
+    @staticmethod
+    async def create(db: AsyncSession, chat_data: ChatBase) -> Chat:
+        chat = Chat(
+            id=str(uuid6.uuid7()),
+            **chat_data.model_dump(),
+            last_access=datetime.now()
+        )
+        db.add(chat)
+        return await _commit_and_refresh(db, chat)
 
+    @staticmethod
+    async def list_by_user_id(db: AsyncSession, user_id: str) -> list[Chat]:
+        result = await db.execute(select(Chat).where(Chat.user_id == user_id))
+        return result.scalars().all()
 
-    def load(self):
-        with open("data/chats.json", "r") as f:
-            chats = json.load(f)
+    @staticmethod
+    async def get_by_id(db: AsyncSession, chat_id: str) -> Chat | None:
+        return await db.get(Chat, chat_id)
 
-        with open("data/messages.json", "r") as f:
-            messages = json.load(f)
+    @staticmethod
+    async def update_name(db: AsyncSession, chat_id: str, new_name: str) -> Chat:
+        chat = await ChatRepository.get_by_id(db, chat_id)
+        if not chat:
+            raise ValueError(f"Chat with ID {chat_id} not found.")
+        chat.name = new_name
+        return await _commit_and_refresh(db, chat)
 
-        for chat in chats:
-            chat_id = chat["id"]
-            self._storage[chat_id] = {
-                **chat,
-                "messages": {},
-            }
+    @staticmethod
+    async def update_last_access(db: AsyncSession, chat_id: str) -> Chat:
+        chat = await ChatRepository.get_by_id(db, chat_id)
+        chat.last_access = datetime.now()
+        return await _commit_and_refresh(db, chat)
 
-        for message in messages:
-            chat_id = message["chat_id"]
-            self._storage[chat_id]["messages"][message["id"]] = message
-
-
-    def save(self):
-        chats = list(self._storage.values())
-        with open("data/chats.json", "w") as f:
-            json.dump(chats, f, indent=4)
-
-        messages = []
-        for chat in self._storage.values():
-            messages.extend(chat["messages"])
-
-        with open("data/messages.json", "w") as f:
-            json.dump(messages, f, indent=4)
-
-
-    def create_chat(self, chat: dict) -> dict:
-        chat_id = str(uuid.uuid4())
-
-        chat["id"] = chat_id
-        chat["messages"] = {}
-        chat["last_access"] = datetime.now()
-
-        self._storage[chat_id] = chat
-        return chat
-
-
-    def create_message(self, message: dict) -> dict:
-        chat_id = message["chat_id"]
-        if chat_id not in self._storage:
-            raise ValueError(f"Chat {chat_id} does not exist")
-
-        message_id = str(uuid.uuid4())
-        message["id"] = message_id
-
-        self._storage[chat_id]["messages"][message_id] = message
-        self._storage[chat_id]["last_access"] = message["time"]
-
-        # if len(self._storage[chat_id]["messages"]) == 1:
-        #     self._storage[chat_id]["created_date"] = message["time"]
-
-        return message
-
-
-    def get_chat(self, chat_id: str) -> dict:
-        return self._storage.get(chat_id)
-
-
-    def get_message(self, chat_id: str, message_id: str) -> dict:
-        return self._storage.get(chat_id)["messages"].get(message_id)
-
-
-    def list_chats(self) -> list[dict]:
-        return list(self._storage.values())
-
-
-    def list_messages(self, chat_id: str) -> list[dict]:
-        if chat_id not in self._storage:
-            raise ValueError(f"Chat {chat_id} does not exist")
-        return list(self._storage.get(chat_id).get("messages").values())
-
-
-    def update(self, message_id: str, updates: dict) -> bool:
-        message = self.get(message_id)
-        if not message:
+    @staticmethod
+    async def delete(db: AsyncSession, chat_id: str) -> None:
+        chat = await ChatRepository.get_by_id(db, chat_id)
+        if not chat:
             return False
-        message.update(updates)
+        try:
+            await db.delete(chat)
+            await db.commit()
+        except:
+            await db.rollback()
+            raise
         return True
 
-
-    def delete(self, message_id: str) -> bool:
-        if message_id in self._storage:
-            del self._storage[message_id]
-            return True
-        return False
+    @staticmethod
+    async def delete_by_user_id(db: AsyncSession, user_id: str) -> None:
+        await db.execute(delete(Chat).where(Chat.user_id == user_id))
+        try:
+            await db.commit()
+        except:
+            await db.rollback()
+            raise

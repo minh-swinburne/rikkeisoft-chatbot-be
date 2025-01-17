@@ -1,14 +1,20 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from datetime import datetime
+from typing import Optional
 
 
 class UserBase(BaseModel):
-    username: str
     email: str
-    firstname: str = None
-    lastname: str = None
-    provider: Optional[str] = None
-    provider_uid: Optional[str] = None
+    firstname: str
+    lastname: Optional[str]
+    username: Optional[str]
+    password: Optional[str]
+    admin: bool = False
+
+
+class UserModel(UserBase):
+    id: str
+    username_last_changed: datetime
 
 
 class UserCreate(UserBase):

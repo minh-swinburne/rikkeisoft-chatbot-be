@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.schemas.chats import ChatBase, ChatResponse
+from app.schemas.chats import ChatBase, ChatModel
 from app.schemas.messages import MessageRequest, MessageResponse
 from app.services.chats import *
 from app.core.database import get_db
@@ -20,12 +20,14 @@ async def get_history(user_id: str, db: AsyncSession = Depends(get_db)):
 @router.post("/")
 async def create_new_chat(request: ChatBase, db: AsyncSession = Depends(get_db)):
     chat = await create_chat(db, request.user_id, request.name)
-    return ChatResponse.model_validate({
-        "id": chat.id,
-        "user_id": chat.user_id,
-        "name": chat.name,
-        "last_access": chat.last_access
-    })
+    return ChatModel.model_validate(
+        {
+            "id": chat.id,
+            "user_id": chat.user_id,
+            "name": chat.name,
+            "last_access": chat.last_access,
+        }
+    )
 
 
 @router.get("/{chat_id}")
@@ -35,51 +37,59 @@ async def get_chat(chat_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/{chat_id}")
-async def send_query(chat_id: str, request: MessageRequest, db: AsyncSession = Depends(get_db)) -> MessageResponse:
+async def send_query(
+    chat_id: str, request: MessageRequest, db: AsyncSession = Depends(get_db)
+) -> MessageResponse:
     if not request:
         raise HTTPException(status_code=400, detail="Message cannot be empty")
 
     # Create user message
-    await create_message(db, {
-        "chat_id": chat_id,
-        "role": "user",
-        "content": request.query
-    })
+    await create_message(
+        db, {"chat_id": chat_id, "role": "user", "content": request.query}
+    )
 
     # Get the chat history (limit to the last 10 messages)
-    chat_history = [{"role": message.role, "content": message.content} for message in await list_messages(db, chat_id)][-10:]
+    chat_history = [
+        {"role": message.role, "content": message.content}
+        for message in await list_messages(db, chat_id)
+    ][-10:]
 
     # Generate the bot's response
     answer = generate_answer(chat_history)
 
     # Create bot message
-    message = await create_message(db, {
-        "chat_id": chat_id,
-        "role": "assistant",
-        "content": answer
-    })
+    message = await create_message(
+        db, {"chat_id": chat_id, "role": "assistant", "content": answer}
+    )
 
     if len(chat_history) == 1:
-        new_chat_name = generate_name(chat_history + [{"role": "assistant", "content": answer}])
-        new_chat_name.replace("\'", "")
+        new_chat_name = generate_name(
+            chat_history + [{"role": "assistant", "content": answer}]
+        )
+        new_chat_name.replace("'", "")
 
         await update_chat_name(db, chat_id, new_chat_name)
 
     await update_chat_last_access(db, chat_id)
 
-    return MessageResponse.model_validate({
-        "id": message.id,
-        "chat_id": message.chat_id,
-        "time": message.time,
-        "role": message.role,
-        "content": message.content
-    })
+    return MessageResponse.model_validate(
+        {
+            "id": message.id,
+            "chat_id": message.chat_id,
+            "time": message.time,
+            "role": message.role,
+            "content": message.content,
+        }
+    )
 
 
 @router.post("/{chat_id}/suggestions")
 async def get_suggested_questions(chat_id: str, db: AsyncSession = Depends(get_db)):
     # Get chat history for suggestions (limit to the last 4 messages)
-    chat_history = [{"role": message.role, "content": message.content} for message in await list_messages(db, chat_id)][-4:]
+    chat_history = [
+        {"role": message.role, "content": message.content}
+        for message in await list_messages(db, chat_id)
+    ][-4:]
 
     # Generate suggestions based on chat history
     suggestions = suggest_questions(chat_history)
@@ -88,6 +98,7 @@ async def get_suggested_questions(chat_id: str, db: AsyncSession = Depends(get_d
 
 from fastapi import HTTPException
 
+
 @router.delete("/{chat_id}/delete")
 async def delete_chat_endpoint(chat_id: str, db: AsyncSession = Depends(get_db)):
     await delete_chat(db, chat_id)
@@ -95,11 +106,15 @@ async def delete_chat_endpoint(chat_id: str, db: AsyncSession = Depends(get_db))
 
 
 @router.put("/{chat_id}/rename")
-async def rename_chat(chat_id: str, request: ChatBase, db: AsyncSession = Depends(get_db)):
+async def rename_chat(
+    chat_id: str, request: ChatBase, db: AsyncSession = Depends(get_db)
+):
     chat = await update_chat_name(db, chat_id, request.name)
-    return ChatResponse.model_validate({
-        "id": chat.id,
-        "user_id": chat.user_id,
-        "name": chat.name,
-        "last_access": chat.last_access
-    })
+    return ChatModel.model_validate(
+        {
+            "id": chat.id,
+            "user_id": chat.user_id,
+            "name": chat.name,
+            "last_access": chat.last_access,
+        }
+    )

@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.core.config import settings
-from app.models.docs import DocumentBase
+from app.models.documents import DocumentBase
 from typing import List, Optional
 from bs4 import BeautifulSoup  # For .html
 from docx import Document   # For .docx
@@ -114,11 +114,11 @@ def extract_text_from_html(file_path: str) -> str:
 
 
 async def update_document(
-    db: AsyncSession, 
-    doc_id: str, 
-    title: Optional[str] = None, 
-    description: Optional[str] = None, 
-    categories: Optional[List[str]] = None, 
+    db: AsyncSession,
+    doc_id: str,
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+    categories: Optional[List[str]] = None,
     restricted: Optional[bool] = None
 ):
     print("Updating document with ID: ", doc_id)

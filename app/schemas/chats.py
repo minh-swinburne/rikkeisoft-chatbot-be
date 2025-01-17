@@ -1,10 +1,12 @@
 from pydantic import BaseModel
 from datetime import datetime
 
-class ChatBase(BaseModel):
-    name: str
-    user_id: str
 
-class ChatResponse(ChatBase):
+class ChatBase(BaseModel):
+    user_id: str
+    name: str
+
+
+class ChatModel(ChatBase):
     id: str
     last_access: datetime

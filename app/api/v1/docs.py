@@ -6,8 +6,8 @@ from sqlalchemy.future import select
 from typing import List, Optional
 from bs4 import BeautifulSoup
 from pathlib import Path
-from app.schemas.docs import Document
-from app.models.docs import DocumentBase
+from app.schemas.documents import Document
+from app.models.documents import DocumentBase
 from app.services.docs import (
     create_document,
     get_document_by_id,
@@ -45,8 +45,8 @@ async def get_pdf(doc_id: str, db: AsyncSession = Depends(get_db)):
     document = await get_document_by_id(db, doc_id)
     filename = document.filename
     print("File name: ", filename)
-    file_path = os.path.join("uploads", filename)   
-    print("File path: ", file_path) 
+    file_path = os.path.join("uploads", filename)
+    print("File path: ", file_path)
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found")
 
@@ -60,20 +60,20 @@ async def get_pdf(doc_id: str, db: AsyncSession = Depends(get_db)):
     if file_extension == "docx":
         pdf_filename = filename.replace(".docx", ".pdf")
         pdf_path = os.path.join("files", pdf_filename)
-        
+
         # Convert DOCX to PDF using LibreOffice (headless)
         subprocess.run(["libreoffice", "--headless", "--convert-to", "pdf", file_path], check=True)
-        
+
         return FileResponse(pdf_path, media_type="application/pdf")
 
     # If the file is XLSX, convert it to PDF using LibreOffice
     if file_extension == "xlsx":
         pdf_filename = filename.replace(".xlsx", ".pdf")
         pdf_path = os.path.join("files", pdf_filename)
-        
+
         # Convert XLSX to PDF using LibreOffice (headless)
         subprocess.run(["libreoffice", "--headless", "--convert-to", "pdf", file_path], check=True)
-        
+
         return FileResponse(pdf_path, media_type="application/pdf")
 
     # If the file type is not supported, return an error

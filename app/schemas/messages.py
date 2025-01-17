@@ -1,12 +1,13 @@
 from pydantic import BaseModel
 from datetime import datetime
 
-class MessageRequest(BaseModel):
-    query: str
 
-class MessageResponse(BaseModel):
-    id: str
+class MessageBase(BaseModel):
     chat_id: str
-    time: datetime
     role: str
     content: str
+
+
+class MessageModel(MessageBase):
+    id: str
+    time: datetime

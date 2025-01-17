@@ -1,7 +1,7 @@
 from sqlalchemy.engine.url import URL
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from app.core.config import settings
+from typing import AsyncGenerator, Any
 
 DATABASE_URL = URL.create(
     drivername=f"{settings.db_dialect}+{settings.db_driver}",
@@ -16,15 +16,13 @@ DATABASE_URL = URL.create(
 engine = create_async_engine(DATABASE_URL, echo=True)
 
 # Session configuration to manage DB connections
-async_session = sessionmaker(
+AsyncSessionLocal = async_sessionmaker(
     bind=engine,
-    class_=AsyncSession,
     autoflush=False,
-    autocommit=False,
     expire_on_commit=False,
 )
 
 # Dependency to get the database session
-async def get_db():
-    async with async_session() as db:
+async def get_db() -> AsyncGenerator[AsyncSession, Any]:
+    async with AsyncSessionLocal() as db:
         yield db
