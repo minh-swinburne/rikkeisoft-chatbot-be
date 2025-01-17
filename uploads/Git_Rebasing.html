@@ -1,0 +1,2046 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible"/>
+  <meta content="width=device-width, initial-scale=1" name="viewport"/>
+  <title>
+   Git - Rebasing
+  </title>
+  <link href="/favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+  <link href="/application.min.css" rel="stylesheet"/>
+  <script src="/js/modernizr.js">
+  </script>
+  <script src="/js/modernize.js">
+  </script>
+ </head>
+ <body id="documentation">
+  <div class="inner">
+   <header>
+    <a href="/">
+     <img alt="Git" height="46" src="/images/logo@2x.png" width="110"/>
+    </a>
+    <span id="tagline">
+    </span>
+    <script type="text/javascript">
+     const taglines = [
+      "fast-version-control",
+      "everything-is-local",
+      "distributed-even-if-your-workflow-isnt",
+      "local-branching-on-the-cheap",
+      "distributed-is-the-new-centralized"
+    ];
+    var tagline = taglines[Math.floor(Math.random() * taglines.length)];
+    document.getElementById('tagline').innerHTML = '--' + tagline;
+    </script>
+    <form action="/search/results" id="search">
+     <input autocomplete="off" id="search-text" name="search" placeholder="Type / to search entire site…" type="text"/>
+    </form>
+    <div id="search-results">
+    </div>
+   </header>
+  </div>
+  <div class="inner">
+   <div id="content-wrapper">
+    <div class="sidebar-btn" tabindex="1">
+    </div>
+    <aside class="sidebar" id="sidebar">
+     <nav>
+      <ul>
+       <li>
+        <a href="/about">
+         About
+        </a>
+        <ul>
+        </ul>
+       </li>
+       <li>
+        <a class="active" href="/doc">
+         Documentation
+        </a>
+        <ul class="expanded">
+         <li>
+          <a href="/docs">
+           Reference
+          </a>
+         </li>
+         <li>
+          <a class="active" href="/book">
+           Book
+          </a>
+         </li>
+         <li>
+          <a href="/videos">
+           Videos
+          </a>
+         </li>
+         <li>
+          <a href="/doc/ext">
+           External Links
+          </a>
+         </li>
+        </ul>
+       </li>
+       <li>
+        <a href="/downloads">
+         Downloads
+        </a>
+        <ul>
+         <li>
+          <a href="/downloads/guis">
+           GUI Clients
+          </a>
+         </li>
+         <li>
+          <a href="/downloads/logos">
+           Logos
+          </a>
+         </li>
+        </ul>
+       </li>
+       <li>
+        <a href="/community">
+         Community
+        </a>
+       </li>
+      </ul>
+      <hr class="sidebar"/>
+      <p>
+       This book is available in
+       <a href="/book/en/v2/Git-Branching-Rebasing">
+        English
+       </a>
+       .
+      </p>
+      <p>
+       Full translation available in
+       <table>
+        <tr>
+         <td>
+          <a href="/book/az/v2/Git%e2%80%99d%c9%99-Branch-Rebasing">
+           azərbaycan dili
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/bg/v2/%d0%9a%d0%bb%d0%be%d0%bd%d0%be%d0%b2%d0%b5-%d0%b2-Git-%d0%a3%d0%bf%d1%80%d0%b0%d0%b2%d0%bb%d0%b5%d0%bd%d0%b8%d0%b5-%d0%bd%d0%b0-%d0%bf%d1%80%d0%be%d0%b5%d0%ba%d1%82">
+           български език
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/de/v2/Git-Branching-Rebasing">
+           Deutsch
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/es/v2/Ramificaciones-en-Git-Reorganizar-el-Trabajo-Realizado">
+           Español
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/fr/v2/Les-branches-avec-Git-Rebaser-Rebasing">
+           Français
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/gr">
+           Ελληνικά
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/ja/v2/Git-%e3%81%ae%e3%83%96%e3%83%a9%e3%83%b3%e3%83%81%e6%a9%9f%e8%83%bd-%e3%83%aa%e3%83%99%e3%83%bc%e3%82%b9">
+           日本語
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/ko/v2/Git-%eb%b8%8c%eb%9e%9c%ec%b9%98-Rebase-%ed%95%98%ea%b8%b0">
+           한국어
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/nl/v2/Branchen-in-Git-Rebasen">
+           Nederlands
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/ru/v2/%d0%92%d0%b5%d1%82%d0%b2%d0%bb%d0%b5%d0%bd%d0%b8%d0%b5-%d0%b2-Git-%d0%9f%d0%b5%d1%80%d0%b5%d0%b1%d0%b0%d0%b7%d0%b8%d1%80%d0%be%d0%b2%d0%b0%d0%bd%d0%b8%d0%b5">
+           Русский
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/sl/v2/Veje-Git-Ponovno-baziranje">
+           Slovenščina
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/tl/v2/Pag-branch-ng-Git-Pag-rebase">
+           Tagalog
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/uk/v2/%d0%93%d0%b0%d0%bb%d1%83%d0%b6%d0%b5%d0%bd%d0%bd%d1%8f-%d0%b2-git-%d0%9f%d0%b5%d1%80%d0%b5%d0%b1%d0%b0%d0%b7%d0%be%d0%b2%d1%83%d0%b2%d0%b0%d0%bd%d0%bd%d1%8f">
+           Українська
+          </a>
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/zh/v2/Git-%e5%88%86%e6%94%af-%e5%8f%98%e5%9f%ba">
+           简体中文
+          </a>
+          ,
+         </td>
+        </tr>
+       </table>
+      </p>
+      <p>
+       Partial translations available in
+       <table>
+        <tr>
+         <td>
+          <a href="/book/cs/v2/V%c4%9btve-v-syst%c3%a9mu-Git-P%c5%99eskl%c3%a1d%c3%a1n%c3%ad">
+           Čeština
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/mk/v2/%d0%93%d1%80%d0%b0%d0%bd%d0%b5%d1%9a%d0%b5-%d0%b2%d0%be-Git-%d0%a0%d0%b5%d0%b1%d0%b0%d0%b7%d0%b0">
+           Македонски
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/pl/v2/Ga%c5%82%c4%99zie-Gita-Zmiana-bazy">
+           Polski
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/sr/v2/%d0%93%d1%80%d0%b0%d0%bd%d0%b0%d1%9a%d0%b5-%d1%83-%d0%bf%d1%80%d0%be%d0%b3%d1%80%d0%b0%d0%bc%d1%83-%d0%93%d0%b8%d1%82-%d0%a0%d0%b5%d0%b1%d0%b0%d0%b7%d0%b8%d1%80%d0%b0%d1%9a%d0%b5">
+           Српски
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/uz/v2/Git-%d0%b4%d0%b0-%d1%82%d0%b0%d1%80%d0%bc%d0%be%d2%9b%d0%bb%d0%b0%d0%bd%d0%b8%d1%88-%d2%9a%d0%b0%d0%b9%d1%82%d0%b0-%d0%b0%d1%81%d0%be%d1%81%d0%bb%d0%b0%d0%bd%d0%b8%d1%88">
+           Ўзбекча
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/zh-tw/v2/%e4%bd%bf%e7%94%a8-Git-%e5%88%86%e6%94%af-%e8%a1%8d%e5%90%88">
+           繁體中文
+          </a>
+          ,
+         </td>
+        </tr>
+       </table>
+      </p>
+      <p>
+       Translations started for
+       <table>
+        <tr>
+         <td>
+          <a href="/book/be/v2/Git-Branching-Rebasing">
+           Беларуская
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a dir="rtl" href="/book/fa/v2/%d8%b4%d8%a7%d8%ae%d9%87%e2%80%8c%d8%b3%d8%a7%d8%b2%db%8c-%d8%af%d8%b1-%da%af%db%8c%d8%aa-%d8%b1%db%8c%d8%a8%db%8c%d8%b3%e2%80%8c%da%a9%d8%b1%d8%af%d9%86">
+           فارسی
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/id/v2/Git-Branching-Rebasing">
+           Indonesian
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/it/v2/Git-Branching-Rebasing">
+           Italiano
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/ms/v2/Git-Branching-Rebasing">
+           Bahasa Melayu
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/pt-br/v2/Branches-no-Git-Rebase">
+           Português (Brasil)
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/pt-pt/v2/Ramifica%c3%a7%c3%a3o-do-Git-Rebasing">
+           Português (Portugal)
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/sv/v2/Git-f%c3%b6rgreningar-Grenflytt">
+           Svenska
+          </a>
+          ,
+         </td>
+        </tr>
+        <tr>
+         <td>
+          <a href="/book/tr/v2/Git-Dallar%c4%b1-Yeniden-Temelleme-rebase">
+           Türkçe
+          </a>
+          .
+         </td>
+        </tr>
+       </table>
+      </p>
+      <hr class="sidebar">
+       <p>
+        The source of this book is
+        <a href="https://github.com/progit/progit2">
+         hosted on GitHub.
+        </a>
+        Patches, suggestions and comments are welcome.
+       </p>
+      </hr>
+     </nav>
+    </aside>
+    <div id="content">
+     <div id="book-chapters">
+      <a class="dropdown-trigger" data-panel-id="chapters-dropdown" href="#" id="book-chapters-trigger">
+       Chapters ▾
+      </a>
+      <div class="dropdown-panel" id="chapters-dropdown">
+       <div class="three-column">
+        <div class="column-left">
+         <ol class="book-toc">
+          <li class="chapter">
+           <h2>
+            1.
+            <a href="/book/en/v2/Getting-Started-About-Version-Control">
+             Getting Started
+            </a>
+           </h2>
+           <ol>
+            <li>
+             1.1
+             <a href="/book/en/v2/Getting-Started-About-Version-Control">
+              About Version Control
+             </a>
+            </li>
+            <li>
+             1.2
+             <a href="/book/en/v2/Getting-Started-A-Short-History-of-Git">
+              A Short History of Git
+             </a>
+            </li>
+            <li>
+             1.3
+             <a href="/book/en/v2/Getting-Started-What-is-Git%3F">
+              What is Git?
+             </a>
+            </li>
+            <li>
+             1.4
+             <a href="/book/en/v2/Getting-Started-The-Command-Line">
+              The Command Line
+             </a>
+            </li>
+            <li>
+             1.5
+             <a href="/book/en/v2/Getting-Started-Installing-Git">
+              Installing Git
+             </a>
+            </li>
+            <li>
+             1.6
+             <a href="/book/en/v2/Getting-Started-First-Time-Git-Setup">
+              First-Time Git Setup
+             </a>
+            </li>
+            <li>
+             1.7
+             <a href="/book/en/v2/Getting-Started-Getting-Help">
+              Getting Help
+             </a>
+            </li>
+            <li>
+             1.8
+             <a href="/book/en/v2/Getting-Started-Summary">
+              Summary
+             </a>
+            </li>
+           </ol>
+          </li>
+          <li class="chapter">
+           <h2>
+            2.
+            <a href="/book/en/v2/Git-Basics-Getting-a-Git-Repository">
+             Git Basics
+            </a>
+           </h2>
+           <ol>
+            <li>
+             2.1
+             <a href="/book/en/v2/Git-Basics-Getting-a-Git-Repository">
+              Getting a Git Repository
+             </a>
+            </li>
+            <li>
+             2.2
+             <a href="/book/en/v2/Git-Basics-Recording-Changes-to-the-Repository">
+              Recording Changes to the Repository
+             </a>
+            </li>
+            <li>
+             2.3
+             <a href="/book/en/v2/Git-Basics-Viewing-the-Commit-History">
+              Viewing the Commit History
+             </a>
+            </li>
+            <li>
+             2.4
+             <a href="/book/en/v2/Git-Basics-Undoing-Things">
+              Undoing Things
+             </a>
+            </li>
+            <li>
+             2.5
+             <a href="/book/en/v2/Git-Basics-Working-with-Remotes">
+              Working with Remotes
+             </a>
+            </li>
+            <li>
+             2.6
+             <a href="/book/en/v2/Git-Basics-Tagging">
+              Tagging
+             </a>
+            </li>
+            <li>
+             2.7
+             <a href="/book/en/v2/Git-Basics-Git-Aliases">
+              Git Aliases
+             </a>
+            </li>
+            <li>
+             2.8
+             <a href="/book/en/v2/Git-Basics-Summary">
+              Summary
+             </a>
+            </li>
+           </ol>
+          </li>
+          <li class="chapter">
+           <h2>
+            3.
+            <a href="/book/en/v2/Git-Branching-Branches-in-a-Nutshell">
+             Git Branching
+            </a>
+           </h2>
+           <ol>
+            <li>
+             3.1
+             <a href="/book/en/v2/Git-Branching-Branches-in-a-Nutshell">
+              Branches in a Nutshell
+             </a>
+            </li>
+            <li>
+             3.2
+             <a href="/book/en/v2/Git-Branching-Basic-Branching-and-Merging">
+              Basic Branching and Merging
+             </a>
+            </li>
+            <li>
+             3.3
+             <a href="/book/en/v2/Git-Branching-Branch-Management">
+              Branch Management
+             </a>
+            </li>
+            <li>
+             3.4
+             <a href="/book/en/v2/Git-Branching-Branching-Workflows">
+              Branching Workflows
+             </a>
+            </li>
+            <li>
+             3.5
+             <a href="/book/en/v2/Git-Branching-Remote-Branches">
+              Remote Branches
+             </a>
+            </li>
+            <li>
+             3.6
+             <a class="active" href="/book/en/v2/Git-Branching-Rebasing">
+              Rebasing
+             </a>
+            </li>
+            <li>
+             3.7
+             <a href="/book/en/v2/Git-Branching-Summary">
+              Summary
+             </a>
+            </li>
+           </ol>
+          </li>
+          <li class="chapter">
+           <h2>
+            4.
+            <a href="/book/en/v2/Git-on-the-Server-The-Protocols">
+             Git on the Server
+            </a>
+           </h2>
+           <ol>
+            <li>
+             4.1
+             <a href="/book/en/v2/Git-on-the-Server-The-Protocols">
+              The Protocols
+             </a>
+            </li>
+            <li>
+             4.2
+             <a href="/book/en/v2/Git-on-the-Server-Getting-Git-on-a-Server">
+              Getting Git on a Server
+             </a>
+            </li>
+            <li>
+             4.3
+             <a href="/book/en/v2/Git-on-the-Server-Generating-Your-SSH-Public-Key">
+              Generating Your SSH Public Key
+             </a>
+            </li>
+            <li>
+             4.4
+             <a href="/book/en/v2/Git-on-the-Server-Setting-Up-the-Server">
+              Setting Up the Server
+             </a>
+            </li>
+            <li>
+             4.5
+             <a href="/book/en/v2/Git-on-the-Server-Git-Daemon">
+              Git Daemon
+             </a>
+            </li>
+            <li>
+             4.6
+             <a href="/book/en/v2/Git-on-the-Server-Smart-HTTP">
+              Smart HTTP
+             </a>
+            </li>
+            <li>
+             4.7
+             <a href="/book/en/v2/Git-on-the-Server-GitWeb">
+              GitWeb
+             </a>
+            </li>
+            <li>
+             4.8
+             <a href="/book/en/v2/Git-on-the-Server-GitLab">
+              GitLab
+             </a>
+            </li>
+            <li>
+             4.9
+             <a href="/book/en/v2/Git-on-the-Server-Third-Party-Hosted-Options">
+              Third Party Hosted Options
+             </a>
+            </li>
+            <li>
+             4.10
+             <a href="/book/en/v2/Git-on-the-Server-Summary">
+              Summary
+             </a>
+            </li>
+           </ol>
+          </li>
+          <li class="chapter">
+           <h2>
+            5.
+            <a href="/book/en/v2/Distributed-Git-Distributed-Workflows">
+             Distributed Git
+            </a>
+           </h2>
+           <ol>
+            <li>
+             5.1
+             <a href="/book/en/v2/Distributed-Git-Distributed-Workflows">
+              Distributed Workflows
+             </a>
+            </li>
+            <li>
+             5.2
+             <a href="/book/en/v2/Distributed-Git-Contributing-to-a-Project">
+              Contributing to a Project
+             </a>
+            </li>
+            <li>
+             5.3
+             <a href="/book/en/v2/Distributed-Git-Maintaining-a-Project">
+              Maintaining a Project
+             </a>
+            </li>
+            <li>
+             5.4
+             <a href="/book/en/v2/Distributed-Git-Summary">
+              Summary
+             </a>
+            </li>
+           </ol>
+          </li>
+         </ol>
+        </div>
+        <div class="column-middle">
+         <ol class="book-toc">
+          <li class="chapter">
+           <h2>
+            6.
+            <a href="/book/en/v2/GitHub-Account-Setup-and-Configuration">
+             GitHub
+            </a>
+           </h2>
+           <ol>
+            <li>
+             6.1
+             <a href="/book/en/v2/GitHub-Account-Setup-and-Configuration">
+              Account Setup and Configuration
+             </a>
+            </li>
+            <li>
+             6.2
+             <a href="/book/en/v2/GitHub-Contributing-to-a-Project">
+              Contributing to a Project
+             </a>
+            </li>
+            <li>
+             6.3
+             <a href="/book/en/v2/GitHub-Maintaining-a-Project">
+              Maintaining a Project
+             </a>
+            </li>
+            <li>
+             6.4
+             <a href="/book/en/v2/GitHub-Managing-an-organization">
+              Managing an organization
+             </a>
+            </li>
+            <li>
+             6.5
+             <a href="/book/en/v2/GitHub-Scripting-GitHub">
+              Scripting GitHub
+             </a>
+            </li>
+            <li>
+             6.6
+             <a href="/book/en/v2/GitHub-Summary">
+              Summary
+             </a>
+            </li>
+           </ol>
+          </li>
+          <li class="chapter">
+           <h2>
+            7.
+            <a href="/book/en/v2/Git-Tools-Revision-Selection">
+             Git Tools
+            </a>
+           </h2>
+           <ol>
+            <li>
+             7.1
+             <a href="/book/en/v2/Git-Tools-Revision-Selection">
+              Revision Selection
+             </a>
+            </li>
+            <li>
+             7.2
+             <a href="/book/en/v2/Git-Tools-Interactive-Staging">
+              Interactive Staging
+             </a>
+            </li>
+            <li>
+             7.3
+             <a href="/book/en/v2/Git-Tools-Stashing-and-Cleaning">
+              Stashing and Cleaning
+             </a>
+            </li>
+            <li>
+             7.4
+             <a href="/book/en/v2/Git-Tools-Signing-Your-Work">
+              Signing Your Work
+             </a>
+            </li>
+            <li>
+             7.5
+             <a href="/book/en/v2/Git-Tools-Searching">
+              Searching
+             </a>
+            </li>
+            <li>
+             7.6
+             <a href="/book/en/v2/Git-Tools-Rewriting-History">
+              Rewriting History
+             </a>
+            </li>
+            <li>
+             7.7
+             <a href="/book/en/v2/Git-Tools-Reset-Demystified">
+              Reset Demystified
+             </a>
+            </li>
+            <li>
+             7.8
+             <a href="/book/en/v2/Git-Tools-Advanced-Merging">
+              Advanced Merging
+             </a>
+            </li>
+            <li>
+             7.9
+             <a href="/book/en/v2/Git-Tools-Rerere">
+              Rerere
+             </a>
+            </li>
+            <li>
+             7.10
+             <a href="/book/en/v2/Git-Tools-Debugging-with-Git">
+              Debugging with Git
+             </a>
+            </li>
+            <li>
+             7.11
+             <a href="/book/en/v2/Git-Tools-Submodules">
+              Submodules
+             </a>
+            </li>
+            <li>
+             7.12
+             <a href="/book/en/v2/Git-Tools-Bundling">
+              Bundling
+             </a>
+            </li>
+            <li>
+             7.13
+             <a href="/book/en/v2/Git-Tools-Replace">
+              Replace
+             </a>
+            </li>
+            <li>
+             7.14
+             <a href="/book/en/v2/Git-Tools-Credential-Storage">
+              Credential Storage
+             </a>
+            </li>
+            <li>
+             7.15
+             <a href="/book/en/v2/Git-Tools-Summary">
+              Summary
+             </a>
+            </li>
+           </ol>
+          </li>
+          <li class="chapter">
+           <h2>
+            8.
+            <a href="/book/en/v2/Customizing-Git-Git-Configuration">
+             Customizing Git
+            </a>
+           </h2>
+           <ol>
+            <li>
+             8.1
+             <a href="/book/en/v2/Customizing-Git-Git-Configuration">
+              Git Configuration
+             </a>
+            </li>
+            <li>
+             8.2
+             <a href="/book/en/v2/Customizing-Git-Git-Attributes">
+              Git Attributes
+             </a>
+            </li>
+            <li>
+             8.3
+             <a href="/book/en/v2/Customizing-Git-Git-Hooks">
+              Git Hooks
+             </a>
+            </li>
+            <li>
+             8.4
+             <a href="/book/en/v2/Customizing-Git-An-Example-Git-Enforced-Policy">
+              An Example Git-Enforced Policy
+             </a>
+            </li>
+            <li>
+             8.5
+             <a href="/book/en/v2/Customizing-Git-Summary">
+              Summary
+             </a>
+            </li>
+           </ol>
+          </li>
+          <li class="chapter">
+           <h2>
+            9.
+            <a href="/book/en/v2/Git-and-Other-Systems-Git-as-a-Client">
+             Git and Other Systems
+            </a>
+           </h2>
+           <ol>
+            <li>
+             9.1
+             <a href="/book/en/v2/Git-and-Other-Systems-Git-as-a-Client">
+              Git as a Client
+             </a>
+            </li>
+            <li>
+             9.2
+             <a href="/book/en/v2/Git-and-Other-Systems-Migrating-to-Git">
+              Migrating to Git
+             </a>
+            </li>
+            <li>
+             9.3
+             <a href="/book/en/v2/Git-and-Other-Systems-Summary">
+              Summary
+             </a>
+            </li>
+           </ol>
+          </li>
+          <li class="chapter">
+           <h2>
+            10.
+            <a href="/book/en/v2/Git-Internals-Plumbing-and-Porcelain">
+             Git Internals
+            </a>
+           </h2>
+           <ol>
+            <li>
+             10.1
+             <a href="/book/en/v2/Git-Internals-Plumbing-and-Porcelain">
+              Plumbing and Porcelain
+             </a>
+            </li>
+            <li>
+             10.2
+             <a href="/book/en/v2/Git-Internals-Git-Objects">
+              Git Objects
+             </a>
+            </li>
+            <li>
+             10.3
+             <a href="/book/en/v2/Git-Internals-Git-References">
+              Git References
+             </a>
+            </li>
+            <li>
+             10.4
+             <a href="/book/en/v2/Git-Internals-Packfiles">
+              Packfiles
+             </a>
+            </li>
+            <li>
+             10.5
+             <a href="/book/en/v2/Git-Internals-The-Refspec">
+              The Refspec
+             </a>
+            </li>
+            <li>
+             10.6
+             <a href="/book/en/v2/Git-Internals-Transfer-Protocols">
+              Transfer Protocols
+             </a>
+            </li>
+            <li>
+             10.7
+             <a href="/book/en/v2/Git-Internals-Maintenance-and-Data-Recovery">
+              Maintenance and Data Recovery
+             </a>
+            </li>
+            <li>
+             10.8
+             <a href="/book/en/v2/Git-Internals-Environment-Variables">
+              Environment Variables
+             </a>
+            </li>
+            <li>
+             10.9
+             <a href="/book/en/v2/Git-Internals-Summary">
+              Summary
+             </a>
+            </li>
+           </ol>
+          </li>
+         </ol>
+        </div>
+        <div class="column-right">
+         <ol class="book-toc">
+          <li class="chapter">
+           <h2>
+            A1.
+            <a href="/book/en/v2/Appendix-A:-Git-in-Other-Environments-Graphical-Interfaces">
+             Appendix A: Git in Other Environments
+            </a>
+           </h2>
+           <ol>
+            <li>
+             A1.1
+             <a href="/book/en/v2/Appendix-A:-Git-in-Other-Environments-Graphical-Interfaces">
+              Graphical Interfaces
+             </a>
+            </li>
+            <li>
+             A1.2
+             <a href="/book/en/v2/Appendix-A:-Git-in-Other-Environments-Git-in-Visual-Studio">
+              Git in Visual Studio
+             </a>
+            </li>
+            <li>
+             A1.3
+             <a href="/book/en/v2/Appendix-A:-Git-in-Other-Environments-Git-in-Visual-Studio-Code">
+              Git in Visual Studio Code
+             </a>
+            </li>
+            <li>
+             A1.4
+             <a href="/book/en/v2/Appendix-A:-Git-in-Other-Environments-Git-in-IntelliJ-/-PyCharm-/-WebStorm-/-PhpStorm-/-RubyMine">
+              Git in IntelliJ / PyCharm / WebStorm / PhpStorm / RubyMine
+             </a>
+            </li>
+            <li>
+             A1.5
+             <a href="/book/en/v2/Appendix-A:-Git-in-Other-Environments-Git-in-Sublime-Text">
+              Git in Sublime Text
+             </a>
+            </li>
+            <li>
+             A1.6
+             <a href="/book/en/v2/Appendix-A:-Git-in-Other-Environments-Git-in-Bash">
+              Git in Bash
+             </a>
+            </li>
+            <li>
+             A1.7
+             <a href="/book/en/v2/Appendix-A:-Git-in-Other-Environments-Git-in-Zsh">
+              Git in Zsh
+             </a>
+            </li>
+            <li>
+             A1.8
+             <a href="/book/en/v2/Appendix-A:-Git-in-Other-Environments-Git-in-PowerShell">
+              Git in PowerShell
+             </a>
+            </li>
+            <li>
+             A1.9
+             <a href="/book/en/v2/Appendix-A:-Git-in-Other-Environments-Summary">
+              Summary
+             </a>
+            </li>
+           </ol>
+          </li>
+          <li class="chapter">
+           <h2>
+            A2.
+            <a href="/book/en/v2/Appendix-B:-Embedding-Git-in-your-Applications-Command-line-Git">
+             Appendix B: Embedding Git in your Applications
+            </a>
+           </h2>
+           <ol>
+            <li>
+             A2.1
+             <a href="/book/en/v2/Appendix-B:-Embedding-Git-in-your-Applications-Command-line-Git">
+              Command-line Git
+             </a>
+            </li>
+            <li>
+             A2.2
+             <a href="/book/en/v2/Appendix-B:-Embedding-Git-in-your-Applications-Libgit2">
+              Libgit2
+             </a>
+            </li>
+            <li>
+             A2.3
+             <a href="/book/en/v2/Appendix-B:-Embedding-Git-in-your-Applications-JGit">
+              JGit
+             </a>
+            </li>
+            <li>
+             A2.4
+             <a href="/book/en/v2/Appendix-B:-Embedding-Git-in-your-Applications-go-git">
+              go-git
+             </a>
+            </li>
+            <li>
+             A2.5
+             <a href="/book/en/v2/Appendix-B:-Embedding-Git-in-your-Applications-Dulwich">
+              Dulwich
+             </a>
+            </li>
+           </ol>
+          </li>
+          <li class="chapter">
+           <h2>
+            A3.
+            <a href="/book/en/v2/Appendix-C:-Git-Commands-Setup-and-Config">
+             Appendix C: Git Commands
+            </a>
+           </h2>
+           <ol>
+            <li>
+             A3.1
+             <a href="/book/en/v2/Appendix-C:-Git-Commands-Setup-and-Config">
+              Setup and Config
+             </a>
+            </li>
+            <li>
+             A3.2
+             <a href="/book/en/v2/Appendix-C:-Git-Commands-Getting-and-Creating-Projects">
+              Getting and Creating Projects
+             </a>
+            </li>
+            <li>
+             A3.3
+             <a href="/book/en/v2/Appendix-C:-Git-Commands-Basic-Snapshotting">
+              Basic Snapshotting
+             </a>
+            </li>
+            <li>
+             A3.4
+             <a href="/book/en/v2/Appendix-C:-Git-Commands-Branching-and-Merging">
+              Branching and Merging
+             </a>
+            </li>
+            <li>
+             A3.5
+             <a href="/book/en/v2/Appendix-C:-Git-Commands-Sharing-and-Updating-Projects">
+              Sharing and Updating Projects
+             </a>
+            </li>
+            <li>
+             A3.6
+             <a href="/book/en/v2/Appendix-C:-Git-Commands-Inspection-and-Comparison">
+              Inspection and Comparison
+             </a>
+            </li>
+            <li>
+             A3.7
+             <a href="/book/en/v2/Appendix-C:-Git-Commands-Debugging">
+              Debugging
+             </a>
+            </li>
+            <li>
+             A3.8
+             <a href="/book/en/v2/Appendix-C:-Git-Commands-Patching">
+              Patching
+             </a>
+            </li>
+            <li>
+             A3.9
+             <a href="/book/en/v2/Appendix-C:-Git-Commands-Email">
+              Email
+             </a>
+            </li>
+            <li>
+             A3.10
+             <a href="/book/en/v2/Appendix-C:-Git-Commands-External-Systems">
+              External Systems
+             </a>
+            </li>
+            <li>
+             A3.11
+             <a href="/book/en/v2/Appendix-C:-Git-Commands-Administration">
+              Administration
+             </a>
+            </li>
+            <li>
+             A3.12
+             <a href="/book/en/v2/Appendix-C:-Git-Commands-Plumbing-Commands">
+              Plumbing Commands
+             </a>
+            </li>
+           </ol>
+          </li>
+         </ol>
+        </div>
+       </div>
+      </div>
+      <span class="light" id="edition">
+       2nd Edition
+      </span>
+     </div>
+     <div class="book edition2" data-pagefind-body="" data-pagefind-filter="category:book" data-pagefind-meta="category:Book" data-pagefind-weight="0.05" id="main">
+      <h1>
+       3.6 Git Branching - Rebasing
+      </h1>
+      <div>
+       <h2 id="_rebasing">
+        Rebasing
+       </h2>
+       <div class="paragraph">
+        <p>
+         In Git, there are two main ways to integrate changes from one branch into another: the
+         <code>
+          merge
+         </code>
+         and the
+         <code>
+          rebase
+         </code>
+         .
+In this section you’ll learn what rebasing is, how to do it, why it’s a pretty amazing tool, and in what cases you won’t want to use it.
+        </p>
+       </div>
+       <div class="sect3">
+        <h3 id="_the_basic_rebase">
+         The Basic Rebase
+        </h3>
+        <div class="paragraph">
+         <p>
+          If you go back to an earlier example from
+          <a href="/book/en/v2/ch00/_basic_merging">
+           Basic Merging
+          </a>
+          , you can see that you diverged your work and made commits on two different branches.
+         </p>
+        </div>
+        <div class="imageblock">
+         <div class="content">
+          <img alt="Simple divergent history" src="/book/en/v2/images/basic-rebase-1.png"/>
+         </div>
+         <div class="title">
+          Figure 35. Simple divergent history
+         </div>
+        </div>
+        <div class="paragraph">
+         <p>
+          The easiest way to integrate the branches, as we’ve already covered, is the
+          <code>
+           merge
+          </code>
+          command.
+It performs a three-way merge between the two latest branch snapshots (
+          <code>
+           C3
+          </code>
+          and
+          <code>
+           C4
+          </code>
+          ) and the most recent common ancestor of the two (
+          <code>
+           C2
+          </code>
+          ), creating a new snapshot (and commit).
+         </p>
+        </div>
+        <div class="imageblock" id="rebasing-merging-example">
+         <div class="content">
+          <img alt="Merging to integrate diverged work history" src="/book/en/v2/images/basic-rebase-2.png"/>
+         </div>
+         <div class="title">
+          Figure 36. Merging to integrate diverged work history
+         </div>
+        </div>
+        <div class="paragraph">
+         <p>
+          However, there is another way: you can take the patch of the change that was introduced in
+          <code>
+           C4
+          </code>
+          and reapply it on top of
+          <code>
+           C3
+          </code>
+          .
+In Git, this is called
+          <em>
+           rebasing
+          </em>
+          .
+With the
+          <code>
+           rebase
+          </code>
+          command, you can take all the changes that were committed on one branch and replay them on a different branch.
+         </p>
+        </div>
+        <div class="paragraph">
+         <p>
+          For this example, you would check out the
+          <code>
+           experiment
+          </code>
+          branch, and then rebase it onto the
+          <code>
+           master
+          </code>
+          branch as follows:
+         </p>
+        </div>
+        <div class="listingblock">
+         <div class="content">
+          <pre class="highlight"><code class="language-console" data-lang="console">$ git checkout experiment
+$ git rebase master
+First, rewinding head to replay your work on top of it...
+Applying: added staged command</code></pre>
+         </div>
+        </div>
+        <div class="paragraph">
+         <p>
+          This operation works by going to the common ancestor of the two branches (the one you’re on and the one you’re rebasing onto), getting the diff introduced by each commit of the branch you’re on, saving those diffs to temporary files, resetting the current branch to the same commit as the branch you are rebasing onto, and finally applying each change in turn.
+         </p>
+        </div>
+        <div class="imageblock">
+         <div class="content">
+          <img alt="Rebasing the change introduced in `C4` onto `C3`" src="/book/en/v2/images/basic-rebase-3.png"/>
+         </div>
+         <div class="title">
+          Figure 37. Rebasing the change introduced in
+          <code>
+           C4
+          </code>
+          onto
+          <code>
+           C3
+          </code>
+         </div>
+        </div>
+        <div class="paragraph">
+         <p>
+          At this point, you can go back to the
+          <code>
+           master
+          </code>
+          branch and do a fast-forward merge.
+         </p>
+        </div>
+        <div class="listingblock">
+         <div class="content">
+          <pre class="highlight"><code class="language-console" data-lang="console">$ git checkout master
+$ git merge experiment</code></pre>
+         </div>
+        </div>
+        <div class="imageblock">
+         <div class="content">
+          <img alt="Fast-forwarding the `master` branch" src="/book/en/v2/images/basic-rebase-4.png"/>
+         </div>
+         <div class="title">
+          Figure 38. Fast-forwarding the
+          <code>
+           master
+          </code>
+          branch
+         </div>
+        </div>
+        <div class="paragraph">
+         <p>
+          Now, the snapshot pointed to by
+          <code>
+           C4'
+          </code>
+          is exactly the same as the one that was pointed to by
+          <code>
+           C5
+          </code>
+          in
+          <a href="/book/en/v2/ch00/rebasing-merging-example">
+           the merge example
+          </a>
+          .
+There is no difference in the end product of the integration, but rebasing makes for a cleaner history.
+If you examine the log of a rebased branch, it looks like a linear history: it appears that all the work happened in series, even when it originally happened in parallel.
+         </p>
+        </div>
+        <div class="paragraph">
+         <p>
+          Often, you’ll do this to make sure your commits apply cleanly on a remote branch — perhaps in a project to which you’re trying to contribute but that you don’t maintain.
+In this case, you’d do your work in a branch and then rebase your work onto
+          <code>
+           origin/master
+          </code>
+          when you were ready to submit your patches to the main project.
+That way, the maintainer doesn’t have to do any integration work — just a fast-forward or a clean apply.
+         </p>
+        </div>
+        <div class="paragraph">
+         <p>
+          Note that the snapshot pointed to by the final commit you end up with, whether it’s the last of the rebased commits for a rebase or the final merge commit after a merge, is the same snapshot — it’s only the history that is different.
+Rebasing replays changes from one line of work onto another in the order they were introduced, whereas merging takes the endpoints and merges them together.
+         </p>
+        </div>
+       </div>
+       <div class="sect3">
+        <h3 id="_more_interesting_rebases">
+         More Interesting Rebases
+        </h3>
+        <div class="paragraph">
+         <p>
+          You can also have your rebase replay on something other than the rebase target branch.
+Take a history like
+          <a href="/book/en/v2/ch00/rbdiag_e">
+           A history with a topic branch off another topic branch
+          </a>
+          , for example.
+You branched a topic branch (
+          <code>
+           server
+          </code>
+          ) to add some server-side functionality to your project, and made a commit.
+Then, you branched off that to make the client-side changes (
+          <code>
+           client
+          </code>
+          ) and committed a few times.
+Finally, you went back to your
+          <code>
+           server
+          </code>
+          branch and did a few more commits.
+         </p>
+        </div>
+        <div class="imageblock" id="rbdiag_e">
+         <div class="content">
+          <img alt="A history with a topic branch off another topic branch" src="/book/en/v2/images/interesting-rebase-1.png"/>
+         </div>
+         <div class="title">
+          Figure 39. A history with a topic branch off another topic branch
+         </div>
+        </div>
+        <div class="paragraph">
+         <p>
+          Suppose you decide that you want to merge your client-side changes into your mainline for a release, but you want to hold off on the server-side changes until it’s tested further.
+You can take the changes on
+          <code>
+           client
+          </code>
+          that aren’t on
+          <code>
+           server
+          </code>
+          (
+          <code>
+           C8
+          </code>
+          and
+          <code>
+           C9
+          </code>
+          ) and replay them on your
+          <code>
+           master
+          </code>
+          branch by using the
+          <code>
+           --onto
+          </code>
+          option of
+          <code>
+           git rebase
+          </code>
+          :
+         </p>
+        </div>
+        <div class="listingblock">
+         <div class="content">
+          <pre class="highlight"><code class="language-console" data-lang="console">$ git rebase --onto master server client</code></pre>
+         </div>
+        </div>
+        <div class="paragraph">
+         <p>
+          This basically says, “Take the
+          <code>
+           client
+          </code>
+          branch, figure out the patches since it diverged from the
+          <code>
+           server
+          </code>
+          branch, and replay these patches in the
+          <code>
+           client
+          </code>
+          branch as if it was based directly off the
+          <code>
+           master
+          </code>
+          branch instead.”
+It’s a bit complex, but the result is pretty cool.
+         </p>
+        </div>
+        <div class="imageblock">
+         <div class="content">
+          <img alt="Rebasing a topic branch off another topic branch" src="/book/en/v2/images/interesting-rebase-2.png"/>
+         </div>
+         <div class="title">
+          Figure 40. Rebasing a topic branch off another topic branch
+         </div>
+        </div>
+        <div class="paragraph">
+         <p>
+          Now you can fast-forward your
+          <code>
+           master
+          </code>
+          branch (see
+          <a href="/book/en/v2/ch00/rbdiag_g">
+           Fast-forwarding your
+           <code>
+            master
+           </code>
+           branch to include the
+           <code>
+            client
+           </code>
+           branch changes
+          </a>
+          ):
+         </p>
+        </div>
+        <div class="listingblock">
+         <div class="content">
+          <pre class="highlight"><code class="language-console" data-lang="console">$ git checkout master
+$ git merge client</code></pre>
+         </div>
+        </div>
+        <div class="imageblock" id="rbdiag_g">
+         <div class="content">
+          <img alt="Fast-forwarding your `master` branch to include the `client` branch changes" src="/book/en/v2/images/interesting-rebase-3.png"/>
+         </div>
+         <div class="title">
+          Figure 41. Fast-forwarding your
+          <code>
+           master
+          </code>
+          branch to include the
+          <code>
+           client
+          </code>
+          branch changes
+         </div>
+        </div>
+        <div class="paragraph">
+         <p>
+          Let’s say you decide to pull in your
+          <code>
+           server
+          </code>
+          branch as well.
+You can rebase the
+          <code>
+           server
+          </code>
+          branch onto the
+          <code>
+           master
+          </code>
+          branch without having to check it out first by running
+          <code>
+           git rebase &lt;basebranch&gt; &lt;topicbranch&gt;
+          </code>
+          — which checks out the topic branch (in this case,
+          <code>
+           server
+          </code>
+          ) for you and replays it onto the base branch (
+          <code>
+           master
+          </code>
+          ):
+         </p>
+        </div>
+        <div class="listingblock">
+         <div class="content">
+          <pre class="highlight"><code class="language-console" data-lang="console">$ git rebase master server</code></pre>
+         </div>
+        </div>
+        <div class="paragraph">
+         <p>
+          This replays your
+          <code>
+           server
+          </code>
+          work on top of your
+          <code>
+           master
+          </code>
+          work, as shown in
+          <a href="/book/en/v2/ch00/rbdiag_h">
+           Rebasing your
+           <code>
+            server
+           </code>
+           branch on top of your
+           <code>
+            master
+           </code>
+           branch
+          </a>
+          .
+         </p>
+        </div>
+        <div class="imageblock" id="rbdiag_h">
+         <div class="content">
+          <img alt="Rebasing your `server` branch on top of your `master` branch" src="/book/en/v2/images/interesting-rebase-4.png"/>
+         </div>
+         <div class="title">
+          Figure 42. Rebasing your
+          <code>
+           server
+          </code>
+          branch on top of your
+          <code>
+           master
+          </code>
+          branch
+         </div>
+        </div>
+        <div class="paragraph">
+         <p>
+          Then, you can fast-forward the base branch (
+          <code>
+           master
+          </code>
+          ):
+         </p>
+        </div>
+        <div class="listingblock">
+         <div class="content">
+          <pre class="highlight"><code class="language-console" data-lang="console">$ git checkout master
+$ git merge server</code></pre>
+         </div>
+        </div>
+        <div class="paragraph">
+         <p>
+          You can remove the
+          <code>
+           client
+          </code>
+          and
+          <code>
+           server
+          </code>
+          branches because all the work is integrated and you don’t need them anymore, leaving your history for this entire process looking like
+          <a href="/book/en/v2/ch00/rbdiag_i">
+           Final commit history
+          </a>
+          :
+         </p>
+        </div>
+        <div class="listingblock">
+         <div class="content">
+          <pre class="highlight"><code class="language-console" data-lang="console">$ git branch -d client
+$ git branch -d server</code></pre>
+         </div>
+        </div>
+        <div class="imageblock" id="rbdiag_i">
+         <div class="content">
+          <img alt="Final commit history" src="/book/en/v2/images/interesting-rebase-5.png"/>
+         </div>
+         <div class="title">
+          Figure 43. Final commit history
+         </div>
+        </div>
+       </div>
+       <div class="sect3">
+        <h3 id="_rebase_peril">
+         The Perils of Rebasing
+        </h3>
+        <div class="paragraph">
+         <p>
+          Ahh, but the bliss of rebasing isn’t without its drawbacks, which can be summed up in a single line:
+         </p>
+        </div>
+        <div class="paragraph">
+         <p>
+          <strong>
+           Do not rebase commits that exist outside your repository and that people may have based work on.
+          </strong>
+         </p>
+        </div>
+        <div class="paragraph">
+         <p>
+          If you follow that guideline, you’ll be fine.
+If you don’t, people will hate you, and you’ll be scorned by friends and family.
+         </p>
+        </div>
+        <div class="paragraph">
+         <p>
+          When you rebase stuff, you’re abandoning existing commits and creating new ones that are similar but different.
+If you push commits somewhere and others pull them down and base work on them, and then you rewrite those commits with
+          <code>
+           git rebase
+          </code>
+          and push them up again, your collaborators will have to re-merge their work and things will get messy when you try to pull their work back into yours.
+         </p>
+        </div>
+        <div class="paragraph">
+         <p>
+          Let’s look at an example of how rebasing work that you’ve made public can cause problems.
+Suppose you clone from a central server and then do some work off that.
+Your commit history looks like this:
+         </p>
+        </div>
+        <div class="imageblock">
+         <div class="content">
+          <img alt="Clone a repository, and base some work on it" src="/book/en/v2/images/perils-of-rebasing-1.png"/>
+         </div>
+         <div class="title">
+          Figure 44. Clone a repository, and base some work on it
+         </div>
+        </div>
+        <div class="paragraph">
+         <p>
+          Now, someone else does more work that includes a merge, and pushes that work to the central server.
+You fetch it and merge the new remote branch into your work, making your history look something like this:
+         </p>
+        </div>
+        <div class="imageblock">
+         <div class="content">
+          <img alt="Fetch more commits, and merge them into your work" src="/book/en/v2/images/perils-of-rebasing-2.png"/>
+         </div>
+         <div class="title">
+          Figure 45. Fetch more commits, and merge them into your work
+         </div>
+        </div>
+        <div class="paragraph">
+         <p>
+          Next, the person who pushed the merged work decides to go back and rebase their work instead; they do a
+          <code>
+           git push --force
+          </code>
+          to overwrite the history on the server.
+You then fetch from that server, bringing down the new commits.
+         </p>
+        </div>
+        <div class="imageblock" id="_pre_merge_rebase_work">
+         <div class="content">
+          <img alt="Someone pushes rebased commits, abandoning commits you’ve based your work on" src="/book/en/v2/images/perils-of-rebasing-3.png"/>
+         </div>
+         <div class="title">
+          Figure 46. Someone pushes rebased commits, abandoning commits you’ve based your work on
+         </div>
+        </div>
+        <div class="paragraph">
+         <p>
+          Now you’re both in a pickle.
+If you do a
+          <code>
+           git pull
+          </code>
+          , you’ll create a merge commit which includes both lines of history, and your repository will look like this:
+         </p>
+        </div>
+        <div class="imageblock" id="_merge_rebase_work">
+         <div class="content">
+          <img alt="You merge in the same work again into a new merge commit" src="/book/en/v2/images/perils-of-rebasing-4.png"/>
+         </div>
+         <div class="title">
+          Figure 47. You merge in the same work again into a new merge commit
+         </div>
+        </div>
+        <div class="paragraph">
+         <p>
+          If you run a
+          <code>
+           git log
+          </code>
+          when your history looks like this, you’ll see two commits that have the same author, date, and message, which will be confusing.
+Furthermore, if you push this history back up to the server, you’ll reintroduce all those rebased commits to the central server, which can further confuse people.
+It’s pretty safe to assume that the other developer doesn’t want
+          <code>
+           C4
+          </code>
+          and
+          <code>
+           C6
+          </code>
+          to be in the history; that’s why they rebased in the first place.
+         </p>
+        </div>
+       </div>
+       <div class="sect3">
+        <h3 id="_rebase_rebase">
+         Rebase When You Rebase
+        </h3>
+        <div class="paragraph">
+         <p>
+          If you
+          <strong>
+           do
+          </strong>
+          find yourself in a situation like this, Git has some further magic that might help you out.
+If someone on your team force pushes changes that overwrite work that you’ve based work on, your challenge is to figure out what is yours and what they’ve rewritten.
+         </p>
+        </div>
+        <div class="paragraph">
+         <p>
+          It turns out that in addition to the commit SHA-1 checksum, Git also calculates a checksum that is based just on the patch introduced with the commit.
+This is called a “patch-id”.
+         </p>
+        </div>
+        <div class="paragraph">
+         <p>
+          If you pull down work that was rewritten and rebase it on top of the new commits from your partner, Git can often successfully figure out what is uniquely yours and apply them back on top of the new branch.
+         </p>
+        </div>
+        <div class="paragraph">
+         <p>
+          For instance, in the previous scenario, if instead of doing a merge when we’re at
+          <a href="/book/en/v2/ch00/_pre_merge_rebase_work">
+           Someone pushes rebased commits, abandoning commits you’ve based your work on
+          </a>
+          we run
+          <code>
+           git rebase teamone/master
+          </code>
+          , Git will:
+         </p>
+        </div>
+        <div class="ulist">
+         <ul>
+          <li>
+           <p>
+            Determine what work is unique to our branch (
+            <code>
+             C2
+            </code>
+            ,
+            <code>
+             C3
+            </code>
+            ,
+            <code>
+             C4
+            </code>
+            ,
+            <code>
+             C6
+            </code>
+            ,
+            <code>
+             C7
+            </code>
+            )
+           </p>
+          </li>
+          <li>
+           <p>
+            Determine which are not merge commits (
+            <code>
+             C2
+            </code>
+            ,
+            <code>
+             C3
+            </code>
+            ,
+            <code>
+             C4
+            </code>
+            )
+           </p>
+          </li>
+          <li>
+           <p>
+            Determine which have not been rewritten into the target branch (just
+            <code>
+             C2
+            </code>
+            and
+            <code>
+             C3
+            </code>
+            , since
+            <code>
+             C4
+            </code>
+            is the same patch as
+            <code>
+             C4'
+            </code>
+            )
+           </p>
+          </li>
+          <li>
+           <p>
+            Apply those commits to the top of
+            <code>
+             teamone/master
+            </code>
+           </p>
+          </li>
+         </ul>
+        </div>
+        <div class="paragraph">
+         <p>
+          So instead of the result we see in
+          <a href="/book/en/v2/ch00/_merge_rebase_work">
+           You merge in the same work again into a new merge commit
+          </a>
+          , we would end up with something more like
+          <a href="/book/en/v2/ch00/_rebase_rebase_work">
+           Rebase on top of force-pushed rebase work
+          </a>
+          .
+         </p>
+        </div>
+        <div class="imageblock" id="_rebase_rebase_work">
+         <div class="content">
+          <img alt="Rebase on top of force-pushed rebase work" src="/book/en/v2/images/perils-of-rebasing-5.png"/>
+         </div>
+         <div class="title">
+          Figure 48. Rebase on top of force-pushed rebase work
+         </div>
+        </div>
+        <div class="paragraph">
+         <p>
+          This only works if
+          <code>
+           C4
+          </code>
+          and
+          <code>
+           C4'
+          </code>
+          that your partner made are almost exactly the same patch.
+Otherwise the rebase won’t be able to tell that it’s a duplicate and will add another
+          <code>
+           C4
+          </code>
+          -like patch (which will probably fail to apply cleanly, since the changes would already be at least somewhat there).
+         </p>
+        </div>
+        <div class="paragraph">
+         <p>
+          You can also simplify this by running a
+          <code>
+           git pull --rebase
+          </code>
+          instead of a normal
+          <code>
+           git pull
+          </code>
+          .
+Or you could do it manually with a
+          <code>
+           git fetch
+          </code>
+          followed by a
+          <code>
+           git rebase teamone/master
+          </code>
+          in this case.
+         </p>
+        </div>
+        <div class="paragraph">
+         <p>
+          If you are using
+          <code>
+           git pull
+          </code>
+          and want to make
+          <code>
+           --rebase
+          </code>
+          the default, you can set the
+          <code>
+           pull.rebase
+          </code>
+          config value with something like
+          <code>
+           git config --global pull.rebase true
+          </code>
+          .
+         </p>
+        </div>
+        <div class="paragraph">
+         <p>
+          If you only ever rebase commits that have never left your own computer, you’ll be just fine.
+If you rebase commits that have been pushed, but that no one else has based commits from, you’ll also be fine.
+If you rebase commits that have already been pushed publicly, and people may have based work on those commits, then you may be in for some frustrating trouble, and the scorn of your teammates.
+         </p>
+        </div>
+        <div class="paragraph">
+         <p>
+          If you or a partner does find it necessary at some point, make sure everyone knows to run
+          <code>
+           git pull --rebase
+          </code>
+          to try to make the pain after it happens a little bit simpler.
+         </p>
+        </div>
+       </div>
+       <div class="sect3">
+        <h3 id="_rebase_vs_merge">
+         Rebase vs. Merge
+        </h3>
+        <div class="paragraph">
+         <p>
+          Now that you’ve seen rebasing and merging in action, you may be wondering which one is better.
+Before we can answer this, let’s step back a bit and talk about what history means.
+         </p>
+        </div>
+        <div class="paragraph">
+         <p>
+          One point of view on this is that your repository’s commit history is a
+          <strong>
+           record of what actually happened.
+          </strong>
+          It’s a historical document, valuable in its own right, and shouldn’t be tampered with.
+From this angle, changing the commit history is almost blasphemous; you’re
+          <em>
+           lying
+          </em>
+          about what actually transpired.
+So what if there was a messy series of merge commits?
+That’s how it happened, and the repository should preserve that for posterity.
+         </p>
+        </div>
+        <div class="paragraph">
+         <p>
+          The opposing point of view is that the commit history is the
+          <strong>
+           story of how your project was made.
+          </strong>
+          You wouldn’t publish the first draft of a book, so why show your messy work?
+When you’re working on a project, you may need a record of all your missteps and dead-end paths, but when it’s time to show your work to the world, you may want to tell a more coherent story of how to get from A to B.
+People in this camp use tools like
+          <code>
+           rebase
+          </code>
+          and
+          <code>
+           filter-branch
+          </code>
+          to rewrite their commits before they’re merged into the mainline branch.
+They use tools like
+          <code>
+           rebase
+          </code>
+          and
+          <code>
+           filter-branch
+          </code>
+          , to tell the story in the way that’s best for future readers.
+         </p>
+        </div>
+        <div class="paragraph">
+         <p>
+          Now, to the question of whether merging or rebasing is better: hopefully you’ll see that it’s not that simple.
+Git is a powerful tool, and allows you to do many things to and with your history, but every team and every project is different.
+Now that you know how both of these things work, it’s up to you to decide which one is best for your particular situation.
+         </p>
+        </div>
+        <div class="paragraph">
+         <p>
+          You can get the best of both worlds: rebase local changes before pushing to clean up your work, but never rebase anything that you’ve pushed somewhere.
+         </p>
+        </div>
+       </div>
+       <div id="nav">
+        <a href="/book/en/v2/Git-Branching-Remote-Branches">
+         prev
+        </a>
+        |
+        <a href="/book/en/v2/Git-Branching-Summary">
+         next
+        </a>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+   <footer>
+    <div class="site-source">
+     <a href="/site">
+      About this site
+     </a>
+     <br/>
+     Patches, suggestions, and comments are welcome.
+    </div>
+    <div class="sfc-member">
+     Git is a member of
+     <a href="/sfc">
+      Software Freedom Conservancy
+     </a>
+    </div>
+   </footer>
+   <a class="no-js scrollToTop" data-label="Scroll to top" href="#top" id="scrollToTop">
+    <img alt="scroll-to-top" height="20" src="/images/icons/chevron-up@2x.png" width="20">
+    </img>
+   </a>
+   <script src="/js/jquery-1.7.1.min.js">
+   </script>
+   <script src="/js/jquery-ui-1.8.18.custom.min.js">
+   </script>
+   <script src="/js/jquery.defaultvalue.js">
+   </script>
+   <script src="/js/session.min.js">
+   </script>
+   <script src="/js/application.min.js">
+   </script>
+  </div>
+ </body>
+</html>

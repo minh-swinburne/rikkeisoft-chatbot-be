@@ -1,4 +1,5 @@
-from groq import Groq
+from groq import Groq, Stream
+from groq.types.chat import ChatCompletion, ChatCompletionChunk
 from app.bot import config
 from app.bot.vector_db import search_context, query_document
 from app.core.config import settings
@@ -16,7 +17,7 @@ client = Groq(
         ),
 )
 
-def generate_answer(chat_history: list):
+async def generate_answer(chat_history: list):
     user_query = chat_history[-1]["content"]
     context_results = search_context(user_query)
 
@@ -53,9 +54,19 @@ def generate_answer(chat_history: list):
         **config["answer_generation"]["params"],
     )
 
-    bot_response = chat_completion.choices[0].message.content
+    # bot_response = chat_completion.choices[0].message.content
 
-    return bot_response
+    # return bot_response
+
+    if isinstance(chat_completion, ChatCompletion):
+        print("Chat Completion: ", chat_completion.choices[0].message.content)
+        return chat_completion.choices[0].message.content
+    else:
+        print("Chat Stream: ")
+        async def async_stream_generator():
+            for chunk in chat_completion:
+                yield chunk.choices[0].delta.content
+        return async_stream_generator()
 
 
 def suggest_questions(chat_history: list, context: str = None):
@@ -84,7 +95,7 @@ def suggest_questions(chat_history: list, context: str = None):
         message_template="\n".join(f"{i+1}. {question}" for i, question in enumerate(message_template))
     )
 
-    question_completion = client.chat.completions.create(
+    question_completion:ChatCompletion = client.chat.completions.create(
         messages=[
             {
                 "role": "system",
@@ -116,6 +127,7 @@ def generate_name(chat_history: list):
     # Chat History: {chat_history}
     # """
 
+
     system_prompt = config["name_generation"]["system_prompt"].format(chat_history=chat_history)
 
     name_completion = client.chat.completions.create(
@@ -134,6 +146,12 @@ def generate_name(chat_history: list):
         # stream=False,
         **config["name_generation"]["params"],
     )
+
+    if isinstance(name_completion, ChatCompletion):
+        return re.sub(r"['\"\n]", "", name_completion.choices[0].message.content).strip()
+    elif (isinstance(name_completion, Stream[ChatCompletionChunk])):
+        for chunk in name_completion:
+            yield chunk.choices[0].delta.content
 
     response = name_completion.choices[0].message.content
 
