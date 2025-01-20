@@ -2,25 +2,18 @@ from fastapi import APIRouter, HTTPException, status, Depends, Cookie, Header
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from passlib.context import CryptContext
 from jose import jwt
-from app.schemas.auth import GoogleAuthBase, MicrosoftAuthBase
-from app.services.user import (
-    create_user,
-    get_user_by_provider_uid,
-    authenticate_user,
-    create_access_token,
-    create_refresh_token,
-    validate_token,
-)
 from app.core.database import get_db
 from app.core.config import settings
-from app.utils import parse_timedelta
+from app.services import UserService
+from app.schemas import GoogleAuthBase, MicrosoftAuthBase, AuthModel, UserBase, SSOBase
 import requests
 
 
 router = APIRouter()
-# OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def get_microsoft_public_keys():
@@ -35,120 +28,68 @@ def get_microsoft_public_keys():
 MICROSOFT_PUBLIC_KEYS = get_microsoft_public_keys()
 
 
-def grant_access(
-    user_id: str,
-    firstname: str,
-    lastname: str,
-    email: str,
-    roles: list,
-):
-    access_token = create_access_token(
-        user_id,
-        firstname,
-        lastname,
-        email,
-        roles,
-    )
-
-    refresh_token = create_refresh_token(user_id)
-    response = JSONResponse({"message": "Login successful"})
-
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        secure=False,  # Set to True in production (requires HTTPS)
-        samesite="none",
-        max_age=parse_timedelta(settings.jwt_access_expires_in).seconds,
-    )
-
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=False,  # Set to True in production (requires HTTPS)
-        samesite="none",
-        max_age=parse_timedelta(settings.jwt_refresh_expires_in).seconds,
-    )
-    return response
-
-
 @router.post("/native")
 async def authenticate_native(
-    form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: AsyncSession = Depends(get_db)
 ):
-    user = await authenticate_user(db, form_data.username, form_data.password)
+    user = await UserService.get_user_by_username(db, form_data.username)
     if not user:
+        user = await UserService.get_user_by_email(db, form_data.username)
+
+    if not user or not pwd_context.verify(form_data.password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    return JSONResponse(
-        {
-            "access_token": create_access_token(
-                user.id,
-                user.firstname,
-                user.lastname,
-                user.email,
-                ["user"] + (["admin"] if user.admin else []),
-                "native",
-            ),
-            "refresh_token": create_refresh_token(user.id),
-            "token_type": "bearer",
-        }
-    )
+    return user
+
+    return UserService.grant_access(user)
 
 
 @router.post("/google")
 async def authenticate_google(
-    request: GoogleAuthBase, db: AsyncSession = Depends(get_db)
+    request: GoogleAuthBase,
+    db: AsyncSession = Depends(get_db)
 ):
     user_info = requests.get(
         settings.google_user_info_url,
         headers={"Authorization": f"Bearer {request.access_token}"},
     ).json()
 
-    user = await get_user_by_provider_uid(db, "google", user_info.get("sub"))
+    user = await UserService.get_user_by_provider_sub(db, "google", user_info.get("sub"))
 
     if not user:
-        user = await create_user(
-            db,
-            user_info.get("sub"),  # Provider UID as the username
-            user_info.get("email"),
-            "",  # No password
-            user_info.get("given_name"),
-            user_info.get("family_name"),
-            False,
-            "google",
-            user_info.get("sub"),
+        user_data = UserBase(
+            email=user_info.get("email"),
+            firstname=user_info.get("given_name"),
+            lastname=user_info.get("family_name"),
+            avatar_url=user_info.get("picture"),
         )
+        user = await UserService.create_user(db, user_data)
 
-    return JSONResponse(
-        {
-            "access_token": create_access_token(
-                user.id,
-                user_info.get("given_name"),
-                user_info.get("family_name"),
-                user_info.get("email"),
-                ["user"],
-                "google",
-            ),
-            "refresh_token": create_refresh_token(user_info.get("sub")),
-            "token_type": "bearer",
-        }
-    )
+        sso_data = SSOBase(
+            user_id=user.id,
+            provider="google",
+            provider_uid=user_info.get("sub"),
+        )
+        await UserService.create_sso(db, sso_data)
+
+    return UserService.grant_access(user)
 
 
 @router.post("/microsoft")
 async def authenticate_microsoft(
-    request: MicrosoftAuthBase, db: AsyncSession = Depends(get_db)
+    request: MicrosoftAuthBase,
+    db: AsyncSession = Depends(get_db),
+    microsoft_public_keys=Depends(get_microsoft_public_keys)
 ):
     try:
         header = jwt.get_unverified_header(request.id_token)
         key = next(
-            key for key in MICROSOFT_PUBLIC_KEYS["keys"] if key["kid"] == header["kid"]
+            key for key in microsoft_public_keys["keys"] if key["kid"] == header["kid"]
         )
         payload = jwt.decode(
             request.id_token,
@@ -160,36 +101,25 @@ async def authenticate_microsoft(
         print(f"Error: {e}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 
-    # print(f"Received token: {payload}")
-    user = await get_user_by_provider_uid(db, "microsoft", payload["sub"])
+    user = await UserService.get_user_by_provider_sub(db, "microsoft", payload["sub"])
 
     if not user:
-        user = await create_user(
-            db,
-            payload["sub"],  # Provider UID as the username
-            payload["email"],
-            "",
-            payload["given_name"],
-            payload["family_name"],
-            False,
-            "microsoft",
-            payload["sub"],
+        user_data = UserBase(
+            email=payload["email"],
+            firstname=payload["given_name"],
+            lastname=payload["family_name"],
+            avatar_url="",
         )
+        user = await UserService.create_user(db, user_data)
 
-    return JSONResponse(
-        {
-            "access_token": create_access_token(
-                user.id,
-                payload["given_name"],
-                payload["family_name"],
-                payload["email"],
-                ["user"],
-                "microsoft",
-            ),
-            "refresh_token": create_refresh_token(payload["sub"]),
-            "token_type": "bearer",
-        }
-    )
+        sso_data = SSOBase(
+            user_id=user.id,
+            provider="google",
+            provider_uid=payload["sub"],
+        )
+        await UserService.create_sso(db, sso_data)
+
+    return UserService.grant_access(user)
 
 
 @router.post("/refresh")
@@ -204,26 +134,16 @@ async def refresh_access_token(authorization: str = Header(None)):
 
     # Verify the refresh token
     try:
-        payload = validate_token(refresh_token)
+        access_token = await UserService.refresh_token(refresh_token)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
-    if payload["type"] != "refresh":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type"
-        )
 
     # Create a new access token
-    return JSONResponse(
-        {
-            "access_token": create_access_token(
-                payload["sub"],
-                payload["firstname"],
-                payload["lastname"],
-                payload["email"],
-                payload["roles"],
-            )
-        }
-    )
+    return AuthModel.model_validate({
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+    })
 
 
 @router.get("/validate")
@@ -237,7 +157,7 @@ async def validate_access(authorization: str = Header(None)):
     token = authorization.split(" ")[1]  # Extract the token
 
     try:
-        payload = validate_token(token)
+        payload = UserService.validate_token(token)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 

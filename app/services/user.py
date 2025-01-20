@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repos.user import UserRepository
+from app.repos.role import RoleRepository
 from app.repos.sso import SSORepository
 from app.core.config import settings
 from app.utils import parse_timedelta
@@ -20,8 +21,52 @@ class UserService:
     @staticmethod
     async def create_user(db: AsyncSession, user_data: UserBase) -> UserModel:
         """Create a new user in the database."""
+        existing_user = await UserRepository.get_by_email(db, user_data.email)
+        if existing_user:
+            raise ValueError(f"User with email {user_data.email} already exists")
+
+        existing_user = await UserRepository.get_by_username(db, user_data.username)
+        if existing_user:
+            raise ValueError(f"User with username {user_data.username} already exists")
+
         user = await UserRepository.create(db, user_data)
         return UserModel.model_validate(user)
+
+    @staticmethod
+    async def assign_role(db: AsyncSession, user_id: str, role_name: str) -> UserModel:
+        """Assign a role to a user."""
+        user = await UserRepository.get_by_id(db, user_id)
+        if not user:
+            raise ValueError("User not found")
+
+        role = await RoleRepository.get_by_name(db, role_name)
+        if not role:
+            raise ValueError("Role not found")
+
+        if role not in user.roles:
+            user.roles.append(role)
+            await db.commit()
+            await db.refresh(user)
+
+        return user
+
+    @staticmethod
+    async def remove_role(db: AsyncSession, user_id: str, role_name: str) -> UserModel:
+        """Remove a role from a user."""
+        user = await UserRepository.get_by_id(db, user_id)
+        if not user:
+            raise ValueError("User not found")
+
+        role = await RoleRepository.get_by_name(db, role_name)
+        if not role:
+            raise ValueError("Role not found")
+
+        if role in user.roles:
+            user.roles.remove(role)
+            await db.commit()
+            await db.refresh(user)
+
+        return user
 
     @staticmethod
     async def create_sso(db: AsyncSession, sso_data: SSOBase) -> SSOBase:
@@ -42,6 +87,15 @@ class UserService:
         return [SSOBase.model_validate(sso) for sso in sso_entries]
 
     @staticmethod
+    async def list_user_roles(db: AsyncSession, user_id: str) -> list[str]:
+        """List all roles assigned to a user."""
+        user = await UserRepository.get_by_id(db, user_id)
+        if not user:
+            raise ValueError(f"User with ID {user_id} not found.")
+
+        return [role.name for role in user.roles]
+
+    @staticmethod
     async def get_user_by_id(db: AsyncSession, user_id: str) -> Optional[UserModel]:
         """Retrieve a user by their ID."""
         user = await UserRepository.get_by_id(db, user_id)
@@ -53,6 +107,7 @@ class UserService:
     ) -> Optional[UserModel]:
         """Retrieve a user by their username."""
         user = await UserRepository.get_by_username(db, username)
+        # print(user.__dict__)
         return UserModel.model_validate(user) if user else None
 
     @staticmethod
@@ -147,6 +202,7 @@ class UserService:
         return AuthModel.model_validate({
             "access_token": access_token,
             "refresh_token": refresh_token,
+            "token_type": "bearer",
         })
 
     @staticmethod

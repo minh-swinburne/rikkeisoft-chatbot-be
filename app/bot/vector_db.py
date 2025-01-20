@@ -14,7 +14,7 @@ collection_name = settings.milvus_collection
 client = MilvusClient(uri=settings.milvus_uri, token=settings.milvus_token)
 
 
-def setup_db():
+def setup_vector_db():
     if not client.has_collection(collection_name):
         # Define the schema
         schema = client.create_schema(

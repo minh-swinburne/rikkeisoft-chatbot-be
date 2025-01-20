@@ -77,7 +77,7 @@ class UserRepository:
 
         for key, value in update_data.model_dump(exclude_unset=True).items():
             setattr(user, key, value)
-            
+
         return await _commit_and_refresh(db, user)
 
     @staticmethod

@@ -1,22 +1,16 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repos.document import DocumentRepository
-from app.bot.rag import process_document
+# from app.bot.rag import process_document
 from app.core.config import settings
 from app.schemas import DocumentBase, DocumentModel, DocumentUpdate
-from datetime import datetime
 from bs4 import BeautifulSoup  # For .html
 from docx import Document  # For .docx
 from typing import Optional
-from pathlib import Path
 from PIL import Image
 import pytesseract
-import subprocess
-import requests
 import openpyxl  # For .xlsx
 import fitz  # PyMuPDF for PDF
-import uuid
 import io
-import re
 
 
 pytesseract.pytesseract.tesseract_cmd = settings.tesseract_cmd
@@ -74,6 +68,8 @@ class DocumentService:
             file.write(file_content)
 
         document = await self.create_document(db, doc_data)
+
+        return document
         categories = list(map(lambda category: category.name, document.categories))
 
         # Should be done in a background task
@@ -91,8 +87,6 @@ class DocumentService:
                 "uploader": document.uploader,
             },
         )
-
-        return document
 
     def extract_text(self, file_path: str, file_type: str) -> str:
         """Extract text from a file based on its type."""

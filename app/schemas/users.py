@@ -1,6 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, model_validator
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Self
 from .roles import RoleModel
 
 
@@ -8,9 +8,9 @@ class UserBase(BaseModel):
     email: str
     firstname: str
     lastname: Optional[str]
-    username: Optional[str]
-    password: Optional[str]
-    avatar_url: Optional[str]
+    username: Optional[str] = None
+    password: Optional[str] = None
+    avatar_url: Optional[str] = None
 
 
 class UserModel(UserBase):
@@ -18,6 +18,8 @@ class UserModel(UserBase):
     created_time: datetime
     username_last_changed: Optional[datetime] = None
     roles: list[RoleModel]  # Represent roles as nested objects
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserUpdate(BaseModel):

@@ -38,11 +38,16 @@ class User(Base):
     username_last_changed = Column(DateTime(timezone=True), nullable=True)
 
     # Many-to-many relationship with Role
-    roles = relationship("Role", secondary=user_roles, back_populates="users")
+    roles = relationship("Role", secondary=user_roles, back_populates="users", lazy="joined")
 
-    # Relationship to SSO accounts
-    sso_accounts = relationship(
-        "SSOAccount", back_populates="user", cascade="all, delete-orphan"
+    # One-to many relationship to SSO accounts
+    sso = relationship(
+        "SSO", back_populates="user", cascade="all, delete-orphan"
+    )
+
+    # One-to-many relationship to Chats
+    chats = relationship(
+        "Chat", back_populates="user", cascade="all, delete-orphan"
     )
 
     @validates("username")

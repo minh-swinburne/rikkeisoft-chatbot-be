@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String, Enum, ForeignKey
+from sqlalchemy.orm import relationship
 from .base import Base
 
 
@@ -12,3 +13,5 @@ class SSO(Base):
         Enum("google", "microsoft", name="provider_enum"), primary_key=True
     )
     sub = Column(String(100), nullable=False)
+
+    user = relationship("User", back_populates="sso")
