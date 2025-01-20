@@ -44,40 +44,44 @@ async def download_file(doc_id: str, db: AsyncSession = Depends(get_db)):
 async def get_pdf(doc_id: str, db: AsyncSession = Depends(get_db)):
     document = await get_document_by_id(db, doc_id)
     filename = document.filename
-    print("File name: ", filename)
-    file_path = os.path.join("uploads", filename)   
-    print("File path: ", file_path) 
+    file_path = os.path.join("uploads", filename)
+
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found")
 
     file_extension = filename.split('.')[-1].lower()
 
-    # If the file is already a PDF, serve it directly
     if file_extension == "pdf":
         return FileResponse(file_path, media_type="application/pdf")
+    
+    if file_extension == "html":
+        return FileResponse(file_path, media_type="text/html")
 
-    # If the file is DOCX, convert it to PDF using LibreOffice
-    if file_extension == "docx":
-        pdf_filename = filename.replace(".docx", ".pdf")
-        pdf_path = os.path.join("files", pdf_filename)
-        
-        # Convert DOCX to PDF using LibreOffice (headless)
-        subprocess.run(["libreoffice", "--headless", "--convert-to", "pdf", file_path], check=True)
+    pdf_filename = filename.replace(f".{file_extension}", ".pdf")
+    pdf_path = os.path.join("uploads", pdf_filename)
+
+    # Check if the PDF file already exists
+    if os.path.exists(pdf_path):
+        return FileResponse(pdf_path, media_type="application/pdf")
+
+    if file_extension in ["docx", "xlsx"]:
+        try:
+            subprocess.run([
+                r"C:\Program Files\LibreOffice\program\soffice.exe",
+                "--headless",
+                "--convert-to", "pdf",
+                file_path,
+                "--outdir", "uploads"  # Specify the output directory
+            ], check=True)
+        except subprocess.CalledProcessError:
+            raise HTTPException(status_code=500, detail="Failed to convert file to PDF")
+        except FileNotFoundError:
+            raise HTTPException(status_code=500, detail="LibreOffice not found. Ensure it is installed and added to the PATH.")
         
         return FileResponse(pdf_path, media_type="application/pdf")
 
-    # If the file is XLSX, convert it to PDF using LibreOffice
-    if file_extension == "xlsx":
-        pdf_filename = filename.replace(".xlsx", ".pdf")
-        pdf_path = os.path.join("files", pdf_filename)
-        
-        # Convert XLSX to PDF using LibreOffice (headless)
-        subprocess.run(["libreoffice", "--headless", "--convert-to", "pdf", file_path], check=True)
-        
-        return FileResponse(pdf_path, media_type="application/pdf")
-
-    # If the file type is not supported, return an error
     raise HTTPException(status_code=415, detail="Unsupported file type")
+
 
 
 @router.get("/")
@@ -108,9 +112,35 @@ async def update_document_details(
 
 @router.delete("/{doc_id}/delete")
 async def delete_document_entry(doc_id: str, db: AsyncSession = Depends(get_db)):
+    # Retrieve the document details from the database
+    document = await get_document_by_id(db, doc_id)
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    filename = document.filename
+    file_path = os.path.join("uploads", filename)
+    json_path = f"{file_path}.json"
+    
+    # Construct the PDF file path if the document is a .docx or .xlsx file
+    if filename.endswith(('.docx', '.xlsx')):
+        pdf_filename = f"{os.path.splitext(filename)[0]}.pdf"
+        pdf_path = os.path.join("uploads", pdf_filename)
+    else:
+        pdf_path = None
+
+    # Delete the files if they exist
+    if os.path.exists(file_path):
+        os.remove(file_path)
+    if os.path.exists(json_path):
+        os.remove(json_path)
+    if pdf_path and os.path.exists(pdf_path):
+        os.remove(pdf_path)
+
+    # Delete the document entry from the database
     result = await delete_document(db, doc_id)
     if not result:
         raise HTTPException(status_code=404, detail="Document not found")
+
     return JSONResponse(content={"message": "Document deleted successfully"})
 
 
@@ -182,13 +212,13 @@ async def upload_document(
             soup = BeautifulSoup(response.content, "html.parser")
 
             # Extract page title and sanitize it for filename
-            page_title = soup.title.string if soup.title else "web_content"
+            page_title = soup.title.string if soup.title else title
             sanitized_title = re.sub(r"[^\w\s-]", "", page_title).strip()
             sanitized_title = re.sub(r"[-\s]+", "_", sanitized_title)
 
             # Save crawled content as an .html file
             filename = f"{sanitized_title}.html"
-            file_type = "web_content"
+            file_type = "html"
             file_path = file_dir / filename
 
             with file_path.open("w", encoding="utf-8") as f:
