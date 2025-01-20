@@ -1,4 +1,4 @@
-from app.services.docs import extract_text
+from app.services.document import extract_text
 from app.bot.vector_db import json_to_data, insert_data_to_db
 from app.bot.embedding import get_embedding
 import json
@@ -17,7 +17,7 @@ async def process_document(file_path: str, file_type: str, metadata: dict):
     text = extract_text(file_path, file_type)
     chunks = chunk_text(text)
     embeddings = get_embedding(chunks)
-    
+
     metadata["chunks"] = [
         {"text": chunk, "embedding": embedding}
         for chunk, embedding in zip(chunks, embeddings)

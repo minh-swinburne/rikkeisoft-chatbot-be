@@ -1,5 +1,3 @@
-CREATE DATABASE  IF NOT EXISTS `rikkeisoft_chatbot` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `rikkeisoft_chatbot`;
 -- MySQL dump 10.13  Distrib 8.0.40, for Win64 (x86_64)
 --
 -- Host: localhost    Database: rikkeisoft_chatbot
@@ -16,6 +14,32 @@ USE `rikkeisoft_chatbot`;
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `categories`
+--
+
+DROP TABLE IF EXISTS `categories`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `categories` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `categories`
+--
+
+LOCK TABLES `categories` WRITE;
+/*!40000 ALTER TABLE `categories` DISABLE KEYS */;
+INSERT INTO `categories` VALUES (1,'Guidance','Documents providing guidance'),(2,'Policies','Policy-related documents'),(3,'Reports','Reports and summaries'),(4,'Procedures','Operational procedures'),(5,'Training Materials','Documents for training purposes'),(6,'Technical Documentation','Technical reference documents');
+/*!40000 ALTER TABLE `categories` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `chats`
@@ -46,6 +70,33 @@ INSERT INTO `chats` VALUES ('01945c9c-50cf-7c99-91b1-4efefc51f08b','86ce47d5-0bf
 UNLOCK TABLES;
 
 --
+-- Table structure for table `document_categories`
+--
+
+DROP TABLE IF EXISTS `document_categories`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `document_categories` (
+  `document_id` varchar(36) NOT NULL,
+  `category_id` int NOT NULL,
+  PRIMARY KEY (`document_id`,`category_id`),
+  KEY `category_id` (`category_id`),
+  CONSTRAINT `document_categories_ibfk_1` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `document_categories_ibfk_2` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `document_categories`
+--
+
+LOCK TABLES `document_categories` WRITE;
+/*!40000 ALTER TABLE `document_categories` DISABLE KEYS */;
+INSERT INTO `document_categories` VALUES ('075b414e-b346-43ec-8c60-8f3d7e1c4772',1),('cf4593be-0ee6-4257-a9a5-79c27aa9ac61',1),('20fec429-7b9d-47e5-bc68-4adcdddeb72c',3),('20fec429-7b9d-47e5-bc68-4adcdddeb72c',4),('075b414e-b346-43ec-8c60-8f3d7e1c4772',5),('20fec429-7b9d-47e5-bc68-4adcdddeb72c',5),('44a694c1-9aae-4801-ada4-10cdbd4f712b',5),('cf4593be-0ee6-4257-a9a5-79c27aa9ac61',5),('20fec429-7b9d-47e5-bc68-4adcdddeb72c',6);
+/*!40000 ALTER TABLE `document_categories` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `documents`
 --
 
@@ -58,7 +109,6 @@ CREATE TABLE `documents` (
   `file_type` enum('pdf','docx','xlsx','html') NOT NULL,
   `title` varchar(255) NOT NULL,
   `description` text,
-  `categories` varchar(255) NOT NULL,
   `creator` char(36) NOT NULL,
   `created_date` date DEFAULT NULL,
   `restricted` tinyint DEFAULT '0',
@@ -79,7 +129,7 @@ CREATE TABLE `documents` (
 
 LOCK TABLES `documents` WRITE;
 /*!40000 ALTER TABLE `documents` DISABLE KEYS */;
-INSERT INTO `documents` VALUES ('075b414e-b346-43ec-8c60-8f3d7e1c4772','COS40005_Unit_Outline_DN_Jan2025.docx.pdf','pdf','COS40005 Unit Outline','A lot of text','Guidance,Training Materials,Technical Documentation','c24d9619-848d-4af6-87c8-718444421762','2025-01-10',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 10:29:45','2025-01-13 10:29:45'),('0b7ead0a-bac2-4fb8-ab2f-33df0fd0f55a','image.pdf','pdf','PDF with no text','OCR test','Training Materials,Technical Documentation','c24d9619-848d-4af6-87c8-718444421762','2025-01-10',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 09:30:00','2025-01-13 09:30:00'),('20fec429-7b9d-47e5-bc68-4adcdddeb72c','COS40005 Worklog - Week 2.pdf','pdf','Worklog week 2','Individual Worklog of COS40005','Reports,Procedures','c24d9619-848d-4af6-87c8-718444421762','2025-01-12',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 09:03:47','2025-01-13 09:03:47'),('44a694c1-9aae-4801-ada4-10cdbd4f712b','image.pdf','pdf','PDF with no text','OCR test','Training Materials,Technical Documentation','c24d9619-848d-4af6-87c8-718444421762','2025-01-10',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 09:30:50','2025-01-13 09:30:50'),('cf4593be-0ee6-4257-a9a5-79c27aa9ac61','SWE30003_Unit Outline_Jan_2025_V1 (2).pdf','pdf','SWE30003 Unit Outline','SWE30003 - Software Architecture and Design\r\nBA-CS at Swinburne Technology\r\nJanuary Semester, 2025','Guidance,Training Materials','c24d9619-848d-4af6-87c8-718444421762','2024-12-30',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 17:10:10','2025-01-13 17:10:10');
+INSERT INTO `documents` VALUES ('075b414e-b346-43ec-8c60-8f3d7e1c4772','COS40005_Unit_Outline_DN_Jan2025.docx.pdf','pdf','COS40005 Unit Outline','A lot of text','c24d9619-848d-4af6-87c8-718444421762','2025-01-10',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 10:29:45','2025-01-13 10:29:45'),('0b7ead0a-bac2-4fb8-ab2f-33df0fd0f55a','image.pdf','pdf','PDF with no text','OCR test','c24d9619-848d-4af6-87c8-718444421762','2025-01-10',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 09:30:00','2025-01-13 09:30:00'),('20fec429-7b9d-47e5-bc68-4adcdddeb72c','COS40005 Worklog - Week 2.pdf','pdf','Worklog week 2','Individual Worklog of COS40005','c24d9619-848d-4af6-87c8-718444421762','2025-01-12',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 09:03:47','2025-01-13 09:03:47'),('44a694c1-9aae-4801-ada4-10cdbd4f712b','image.pdf','pdf','PDF with no text','OCR test','c24d9619-848d-4af6-87c8-718444421762','2025-01-10',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 09:30:50','2025-01-13 09:30:50'),('cf4593be-0ee6-4257-a9a5-79c27aa9ac61','SWE30003_Unit Outline_Jan_2025_V1 (2).pdf','pdf','SWE30003 Unit Outline','SWE30003 - Software Architecture and Design\r\nBA-CS at Swinburne Technology\r\nJanuary Semester, 2025','c24d9619-848d-4af6-87c8-718444421762','2024-12-30',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 17:10:10','2025-01-13 17:10:10');
 /*!40000 ALTER TABLE `documents` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -113,6 +163,32 @@ INSERT INTO `messages` VALUES ('01945c88-ed48-79cf-81c1-f9384404b28f','67763113-
 UNLOCK TABLES;
 
 --
+-- Table structure for table `roles`
+--
+
+DROP TABLE IF EXISTS `roles`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `roles` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `roles`
+--
+
+LOCK TABLES `roles` WRITE;
+/*!40000 ALTER TABLE `roles` DISABLE KEYS */;
+INSERT INTO `roles` VALUES (1,'system_admin',''),(2,'admin',''),(3,'employee','');
+/*!40000 ALTER TABLE `roles` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `sso`
 --
 
@@ -139,6 +215,33 @@ INSERT INTO `sso` VALUES ('1642be2a-e3a9-4679-87eb-1365f9f470d0','google','10736
 UNLOCK TABLES;
 
 --
+-- Table structure for table `user_roles`
+--
+
+DROP TABLE IF EXISTS `user_roles`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_roles` (
+  `user_id` varchar(36) NOT NULL,
+  `role_id` int NOT NULL,
+  PRIMARY KEY (`user_id`,`role_id`),
+  KEY `role_id` (`role_id`),
+  CONSTRAINT `user_roles_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `user_roles_ibfk_2` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `user_roles`
+--
+
+LOCK TABLES `user_roles` WRITE;
+/*!40000 ALTER TABLE `user_roles` DISABLE KEYS */;
+INSERT INTO `user_roles` VALUES ('c24d9619-848d-4af6-87c8-718444421762',1),('86ce47d5-0bf4-47c4-adb4-2be068e73580',2),('c24d9619-848d-4af6-87c8-718444421762',2),('1642be2a-e3a9-4679-87eb-1365f9f470d0',3),('86ce47d5-0bf4-47c4-adb4-2be068e73580',3),('c24d9619-848d-4af6-87c8-718444421762',3),('ddfa1b08-e3c0-4cca-84d7-ac70e60f856d',3);
+/*!40000 ALTER TABLE `user_roles` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `users`
 --
 
@@ -148,11 +251,12 @@ DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `id` char(36) NOT NULL,
   `email` varchar(100) NOT NULL,
-  `username` varchar(50) DEFAULT NULL,
-  `password` char(60) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `firstname` varchar(50) NOT NULL,
   `lastname` varchar(50) DEFAULT NULL,
-  `admin` tinyint(1) DEFAULT '0',
+  `username` varchar(50) DEFAULT NULL,
+  `password` char(60) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `avatar_url` varchar(255) DEFAULT NULL,
+  `created_time` datetime NOT NULL,
   `username_last_changed` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
@@ -165,7 +269,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES ('1642be2a-e3a9-4679-87eb-1365f9f470d0','104169617@student.swin.edu.au','','$2b$12$gUr08tFVl1Fvae78DwrEAefIXQGxYdCeqe6TERd.kBoDlkr3hUVNq','Nguyen','Minh',0,NULL),('86ce47d5-0bf4-47c4-adb4-2be068e73580','hoang@gmail.com','hoangdvm','$2a$12$PN2JGhYknKGU2e2oXNA0beW5V760Z7eNWg8q9lLPRzYClBGcfXKNK','Hoang','Duong',0,'2025-01-16 10:41:26'),('c24d9619-848d-4af6-87c8-718444421762','minh@gmail.com','tminh1512','$2a$12$mC5B97wgqzv05s8PBilQDODpRZ.wjwyh1bWSRua7ODBO8H60yjFSu','Minh','Nguyen',1,'2025-01-16 10:41:26'),('ddfa1b08-e3c0-4cca-84d7-ac70e60f856d','thanhminh.nt.1512@gmail.com','','$2b$12$gLvNdtWhgN4p2bIh8xM/qeyrtWewRZWZIRVMX8WpmLHxVqEL0eoNe','Minh','Nguyễn',0,NULL);
+INSERT INTO `users` VALUES ('1642be2a-e3a9-4679-87eb-1365f9f470d0','104169617@student.swin.edu.au','Nguyen','Minh','','$2b$12$gUr08tFVl1Fvae78DwrEAefIXQGxYdCeqe6TERd.kBoDlkr3hUVNq','https://lh3.googleusercontent.com/a/ACg8ocIeYtfsHCc2K2Ujapow2nSd6R3zr8kEx_YgWIuv_FnsoAkoWB4=s360-c-no','2025-01-18 15:00:09',NULL),('86ce47d5-0bf4-47c4-adb4-2be068e73580','hoang@gmail.com','Hoang','Duong','hoangdvm','$2a$12$PN2JGhYknKGU2e2oXNA0beW5V760Z7eNWg8q9lLPRzYClBGcfXKNK','avatars/86ce47d5-0bf4-47c4-adb4-2be068e73580.png','2025-01-16 10:41:26','2025-01-16 10:41:26'),('c24d9619-848d-4af6-87c8-718444421762','minh@gmail.com','Minh','Nguyen','tminh1512','$2a$12$mC5B97wgqzv05s8PBilQDODpRZ.wjwyh1bWSRua7ODBO8H60yjFSu','avatars/c24d9619-848d-4af6-87c8-718444421762.png','2025-01-16 10:41:26','2025-01-16 10:41:26'),('ddfa1b08-e3c0-4cca-84d7-ac70e60f856d','thanhminh.nt.1512@gmail.com','Minh','Nguyễn','','$2b$12$gLvNdtWhgN4p2bIh8xM/qeyrtWewRZWZIRVMX8WpmLHxVqEL0eoNe','avatars/ddfa1b08-e3c0-4cca-84d7-ac70e60f856d.jpg','2025-01-16 10:46:26',NULL);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -178,4 +282,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-01-18  1:03:59
+-- Dump completed on 2025-01-20  9:52:54

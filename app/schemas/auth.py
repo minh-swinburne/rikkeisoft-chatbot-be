@@ -1,10 +1,10 @@
 from pydantic import BaseModel
 
 
-class GoogleAuthRequest(BaseModel):
+class GoogleAuthBase(BaseModel):
     access_token: str
 
 
-class MicrosoftAuthRequest(BaseModel):
+class MicrosoftAuthBase(BaseModel):
     access_token: str
     id_token: str

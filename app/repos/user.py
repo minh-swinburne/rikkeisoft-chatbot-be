@@ -4,6 +4,7 @@ from app.schemas import UserBase
 from app.models import User
 from app.repos import _commit_and_refresh
 from datetime import datetime
+from typing import Optional
 import uuid
 
 
@@ -33,14 +34,14 @@ class UserRepository:
         return result.scalars().all()
 
     @staticmethod
-    async def get_by_id(db: AsyncSession, user_id: str) -> User | None:
+    async def get_by_id(db: AsyncSession, user_id: str) -> Optional[User]:
         """
         Retrieve a user by their ID.
         """
         return await db.get(User, user_id)
 
     @staticmethod
-    async def get_by_email(db: AsyncSession, email: str) -> User | None:
+    async def get_by_email(db: AsyncSession, email: str) -> Optional[User]:
         """
         Retrieve a user by their email.
         """
@@ -48,7 +49,7 @@ class UserRepository:
         return result.scalars().first()
 
     @staticmethod
-    async def get_by_username(db: AsyncSession, username: str) -> User | None:
+    async def get_by_username(db: AsyncSession, username: str) -> Optional[User]:
         """
         Retrieve a user by their username.
         """

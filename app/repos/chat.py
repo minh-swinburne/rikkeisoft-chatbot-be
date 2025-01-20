@@ -4,6 +4,7 @@ from app.repos import _commit_and_refresh
 from app.schemas import ChatBase
 from app.models import Chat
 from datetime import datetime
+from typing import Optional
 import uuid6
 
 
@@ -24,7 +25,7 @@ class ChatRepository:
         return result.scalars().all()
 
     @staticmethod
-    async def get_by_id(db: AsyncSession, chat_id: str) -> Chat | None:
+    async def get_by_id(db: AsyncSession, chat_id: str) -> Optional[Chat]:
         return await db.get(Chat, chat_id)
 
     @staticmethod

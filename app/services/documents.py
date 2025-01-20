@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.core.config import settings
-from app.models.documents import DocumentBase
+from app.models import DocumentBase
 from typing import List, Optional
 from bs4 import BeautifulSoup  # For .html
 from docx import Document   # For .docx

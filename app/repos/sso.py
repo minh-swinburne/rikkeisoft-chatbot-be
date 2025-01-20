@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from typing import Optional
 from app.schemas.sso import SSOBase
 from app.models.sso import SSO
 from app.repos import _commit_and_refresh
@@ -30,7 +31,7 @@ class SSORepository:
     @staticmethod
     async def get_by_provider_and_sub(
         db: AsyncSession, provider: str, sub: str
-    ) -> SSO | None:
+    ) -> Optional[SSO]:
         """
         Get an SSO entry by provider and sub.
         """

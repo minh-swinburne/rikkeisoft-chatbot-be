@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from app.core.security import setup_cors
 from app.bot.vector_db import setup_db
-from app.api.v1 import router as api_router
+from app.api import router
 
 
 app = FastAPI()
-app.include_router(api_router, prefix="/api/v1")
+app.include_router(router, prefix="/api")
 
 setup_cors(app)
 setup_db()

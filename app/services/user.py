@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from passlib.context import CryptContext
 from jose import jwt, JWTError, ExpiredSignatureError
-from datetime import datetime, timedelta
+from datetime import datetime
 from app.core.config import settings
 from app.utils import parse_timedelta
 from app.models import User

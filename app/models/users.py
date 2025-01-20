@@ -1,7 +1,27 @@
-from sqlalchemy import Column, String, Boolean, DateTime
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Table
 from sqlalchemy.orm import relationship, validates
-from app.models.base import Base
+from .base import Base
 import re
+
+
+# Association table for many-to-many relationship
+user_roles = Table(
+    "user_roles",
+    Base.metadata,
+    Column("user_id", String(36), ForeignKey("users.id"), primary_key=True),
+    Column("role_id", Integer, ForeignKey("roles.id"), primary_key=True),
+)
+
+
+class Role(Base):
+    __tablename__ = "roles"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(50), unique=True, nullable=False)
+    description = Column(String(255), nullable=True)
+
+    # Relationship with User
+    users = relationship("User", secondary=user_roles, back_populates="roles")
 
 
 class User(Base):
@@ -9,12 +29,16 @@ class User(Base):
 
     id = Column(String(36), primary_key=True, index=True)
     email = Column(String(100), unique=True, nullable=False)
-    username = Column(String(50), unique=True, nullable=True)
-    password = Column(String(60), nullable=True)  # Nullable for SSO accounts
     firstname = Column(String(50), nullable=False)
     lastname = Column(String(50), nullable=True)  # Nullable to allow flexibility
-    admin = Column(Boolean, default=False)
+    username = Column(String(50), unique=True, nullable=True)
+    password = Column(String(60), nullable=True)  # Nullable for SSO accounts
+    avatar_url = Column(String(255), nullable=True)
+    created_time = Column(DateTime(timezone=True), nullable=False)
     username_last_changed = Column(DateTime(timezone=True), nullable=True)
+
+    # Many-to-many relationship with Role
+    roles = relationship("Role", secondary=user_roles, back_populates="users")
 
     # Relationship to SSO accounts
     sso_accounts = relationship(

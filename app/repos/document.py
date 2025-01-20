@@ -1,10 +1,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.models.documents import Document
-from app.schemas.documents import DocumentBase, DocumentUpdate
-from app.repos import _commit_and_refresh
 from datetime import datetime
+from typing import Optional
 import uuid
+from app.models.docs import Document
+from app.schemas.docs import DocumentBase, DocumentUpdate
+from app.repos import _commit_and_refresh
 
 
 class DocumentRepository:
@@ -31,7 +32,7 @@ class DocumentRepository:
         return result.scalars().all()
 
     @staticmethod
-    async def get_by_id(db: AsyncSession, document_id: str) -> Document | None:
+    async def get_by_id(db: AsyncSession, document_id: str) -> Optional[Document]:
         """
         Get a document by its ID.
         """
@@ -40,7 +41,7 @@ class DocumentRepository:
     @staticmethod
     async def update(
         db: AsyncSession, document_id: str, update_data: DocumentUpdate
-    ) -> Document | None:
+    ) -> Optional[Document]:
         """
         Update an existing document.
         """

@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, Enum, ForeignKey
-from app.models.base import Base
+from .base import Base
 
 
 class SSO(Base):

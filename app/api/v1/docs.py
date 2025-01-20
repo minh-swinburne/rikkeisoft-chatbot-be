@@ -3,18 +3,18 @@ from fastapi.responses import JSONResponse
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from typing import List, Optional
+from typing import Optional, Annotated
 from bs4 import BeautifulSoup
 from pathlib import Path
-from app.schemas.documents import Document
-from app.models.documents import DocumentBase
-from app.services.docs import (
+from app.schemas.docs import Document
+from app.models.docs import DocumentBase
+from app.services.document import (
     create_document,
     get_document_by_id,
     update_document,
     delete_document,
 )
-from app.services.users import get_user_by_email
+from app.services.user import get_user_by_email
 from app.bot.rag import process_document
 from app.core.database import get_db
 from app.core.config import settings
@@ -28,8 +28,8 @@ import subprocess
 import os
 
 
-
 router = APIRouter()
+
 
 @router.get("/{doc_id}/download")
 async def download_file(doc_id: str, db: AsyncSession = Depends(get_db)):
@@ -90,7 +90,7 @@ async def update_document_details(
     doc_id: str,
     title: Optional[str] = Form(None),
     description: Optional[str] = Form(None),
-    categories: Optional[List[str]] = Form(None),
+    categories: Optional[list[str]] = Form(None),
     restricted: Optional[bool] = Form(None),
     db: AsyncSession = Depends(get_db),
 ):
@@ -124,15 +124,15 @@ async def get_document(doc_id: str, db: AsyncSession = Depends(get_db)):
 
 @router.post("/")
 async def upload_document(
-    file: Optional[UploadFile] = File(None),
-    link: Optional[str] = Form(None),
-    title: str = Form(...),
-    description: Optional[str] = Form(None),
-    categories: list[str] = Form(...),
-    creator: Optional[str] = Form(None),
-    created_date: Optional[datetime.date] = Form(None, alias="createdDate"),
-    restricted: bool = Form(...),
-    uploader: str = Form(...),  # Admin ID / Model
+    file: Annotated[Optional[UploadFile], File(None)],
+    link: Annotated[Optional[str], Form(None)],
+    title: Annotated[str, Form()],
+    description: Annotated[Optional[str], Form(None)],
+    categories: Annotated[list[str], Form([])],
+    creator: Annotated[str, Form()],
+    created_date: Annotated[Optional[datetime.date], Form(None, alias="createdDate")],
+    restricted: Annotated[bool, Form(False)],
+    uploader: Annotated[str, Form()],  # Admin ID / Model
     db: AsyncSession = Depends(get_db),
 ):
     # Prepare directory and file path

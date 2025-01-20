@@ -10,7 +10,7 @@ load_dotenv(override=True)
 
 class Settings(BaseSettings):
     root_dir: Path = Path(__file__).resolve().parent.parent
-    upload_dir: Optional[Path] = Path(os.getenv("UPLOAD_DIR"))
+    upload_dir: Path = Path(os.getenv("UPLOAD_DIR") or "./uploads")
     tesseract_cmd: str = os.getenv("TESSERACT_CMD")
 
     embedding_model: str = os.getenv("EMBEDDING_MODEL")

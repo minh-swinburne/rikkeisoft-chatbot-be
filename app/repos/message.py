@@ -4,6 +4,7 @@ from app.repos import _commit_and_refresh
 from app.schemas import MessageBase
 from app.models import Message
 from datetime import datetime
+from typing import Optional
 import uuid6
 
 
@@ -30,7 +31,7 @@ class MessageRepository:
         return result.scalars().all()
 
     @staticmethod
-    async def get_by_id(db: AsyncSession, message_id: str) -> Message | None:
+    async def get_by_id(db: AsyncSession, message_id: str) -> Optional[Message]:
         """
         Get a message by its ID.
         """

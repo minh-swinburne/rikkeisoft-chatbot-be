@@ -5,7 +5,7 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
 from passlib.context import CryptContext
-from app.services.users import authenticate_user
+from app.services.user import authenticate_user
 from app.core.database import get_db
 from app.core.config import settings
 import requests
