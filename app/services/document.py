@@ -1,12 +1,13 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repos.document import DocumentRepository
-from app.core.config import settings
-from app.schemas.docs import *
 from app.bot.rag import process_document
+from app.core.config import settings
+from app.schemas import DocumentBase, DocumentModel, DocumentUpdate
 from datetime import datetime
 from bs4 import BeautifulSoup  # For .html
-from pathlib import Path
 from docx import Document  # For .docx
+from typing import Optional
+from pathlib import Path
 from PIL import Image
 import pytesseract
 import subprocess
@@ -25,7 +26,6 @@ class DocumentService:
     """
     Handles business logic for document management, including text extraction, CRUD operations, and processing.
     """
-
     def __init__(self, repository: DocumentRepository):
         self.repository = repository
 
@@ -35,6 +35,11 @@ class DocumentService:
         """Create a new document in the database."""
         doc = await self.repository.create(db, doc_data)
         return DocumentModel.model_validate(doc)
+
+    async def list_documents(self, db: AsyncSession) -> list[DocumentModel]:
+        """List all documents in the database."""
+        docs = await self.repository.list(db)
+        return [DocumentModel.model_validate(doc) for doc in docs]
 
     async def get_document_by_id(
         self, db: AsyncSession, doc_id: str

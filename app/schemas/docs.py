@@ -24,7 +24,7 @@ class DocumentModel(DocumentBase):
 
 
 class DocumentUpdate(BaseModel):
-    title: Optional[str]
-    description: Optional[str]
-    categories: Optional[list[int]]  # Allow updating categories by ID
-    restricted: Optional[bool]
+    title: Optional[str] = None
+    description: Optional[str] = None
+    categories: Optional[list[int]] = None  # Allow updating categories by ID
+    restricted: Optional[bool] = None

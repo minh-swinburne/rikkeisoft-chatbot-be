@@ -31,7 +31,7 @@ class User(Base):
     email = Column(String(100), unique=True, nullable=False)
     firstname = Column(String(50), nullable=False)
     lastname = Column(String(50), nullable=True)  # Nullable to allow flexibility
-    username = Column(String(50), unique=True, nullable=True)
+    username = Column(String(50), nullable=True)
     password = Column(String(60), nullable=True)  # Nullable for SSO accounts
     avatar_url = Column(String(255), nullable=True)
     created_time = Column(DateTime(timezone=True), nullable=False)

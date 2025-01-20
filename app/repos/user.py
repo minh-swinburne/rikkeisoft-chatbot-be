@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.schemas import UserBase
+from app.schemas import UserBase, UserUpdate
 from app.models import User
 from app.repos import _commit_and_refresh
 from datetime import datetime
@@ -59,19 +59,25 @@ class UserRepository:
         return result.scalars().first()
 
     @staticmethod
-    async def update_username(
-        db: AsyncSession, user_id: str, new_username: str
-    ) -> User:
+    async def update(db: AsyncSession, user_id: str, update_data: UserUpdate) -> User:
         """
         Update a user's username. Ensures the username is valid.
         """
         user = await UserRepository.get_by_id(db, user_id)
         if not user:
-            raise ValueError("User not found.")
-        if not new_username:
-            raise ValueError("Username cannot be empty.")
-        user.username = new_username
-        user.username_last_changed = datetime.now()
+            raise ValueError(f"User with ID {user_id} not found.")
+
+        if update_data.username and user.username != update_data.username:
+            new_username = update_data.username
+            existing_user = await UserRepository.get_by_username(db, new_username)
+
+            if existing_user:
+                raise ValueError("Username already exists.")
+            user.username_last_changed = datetime.now()
+
+        for key, value in update_data.model_dump(exclude_unset=True).items():
+            setattr(user, key, value)
+            
         return await _commit_and_refresh(db, user)
 
     @staticmethod

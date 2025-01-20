@@ -7,10 +7,10 @@ from .roles import RoleModel
 class UserBase(BaseModel):
     email: str
     firstname: str
-    lastname: Optional[str] = None
-    username: Optional[str] = None
-    password: Optional[str] = None
-    avatar_url: Optional[str] = None
+    lastname: Optional[str]
+    username: Optional[str]
+    password: Optional[str]
+    avatar_url: Optional[str]
 
 
 class UserModel(UserBase):
