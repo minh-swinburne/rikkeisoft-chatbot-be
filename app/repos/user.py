@@ -20,7 +20,8 @@ class UserRepository:
         user = User(
             id=str(uuid.uuid4()),
             **user_data.model_dump(),
-            username_last_changed=datetime.now(),
+            created_time=datetime.now(),
+            username_last_changed=datetime.now() if user_data.username else None,
         )
         db.add(user)
         return await _commit_and_refresh(db, user)
@@ -59,23 +60,22 @@ class UserRepository:
         return result.scalars().first()
 
     @staticmethod
-    async def update(db: AsyncSession, user_id: str, update_data: UserUpdate) -> User:
+    async def update(db: AsyncSession, user_id: str, updates: UserUpdate) -> User:
         """
-        Update a user's username. Ensures the username is valid.
+        Update a user by their ID. If the username is changed, update the last changed time.
         """
         user = await UserRepository.get_by_id(db, user_id)
         if not user:
             raise ValueError(f"User with ID {user_id} not found.")
 
-        if update_data.username and user.username != update_data.username:
-            new_username = update_data.username
-            existing_user = await UserRepository.get_by_username(db, new_username)
+        if updates.username and user.username != updates.username:
+            existing_user = await UserRepository.get_by_username(db, updates.username)
 
             if existing_user:
                 raise ValueError("Username already exists.")
             user.username_last_changed = datetime.now()
 
-        for key, value in update_data.model_dump(exclude_unset=True).items():
+        for key, value in updates.model_dump(exclude_unset=True).items():
             setattr(user, key, value)
 
         return await _commit_and_refresh(db, user)

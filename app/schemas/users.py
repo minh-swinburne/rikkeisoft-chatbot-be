@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Optional, Self
 from .roles import RoleModel
@@ -28,4 +28,4 @@ class UserUpdate(BaseModel):
     username: Optional[str] = None
     password: Optional[str] = None
     avatar_url: Optional[str] = None
-    roles: Optional[list[int]] = None  # Allow updating roles by ID
+    roles: Optional[list[str]] = None  # Allow updating roles by name

@@ -7,7 +7,7 @@ from app.utils import parse_timedelta
 from app.schemas import UserBase, UserModel, UserUpdate, SSOBase, AuthBase, AuthModel
 from passlib.context import CryptContext
 from jose import jwt, JWTError, ExpiredSignatureError
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 
@@ -30,7 +30,14 @@ class UserService:
             raise ValueError(f"User with username {user_data.username} already exists")
 
         user = await UserRepository.create(db, user_data)
+        user = await UserService.assign_role(db, user.id, "employee")
         return UserModel.model_validate(user)
+
+    @staticmethod
+    async def create_sso(db: AsyncSession, sso_data: SSOBase) -> SSOBase:
+        """Create a new SSO entry in the database."""
+        sso = await SSORepository.create(db, sso_data)
+        return SSOBase.model_validate(sso)
 
     @staticmethod
     async def assign_role(db: AsyncSession, user_id: str, role_name: str) -> UserModel:
@@ -69,12 +76,6 @@ class UserService:
         return user
 
     @staticmethod
-    async def create_sso(db: AsyncSession, sso_data: SSOBase) -> SSOBase:
-        """Create a new SSO entry in the database."""
-        sso = await SSORepository.create(db, sso_data)
-        return SSOBase.model_validate(sso)
-
-    @staticmethod
     async def list_users(db: AsyncSession) -> list[UserModel]:
         """List all users in the database."""
         users = await UserRepository.list(db)
@@ -85,15 +86,6 @@ class UserService:
         """List all SSO entries for a specific user."""
         sso_entries = await SSORepository.list_by_user_id(db, user_id)
         return [SSOBase.model_validate(sso) for sso in sso_entries]
-
-    @staticmethod
-    async def list_user_roles(db: AsyncSession, user_id: str) -> list[str]:
-        """List all roles assigned to a user."""
-        user = await UserRepository.get_by_id(db, user_id)
-        if not user:
-            raise ValueError(f"User with ID {user_id} not found.")
-
-        return [role.name for role in user.roles]
 
     @staticmethod
     async def get_user_by_id(db: AsyncSession, user_id: str) -> Optional[UserModel]:
@@ -128,10 +120,10 @@ class UserService:
     @staticmethod
     async def update_user(
         db: AsyncSession, user_id: str, updates: UserUpdate
-    ) -> Optional[UserModel]:
+    ) -> UserModel:
         """Update user details."""
         user = await UserRepository.update(db, user_id, updates)
-        return UserModel.model_validate(user) if user else None
+        return UserModel.model_validate(user)
 
     @staticmethod
     async def delete_user(db: AsyncSession, user_id: str) -> bool:
@@ -158,8 +150,8 @@ class UserService:
             "avatar_url": auth_data.avatar_url,  # Optional claim
             "roles": auth_data.roles,  # Optional claim
             "type": "access",  # Custom claim
-            "iat": datetime.now(),  # Issued at
-            "exp": datetime.now() + expires_delta,  # Expiration time
+            "iat": datetime.now(timezone.utc),  # Issued at
+            "exp": datetime.now(timezone.utc) + expires_delta,  # Expiration time
         }
 
         return jwt.encode(
