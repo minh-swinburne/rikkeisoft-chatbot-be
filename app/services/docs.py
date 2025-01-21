@@ -68,7 +68,7 @@ def extract_text(file_path: str, file_type: str) -> str:
         return extract_text_from_doc(file_path)
     elif file_type == "xlsx":
         return extract_text_from_excel(file_path)
-    elif file_type == "web_content":
+    elif file_type == "html":
         return extract_text_from_html(file_path)
     else:
         raise ValueError(f"Unsupported file type: {file_type}")
@@ -114,11 +114,11 @@ def extract_text_from_html(file_path: str) -> str:
 
 
 async def update_document(
-    db: AsyncSession, 
-    doc_id: str, 
-    title: Optional[str] = None, 
-    description: Optional[str] = None, 
-    categories: Optional[List[str]] = None, 
+    db: AsyncSession,
+    doc_id: str,
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+    categories: Optional[List[str]] = None,
     restricted: Optional[bool] = None
 ):
     print("Updating document with ID: ", doc_id)
