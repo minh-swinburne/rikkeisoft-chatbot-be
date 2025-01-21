@@ -91,7 +91,7 @@ class UserRepository:
         try:
             await db.delete(user)
             await db.commit()
-            return True
         except:
             await db.rollback()
             raise
+        return True

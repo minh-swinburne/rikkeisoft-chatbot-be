@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, desc
 from app.repos import _commit_and_refresh
 from app.schemas import MessageBase
 from app.models import Message
@@ -23,11 +23,17 @@ class MessageRepository:
         return await _commit_and_refresh(db, message)
 
     @staticmethod
-    async def list_by_chat_id(db: AsyncSession, chat_id: str) -> list[Message]:
+    async def list_by_chat_id(
+        db: AsyncSession, chat_id: str, limit: int = None, descending: bool = False
+    ) -> list[Message]:
         """
         List all messages for a specific chat.
         """
-        result = await db.execute(select(Message).where(Message.chat_id == chat_id))
+        result = await db.execute(
+            select(Message).where(Message.chat_id == chat_id)
+            .order_by(desc(Message.time) if descending else Message.time)
+            .limit(limit)
+        )
         return result.scalars().all()
 
     @staticmethod
@@ -61,13 +67,13 @@ class MessageRepository:
         try:
             await db.delete(message)
             await db.commit()
-            return True
         except:
             await db.rollback()
             raise
+        return True
 
     @staticmethod
-    async def delete_by_chat_id(db: AsyncSession, chat_id: str) -> None:
+    async def delete_by_chat_id(db: AsyncSession, chat_id: str) -> bool:
         """
         Delete all messages associated with a specific chat.
         This is optional because cascading in the DB already handles this.
@@ -78,3 +84,4 @@ class MessageRepository:
         except:
             await db.rollback()
             raise
+        return True

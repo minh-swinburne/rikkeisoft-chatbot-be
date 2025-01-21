@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Cookie, Header
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from passlib.context import CryptContext
 from jose import jwt
@@ -8,7 +7,7 @@ from app.core.database import get_db
 from app.core.config import settings
 from app.api.dependencies import validate_access_token
 from app.services import UserService
-from app.schemas import GoogleAuthBase, MicrosoftAuthBase, AuthModel, UserBase, SSOBase
+from app.schemas import GoogleAuthBase, MicrosoftAuthBase, AuthModel, TokenModel, UserBase, SSOBase
 import requests
 
 
@@ -28,10 +27,13 @@ def get_microsoft_public_keys():
 MICROSOFT_PUBLIC_KEYS = get_microsoft_public_keys()
 
 
-@router.post("/native", response_model=AuthModel, summary="Authenticate native users using username / email and password")
+@router.post(
+    "/native",
+    response_model=AuthModel,
+    summary="Authenticate native users using username / email and password",
+)
 async def authenticate_native(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: AsyncSession = Depends(get_db)
+    form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)
 ):
     user = await UserService.get_user_by_username(db, form_data.username)
     if not user:
@@ -48,11 +50,10 @@ async def authenticate_native(
     return UserService.grant_access(user)
 
 
-@router.post("/register", response_model=AuthModel, summary="Register a new native user")
-async def register_native(
-    user_data: UserBase,
-    db: AsyncSession = Depends(get_db)
-):
+@router.post(
+    "/register", response_model=AuthModel, summary="Register a new native user"
+)
+async def register_native(user_data: UserBase, db: AsyncSession = Depends(get_db)):
     user = await UserService.get_user_by_username(db, user_data.username)
     if user:
         raise HTTPException(
@@ -73,8 +74,7 @@ async def register_native(
 
 @router.post("/google")
 async def authenticate_google(
-    auth_data: GoogleAuthBase,
-    db: AsyncSession = Depends(get_db)
+    auth_data: GoogleAuthBase, db: AsyncSession = Depends(get_db)
 ):
     user_info = requests.get(
         settings.google_user_info_url,
@@ -82,7 +82,9 @@ async def authenticate_google(
     ).json()
     print(user_info)
 
-    user = await UserService.get_user_by_provider_sub(db, "google", user_info.get("sub"))
+    user = await UserService.get_user_by_provider_sub(
+        db, "google", user_info.get("sub")
+    )
 
     if not user:
         user_data = UserBase(
@@ -108,7 +110,7 @@ async def authenticate_google(
 async def authenticate_microsoft(
     auth_data: MicrosoftAuthBase,
     db: AsyncSession = Depends(get_db),
-    microsoft_public_keys=Depends(get_microsoft_public_keys)
+    microsoft_public_keys=Depends(get_microsoft_public_keys),
 ):
     try:
         header = jwt.get_unverified_header(auth_data.id_token)
@@ -150,11 +152,11 @@ async def authenticate_microsoft(
 
 @router.get("/validate")
 # async def validate_token(token: str = Cookie(None)):
-async def validate_access(token_payload: str = Depends(validate_access_token)):
+async def validate_access(token_payload: TokenModel = Depends(validate_access_token)):
     """
     Validate the token and return the token payload.
     """
-    return {"status": "valid", "payload": token_payload}
+    return {"valid": True, "payload": token_payload}
 
 
 # not working

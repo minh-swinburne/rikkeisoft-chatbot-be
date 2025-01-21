@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict
 from datetime import date, datetime
 from typing import Optional, Literal
 from .categories import CategoryModel
@@ -21,6 +21,8 @@ class DocumentModel(DocumentBase):
     categories: list[CategoryModel] # Return categories as objects
     uploaded_time: datetime
     last_modified: datetime
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DocumentUpdate(BaseModel):

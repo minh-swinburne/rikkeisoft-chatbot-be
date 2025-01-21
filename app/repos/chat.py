@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from app.repos import _commit_and_refresh
-from app.schemas import ChatBase
+from app.schemas import ChatBase, ChatUpdate
 from app.models import Chat
 from datetime import datetime
 from typing import Optional
@@ -29,6 +29,17 @@ class ChatRepository:
         return await db.get(Chat, chat_id)
 
     @staticmethod
+    async def update(db: AsyncSession, chat_id: str, updates: ChatUpdate) -> Chat:
+        chat = await ChatRepository.get_by_id(db, chat_id)
+        if not chat:
+            raise ValueError(f"Chat with ID {chat_id} not found.")
+
+        for key, value in updates.model_dump(exclude_unset=True).items():
+            setattr(chat, key, value)
+
+        return await _commit_and_refresh(db, chat)
+
+    @staticmethod
     async def update_name(db: AsyncSession, chat_id: str, new_name: str) -> Chat:
         chat = await ChatRepository.get_by_id(db, chat_id)
         if not chat:
@@ -43,7 +54,7 @@ class ChatRepository:
         return await _commit_and_refresh(db, chat)
 
     @staticmethod
-    async def delete(db: AsyncSession, chat_id: str) -> None:
+    async def delete(db: AsyncSession, chat_id: str) -> bool:
         chat = await ChatRepository.get_by_id(db, chat_id)
         if not chat:
             return False

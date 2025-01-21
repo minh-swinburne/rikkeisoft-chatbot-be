@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Optional
 
@@ -11,6 +11,8 @@ class ChatBase(BaseModel):
 class ChatModel(ChatBase):
     id: str
     last_access: datetime
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ChatUpdate(BaseModel):

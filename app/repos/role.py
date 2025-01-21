@@ -45,7 +45,7 @@ class RoleRepository:
         try:
             await db.delete(role)
             await db.commit()
-            return True
         except:
             await db.rollback()
             raise
+        return True

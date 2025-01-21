@@ -4,7 +4,15 @@ from app.repos.role import RoleRepository
 from app.repos.sso import SSORepository
 from app.core.config import settings
 from app.utils import parse_timedelta
-from app.schemas import UserBase, UserModel, UserUpdate, SSOBase, AuthBase, AuthModel
+from app.schemas import (
+    UserBase,
+    UserModel,
+    UserUpdate,
+    SSOBase,
+    TokenBase,
+    TokenModel,
+    AuthModel,
+)
 from passlib.context import CryptContext
 from jose import jwt, JWTError, ExpiredSignatureError
 from datetime import datetime, timezone
@@ -18,6 +26,7 @@ class UserService:
     """
     Handles business logic for user management, including CRUD operations, authentication, and token generation.
     """
+
     @staticmethod
     async def create_user(db: AsyncSession, user_data: UserBase) -> UserModel:
         """Create a new user in the database."""
@@ -136,7 +145,7 @@ class UserService:
         return await SSORepository.delete(db, user_id, provider)
 
     @staticmethod
-    def create_access_token(auth_data: AuthBase) -> str:
+    def create_access_token(auth_data: TokenBase) -> str:
         """Create an access token for a user."""
         expires_delta = parse_timedelta(settings.jwt_access_expires_in)
 
@@ -179,7 +188,7 @@ class UserService:
     def grant_access(user: UserModel) -> AuthModel:
         """Generate access and refresh tokens for a user."""
         roles = list(map(lambda role: role.name, user.roles))
-        auth_data = AuthBase(
+        auth_data = TokenBase(
             sub=user.id,
             email=user.email,
             firstname=user.firstname,
@@ -191,22 +200,22 @@ class UserService:
         access_token = UserService.create_access_token(auth_data)
         refresh_token = UserService.create_refresh_token(user.id)
 
-        return AuthModel.model_validate({
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "token_type": "bearer",
-        })
+        return AuthModel.model_validate(
+            {
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "token_type": "bearer",
+            }
+        )
 
     @staticmethod
-    def validate_token(token: str) -> dict:
+    def validate_token(token: str) -> TokenModel:
         """Validate a JWT token and return its payload."""
         try:
             payload = jwt.decode(
-                token,
-                key=settings.jwt_secret_key,
-                algorithms=[settings.jwt_algorithm]
+                token, key=settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
             )
-            return payload
+            return TokenModel.model_validate(payload)
         except JWTError:
             raise ValueError("Invalid token")
         except ExpiredSignatureError:
@@ -223,7 +232,7 @@ class UserService:
         if not user:
             raise ValueError("User not found")
 
-        auth_data = AuthBase(
+        auth_data = TokenBase(
             sub=user.id,
             email=user.email,
             firstname=user.firstname,

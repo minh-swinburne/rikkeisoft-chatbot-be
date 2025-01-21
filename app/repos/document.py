@@ -40,7 +40,7 @@ class DocumentRepository:
 
     @staticmethod
     async def update(
-        db: AsyncSession, document_id: str, update_data: DocumentUpdate
+        db: AsyncSession, document_id: str, updates: DocumentUpdate
     ) -> Optional[Document]:
         """
         Update an existing document.
@@ -48,7 +48,7 @@ class DocumentRepository:
         document = await DocumentRepository.get_by_id(db, document_id)
         if not document:
             raise ValueError(f"Document with ID {document_id} not found.")
-        for key, value in update_data.model_dump(exclude_unset=True).items():
+        for key, value in updates.model_dump(exclude_unset=True).items():
             setattr(document, key, value)
         return await _commit_and_refresh(db, document)
 

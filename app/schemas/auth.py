@@ -11,7 +11,7 @@ class MicrosoftAuthBase(BaseModel):
     id_token: str
 
 
-class AuthBase(BaseModel):
+class TokenBase(BaseModel):
     sub: str
     email: str
     firstname: str
@@ -19,6 +19,12 @@ class AuthBase(BaseModel):
     username: Optional[str]
     avatar_url: Optional[str]
     roles: list[str]
+
+
+class TokenModel(TokenBase):
+    type: str
+    iat: int
+    exp: int
 
 
 class AuthModel(BaseModel):

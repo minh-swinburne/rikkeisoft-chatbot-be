@@ -1,3 +1,3 @@
 from .user import UserService
-# from .chat import ChatService1
+from .chat import ChatService
 from .document import DocumentService

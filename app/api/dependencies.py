@@ -1,6 +1,7 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from app.services import UserService
+from app.schemas import TokenModel
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/native")
@@ -9,7 +10,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/native")
 async def validate_access_token(
     token: str = Depends(oauth2_scheme),
     # required_roles: list[str] = [],
-) -> dict:
+) -> TokenModel:
     """
     Validate the access token and return its payload if valid.
     """
@@ -17,7 +18,7 @@ async def validate_access_token(
         # Decode the token
         payload = UserService.validate_token(token)
         # Check token type
-        if payload.get("type") != "access":
+        if payload.type != "access":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token type",
@@ -32,7 +33,7 @@ async def validate_access_token(
         #         headers={"WWW-Authenticate": "Bearer"},
         #     )
 
-        print(payload)
+        print(payload.__dict__)
         return payload  # The token payload can be used for additional checks
     except Exception as e:
         raise HTTPException(

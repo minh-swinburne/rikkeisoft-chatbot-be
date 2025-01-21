@@ -73,5 +73,8 @@ class Document(Base):
 
     # Many-to-many relationship with Category
     categories = relationship(
-        "Category", secondary=document_categories, back_populates="documents"
+        "Category",
+        secondary=document_categories,
+        back_populates="documents",
+        lazy="joined",
     )
