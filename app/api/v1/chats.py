@@ -93,6 +93,12 @@ async def send_query(chat_id: str, request: MessageRequest, db: AsyncSession = D
                 "role": "assistant",
                 "content": content
             })
+
+            # Handle new chat name for the first message
+            if len(chat_history) == 1:
+                new_chat_name = generate_name(chat_history + [{"role": "assistant", "content": answer}])
+                await update_chat_name(db, chat_id, new_chat_name.replace("'", ""))
+
             await update_chat_last_access(db, chat_id)
 
         return StreamingResponse(stream_generator(), media_type="text/plain")
