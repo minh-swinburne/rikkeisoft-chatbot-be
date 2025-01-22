@@ -3,7 +3,7 @@ from app.repos.chat import ChatRepository
 from app.repos.message import MessageRepository
 from app.bot.chat import generate_answer, suggest_questions, generate_name
 from app.schemas import ChatBase, ChatModel, MessageBase, MessageModel
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 import re
 
 
@@ -102,16 +102,16 @@ class ChatService:
         return [MessageModel.model_validate(message) for message in messages]
 
     @staticmethod
-    async def get_chat_by_id(db: AsyncSession, chat_id: str) -> ChatModel:
+    async def get_chat_by_id(db: AsyncSession, chat_id: str) -> Optional[ChatModel]:
         """Retrieve a chat by ID."""
         chat = await ChatRepository.get_by_id(db, chat_id)
-        return ChatModel.model_validate(chat)
+        return ChatModel.model_validate(chat) if chat else None
 
     @staticmethod
-    async def get_message_by_id(db: AsyncSession, message_id: str) -> MessageModel:
+    async def get_message_by_id(db: AsyncSession, message_id: str) -> Optional[MessageModel]:
         """Retrieve a message by ID."""
         message = await MessageRepository.get_by_id(db, message_id)
-        return MessageModel.model_validate(message)
+        return MessageModel.model_validate(message) if message else None
 
     @staticmethod
     async def update_chat_name(db: AsyncSession, chat_id: str, name: str) -> ChatModel:

@@ -4,5 +4,5 @@ from .users import UserBase, UserModel, UserUpdate
 from .roles import RoleBase, RoleModel
 from .sso import SSOBase
 from .auth import GoogleAuthBase, MicrosoftAuthBase, AuthModel, TokenBase, TokenModel
-from .docs import DocumentBase, DocumentModel, DocumentUpdate
-from .config import ConfigParams, Config
+from .docs import DocumentBase, DocumentModel, DocumentUpdate, DocumentStatusModel
+from .config import ConfigParams, Config, ConfigUpdate

@@ -17,8 +17,10 @@ async def validate_access_token(
     try:
         # Decode the token
         payload = UserService.validate_token(token)
+        print("Validating token:", payload)
         # Check token type
         if payload.type != "access":
+            print("Invalid token type:", payload.type)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token type",
@@ -33,9 +35,10 @@ async def validate_access_token(
         #         headers={"WWW-Authenticate": "Bearer"},
         #     )
 
-        print(payload.__dict__)
+        print("Payload:", payload.__dict__)
         return payload  # The token payload can be used for additional checks
     except Exception as e:
+        print("Failed to validate token:", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),

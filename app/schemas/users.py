@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
-from typing import Optional, Self
+from typing import Optional
 from .roles import RoleModel
 
 

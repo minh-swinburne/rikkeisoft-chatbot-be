@@ -54,6 +54,7 @@ class Document(Base):
     file_type = Column(
         Enum("pdf", "docx", "xlsx", "html", name="file_type_enum"), nullable=False
     )
+    url = Column(Text, nullable=True)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     creator = Column(
@@ -77,4 +78,12 @@ class Document(Base):
         secondary=document_categories,
         back_populates="documents",
         lazy="joined",
+    )
+
+    status = relationship(
+        "DocumentStatus",
+        back_populates="document",
+        cascade="all, delete-orphan",
+        lazy="joined",
+        uselist=False,
     )

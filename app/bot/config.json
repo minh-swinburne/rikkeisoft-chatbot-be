@@ -12,7 +12,7 @@
       "temperature": 0.4,
       "top_p": 1,
       "stop": null,
-      "stream": false
+      "stream": true
     },
     "model_options": [
       "llama-3.3-70b-versatile",

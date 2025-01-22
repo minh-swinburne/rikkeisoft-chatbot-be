@@ -1,8 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repos.document import DocumentRepository
-# from app.bot.rag import process_document
 from app.core.config import settings
-from app.schemas import DocumentBase, DocumentModel, DocumentUpdate
+from app.schemas import DocumentBase, DocumentModel, DocumentUpdate, DocumentStatusModel
 from bs4 import BeautifulSoup  # For .html
 from docx import Document  # For .docx
 from typing import Optional
@@ -20,87 +19,126 @@ class DocumentService:
     """
     Handles business logic for document management, including text extraction, CRUD operations, and processing.
     """
-    def __init__(self, repository: DocumentRepository):
-        self.repository = repository
 
+    @staticmethod
     async def create_document(
-        self, db: AsyncSession, doc_data: DocumentBase
+        db: AsyncSession, doc_data: DocumentBase
     ) -> DocumentModel:
         """Create a new document in the database."""
-        doc = await self.repository.create(db, doc_data)
-        return DocumentModel.model_validate(doc)
+        document = await DocumentRepository.create(db, doc_data)
+        return DocumentModel.model_validate(document)
 
-    async def list_documents(self, db: AsyncSession) -> list[DocumentModel]:
+    @staticmethod
+    async def list_documents(db: AsyncSession) -> list[DocumentModel]:
         """List all documents in the database."""
-        docs = await self.repository.list(db)
+        docs = await DocumentRepository.list(db)
         return [DocumentModel.model_validate(doc) for doc in docs]
 
+    @staticmethod
     async def get_document_by_id(
-        self, db: AsyncSession, doc_id: str
+        db: AsyncSession, doc_id: str
     ) -> Optional[DocumentModel]:
         """Retrieve a document by its ID."""
-        doc = await self.repository.get_by_id(db, doc_id)
+        doc = await DocumentRepository.get_by_id(db, doc_id)
         return DocumentModel.model_validate(doc) if doc else None
 
+    @staticmethod
     async def update_document(
-        self, db: AsyncSession, doc_id: str, updates: DocumentUpdate
+        db: AsyncSession, doc_id: str, updates: DocumentUpdate
     ) -> Optional[DocumentModel]:
         """Update document details."""
-        doc = await self.repository.update(db, doc_id, updates)
+        doc = await DocumentRepository.update(db, doc_id, updates)
         return DocumentModel.model_validate(doc) if doc else None
 
-    async def delete_document(self, db: AsyncSession, doc_id: str) -> bool:
-        """Delete a document by its ID."""
-        return await self.repository.delete(db, doc_id)
+    @staticmethod
+    async def update_status(
+        db: AsyncSession, updates: DocumentStatusModel
+    ) -> Optional[DocumentModel]:
+        """Update document status."""
+        status = await DocumentRepository.update_status(db, updates)
+        return DocumentStatusModel.model_validate(status) if status else None
 
-    async def upload_document(
-        self, db: AsyncSession, file_content: bytes | str, doc_data: DocumentBase
-    ) -> DocumentModel:
+    @staticmethod
+    async def delete_document(db: AsyncSession, doc_id: str) -> bool:
+        """Delete a document by its ID."""
+        from app.bot.vector_db import delete_data
+
+        delete_data(doc_id)
+        return await DocumentRepository.delete(db, doc_id)
+
+    @staticmethod
+    async def upload_document(file_content: bytes | str, filename: str
+    ) -> str:
         # Prepare directory and file path
         file_dir = settings.upload_dir
         file_dir.mkdir(exist_ok=True)
+        file_path = file_dir / filename
 
         if not file_dir.exists():
             raise FileNotFoundError("Upload directory not found.")
 
-        file_path = file_dir / doc_data.filename
         with open(file_path, "wb" if isinstance(file_content, bytes) else "w") as file:
             file.write(file_content)
 
-        document = await self.create_document(db, doc_data)
+        return file_path
 
-        return document
-        categories = list(map(lambda category: category.name, document.categories))
+    @staticmethod
+    def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
+        words = text.split()
+        chunks = [
+            " ".join(words[i : i + chunk_size])
+            for i in range(0, len(words), chunk_size - overlap)
+        ]
+        return chunks
 
-        # Should be done in a background task
-        await process_document(
-            file_path,
-            document.file_type,
-            {   # Document metadata
-                "document_id": document.id,
-                "title": document.title,
-                "description": document.description,
-                "categories": categories,
-                "creator": document.creator,
-                "created_date": document.created_date,
-                "restricted": document.restricted,
-                "uploader": document.uploader,
-            },
-        )
-
-    def extract_text(self, file_path: str, file_type: str) -> str:
+    @staticmethod
+    def extract_text(file_path: str, file_type: str) -> str:
         """Extract text from a file based on its type."""
         extractors = {
-            "pdf": self._extract_text_from_pdf,
-            "docx": self._extract_text_from_doc,
-            "xlsx": self._extract_text_from_excel,
-            "html": self._extract_text_from_html,
+            "pdf": DocumentService._extract_text_from_pdf,
+            "docx": DocumentService._extract_text_from_doc,
+            "xlsx": DocumentService._extract_text_from_excel,
+            "html": DocumentService._extract_text_from_html,
         }
         if file_type not in extractors:
             raise ValueError(f"Unsupported file type: {file_type}")
         return extractors[file_type](file_path)
 
-    def _extract_text_from_pdf(self, file_path: str) -> str:
+    @staticmethod
+    async def embed_document(document: DocumentModel, file_path: str) -> bool:
+        from app.bot.embedding import get_embedding
+        from app.bot.vector_db import insert_data
+
+        text = DocumentService.extract_text(file_path, document.file_type)
+        chunks = DocumentService.chunk_text(text)
+        embeddings = get_embedding(chunks)
+        data = []
+
+        for chunk, embedding in zip(chunks, embeddings):
+            data.append(
+                {
+                    "document_id": document.id,
+                    "title": document.title,
+                    "text": chunk,
+                    "embedding": embedding,
+                    "meta": {
+                        "description": document.description,
+                        "categories": document.categories,
+                        "creator": document.creator,
+                        "created_date": document.created_date,
+                        "restricted": document.restricted,
+                        "uploader": document.uploader,
+                        "uploaded_time": document.uploaded_time,
+                        "url": document.url,
+                        "last_modified": document.last_modified,
+                    },
+                }
+            )
+
+        insert_data(data)
+
+    @staticmethod
+    def _extract_text_from_pdf(file_path: str) -> str:
         text = ""
         with fitz.open(file_path) as pdf:
             for page in pdf:
@@ -118,11 +156,13 @@ class DocumentService:
                     text += page_text
         return text
 
-    def _extract_text_from_doc(self, file_path: str) -> str:
+    @staticmethod
+    def _extract_text_from_doc(file_path: str) -> str:
         doc = Document(file_path)
         return "\n".join([p.text for p in doc.paragraphs])
 
-    def _extract_text_from_excel(self, file_path: str) -> str:
+    @staticmethod
+    def _extract_text_from_excel(file_path: str) -> str:
         text = ""
         workbook = openpyxl.load_workbook(file_path)
         for sheet in workbook.worksheets:
@@ -130,7 +170,8 @@ class DocumentService:
                 text += " ".join(map(str, row)) + "\n"
         return text
 
-    def _extract_text_from_html(self, file_path: str) -> str:
+    @staticmethod
+    def _extract_text_from_html(file_path: str) -> str:
         with open(file_path, "r", encoding="utf-8") as file:
             soup = BeautifulSoup(file, "html.parser")
             return soup.get_text()

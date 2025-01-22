@@ -5,6 +5,7 @@ select * from documents;
 -- select * from sso_providers;
 select * from sso;
 select * from roles;
+select * from user_roles where user_id = 'ba533d7e-6b6e-47d2-8252-25dfc8438b31';
 
 SELECT CURRENT_TIMESTAMP;
 
@@ -57,7 +58,7 @@ CREATE TABLE `roles` (
 INSERT INTO `roles` (`name`, `description`) VALUES ('system_admin', ''), ('admin', ''), ('employee', '');
 
 CREATE TABLE user_roles (
-    user_id VARCHAR(36) NOT NULL,
+    user_id CHAR(36) NOT NULL,
     role_id INT NOT NULL,
     PRIMARY KEY (user_id, role_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -82,7 +83,7 @@ INSERT INTO categories (name, description) VALUES
 
 DROP TABLE IF EXISTS document_categories;
 CREATE TABLE document_categories (
-    document_id VARCHAR(36) NOT NULL,
+    document_id CHAR(36) NOT NULL,
     category_id INT NOT NULL,
     PRIMARY KEY (document_id, category_id),
     FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
@@ -99,3 +100,15 @@ INSERT INTO document_categories (document_id, category_id) VALUES
     ('44a694c1-9aae-4801-ada4-10cdbd4f712b', 5),
     ('cf4593be-0ee6-4257-a9a5-79c27aa9ac61', 1),
     ('cf4593be-0ee6-4257-a9a5-79c27aa9ac61', 5);
+    
+CREATE TABLE `document_status` (
+	`id` CHAR(36) primary key,
+    `uploaded` BOOL default FALSE,
+    `embedded` BOOL default FALSE,
+    foreign key (`id`) references `documents`(`id`)
+);
+
+alter table `document_categories` modify `document_id` char(36);
+alter table `user_roles` modify `user_id` char(36);
+
+alter table `user`

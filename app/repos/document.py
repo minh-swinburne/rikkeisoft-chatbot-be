@@ -1,11 +1,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from app.repos import _commit_and_refresh
+from app.models import Document, DocumentStatus
+from app.schemas import DocumentBase, DocumentUpdate, DocumentStatusModel
 from datetime import datetime
 from typing import Optional
 import uuid
-from app.models.docs import Document
-from app.schemas.docs import DocumentBase, DocumentUpdate
-from app.repos import _commit_and_refresh
 
 
 class DocumentRepository:
@@ -20,6 +20,9 @@ class DocumentRepository:
             uploaded_time=datetime.now(),
             last_modified=datetime.now(),
         )
+
+        document.status = DocumentStatus(document_id=document.id)
+
         db.add(document)
         return await _commit_and_refresh(db, document)
 
@@ -41,7 +44,7 @@ class DocumentRepository:
     @staticmethod
     async def update(
         db: AsyncSession, document_id: str, updates: DocumentUpdate
-    ) -> Optional[Document]:
+    ) -> Document:
         """
         Update an existing document.
         """
@@ -51,6 +54,20 @@ class DocumentRepository:
         for key, value in updates.model_dump(exclude_unset=True).items():
             setattr(document, key, value)
         return await _commit_and_refresh(db, document)
+
+    @staticmethod
+    async def update_status(
+        db: AsyncSession, updates: DocumentStatusModel
+    ) -> DocumentStatus:
+        """
+        Update the status of a document.
+        """
+        document_status = await DocumentRepository.get_by_id(db, updates.document_id)
+        if not document_status:
+            raise ValueError(f"Document with ID {updates.document_id} not found.")
+        for key, value in updates.items():
+            setattr(document_status, key, value)
+        return await _commit_and_refresh(db, document_status)
 
     @staticmethod
     async def delete(db: AsyncSession, document_id: str) -> bool:

@@ -77,7 +77,7 @@ DROP TABLE IF EXISTS `document_categories`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `document_categories` (
-  `document_id` varchar(36) NOT NULL,
+  `document_id` char(36) NOT NULL,
   `category_id` int NOT NULL,
   PRIMARY KEY (`document_id`,`category_id`),
   KEY `category_id` (`category_id`),
@@ -97,6 +97,31 @@ INSERT INTO `document_categories` VALUES ('075b414e-b346-43ec-8c60-8f3d7e1c4772'
 UNLOCK TABLES;
 
 --
+-- Table structure for table `document_status`
+--
+
+DROP TABLE IF EXISTS `document_status`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `document_status` (
+  `document_id` char(36) NOT NULL,
+  `uploaded` enum('pending','processing','complete','error') DEFAULT 'pending',
+  `embedded` enum('pending','processing','complete','error') DEFAULT 'pending',
+  PRIMARY KEY (`document_id`),
+  CONSTRAINT `document_status_ibfk_1` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `document_status`
+--
+
+LOCK TABLES `document_status` WRITE;
+/*!40000 ALTER TABLE `document_status` DISABLE KEYS */;
+/*!40000 ALTER TABLE `document_status` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `documents`
 --
 
@@ -107,6 +132,7 @@ CREATE TABLE `documents` (
   `id` char(36) NOT NULL,
   `filename` varchar(255) NOT NULL,
   `file_type` enum('pdf','docx','xlsx','html') NOT NULL,
+  `url` text,
   `title` varchar(255) NOT NULL,
   `description` text,
   `creator` char(36) NOT NULL,
@@ -129,7 +155,7 @@ CREATE TABLE `documents` (
 
 LOCK TABLES `documents` WRITE;
 /*!40000 ALTER TABLE `documents` DISABLE KEYS */;
-INSERT INTO `documents` VALUES ('075b414e-b346-43ec-8c60-8f3d7e1c4772','COS40005_Unit_Outline_DN_Jan2025.docx.pdf','pdf','COS40005 Unit Outline','A lot of text','c24d9619-848d-4af6-87c8-718444421762','2025-01-10',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 10:29:45','2025-01-13 10:29:45'),('0b7ead0a-bac2-4fb8-ab2f-33df0fd0f55a','image.pdf','pdf','PDF with no text','OCR test','c24d9619-848d-4af6-87c8-718444421762','2025-01-10',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 09:30:00','2025-01-13 09:30:00'),('20fec429-7b9d-47e5-bc68-4adcdddeb72c','COS40005 Worklog - Week 2.pdf','pdf','Worklog week 2','Individual Worklog of COS40005','c24d9619-848d-4af6-87c8-718444421762','2025-01-12',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 09:03:47','2025-01-13 09:03:47'),('44a694c1-9aae-4801-ada4-10cdbd4f712b','image.pdf','pdf','PDF with no text','OCR test','c24d9619-848d-4af6-87c8-718444421762','2025-01-10',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 09:30:50','2025-01-13 09:30:50'),('cf4593be-0ee6-4257-a9a5-79c27aa9ac61','SWE30003_Unit Outline_Jan_2025_V1 (2).pdf','pdf','SWE30003 Unit Outline','SWE30003 - Software Architecture and Design\r\nBA-CS at Swinburne Technology\r\nJanuary Semester, 2025','c24d9619-848d-4af6-87c8-718444421762','2024-12-30',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 17:10:10','2025-01-13 17:10:10');
+INSERT INTO `documents` VALUES ('075b414e-b346-43ec-8c60-8f3d7e1c4772','COS40005_Unit_Outline_DN_Jan2025.docx.pdf','pdf','','COS40005 Unit Outline','A lot of text','c24d9619-848d-4af6-87c8-718444421762','2025-01-10',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 10:29:45','2025-01-13 10:29:45'),('0b7ead0a-bac2-4fb8-ab2f-33df0fd0f55a','image.pdf','pdf','','PDF with no text','OCR test','c24d9619-848d-4af6-87c8-718444421762','2025-01-10',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 09:30:00','2025-01-13 09:30:00'),('20fec429-7b9d-47e5-bc68-4adcdddeb72c','COS40005 Worklog - Week 2.pdf','pdf','','Worklog week 2','Individual Worklog of COS40005','c24d9619-848d-4af6-87c8-718444421762','2025-01-12',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 09:03:47','2025-01-13 09:03:47'),('44a694c1-9aae-4801-ada4-10cdbd4f712b','image.pdf','pdf','','PDF with no text','OCR test','c24d9619-848d-4af6-87c8-718444421762','2025-01-10',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 09:30:50','2025-01-13 09:30:50'),('cf4593be-0ee6-4257-a9a5-79c27aa9ac61','SWE30003_Unit Outline_Jan_2025_V1 (2).pdf','pdf','','SWE30003 Unit Outline','SWE30003 - Software Architecture and Design\r\nBA-CS at Swinburne Technology\r\nJanuary Semester, 2025','c24d9619-848d-4af6-87c8-718444421762','2024-12-30',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 17:10:10','2025-01-13 17:10:10');
 /*!40000 ALTER TABLE `documents` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -184,7 +210,7 @@ CREATE TABLE `roles` (
 
 LOCK TABLES `roles` WRITE;
 /*!40000 ALTER TABLE `roles` DISABLE KEYS */;
-INSERT INTO `roles` VALUES (1,'system_admin',''),(2,'admin',''),(3,'employee','');
+INSERT INTO `roles` VALUES (1,'system_admin','System administrator'),(2,'admin','Administrator'),(3,'employee','Regular employee');
 /*!40000 ALTER TABLE `roles` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -222,7 +248,7 @@ DROP TABLE IF EXISTS `user_roles`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `user_roles` (
-  `user_id` varchar(36) NOT NULL,
+  `user_id` char(36) NOT NULL,
   `role_id` int NOT NULL,
   PRIMARY KEY (`user_id`,`role_id`),
   KEY `role_id` (`role_id`),
@@ -255,7 +281,7 @@ CREATE TABLE `users` (
   `lastname` varchar(50) DEFAULT NULL,
   `username` varchar(50) DEFAULT NULL,
   `password` char(60) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
-  `avatar_url` varchar(255) DEFAULT NULL,
+  `avatar_url` text,
   `created_time` datetime NOT NULL,
   `username_last_changed` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -282,4 +308,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-01-20  9:52:54
+-- Dump completed on 2025-01-22 15:48:23

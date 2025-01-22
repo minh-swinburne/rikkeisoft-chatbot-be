@@ -4,3 +4,4 @@ from .sso import SSO
 from .chats import Chat
 from .messages import Message
 from .docs import Document, Category
+from .status import DocumentStatus

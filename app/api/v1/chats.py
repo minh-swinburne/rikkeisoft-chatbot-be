@@ -1,10 +1,17 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Path, Body
 from fastapi.responses import StreamingResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.database import get_db
 from app.api.dependencies import validate_access_token
-from app.schemas import ChatBase, ChatModel, ChatUpdate, MessageBase, MessageModel, TokenModel
+from app.core.database import get_db
 from app.services import ChatService
+from app.schemas import (
+    ChatBase,
+    ChatModel,
+    ChatUpdate,
+    MessageBase,
+    MessageModel,
+    TokenModel,
+)
 
 
 router = APIRouter()
@@ -15,10 +22,17 @@ async def get_chat_history(
     token_payload: TokenModel = Depends(validate_access_token),
     db: AsyncSession = Depends(get_db),
 ) -> list[ChatModel]:
-    user_id = token_payload.sub
-    # Fetch the chats for a given user
-    chats = await ChatService.list_chats_by_user_id(db, user_id)
-    return chats
+    try:
+        print("Token payload for chat history:")
+        print(token_payload)
+        user_id = token_payload.sub
+        # Fetch the chats for a given user
+        chats = await ChatService.list_chats_by_user_id(db, user_id)
+        print("Chats:", chats)
+        return chats
+    except Exception as e:
+        print("Failed to fetch chat history:", e)
+        raise e
 
 
 @router.post("/")
@@ -123,7 +137,7 @@ async def rename_chat(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You are not authorized to rename this chat",
         )
-        
+
     chat = await ChatService.update_chat_name(db, chat_id, updates.name)
 
     return chat

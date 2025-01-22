@@ -1,13 +1,20 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Cookie, Header
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
-from passlib.context import CryptContext
-from jose import jwt
+from app.api.dependencies import validate_access_token
 from app.core.database import get_db
 from app.core.config import settings
-from app.api.dependencies import validate_access_token
 from app.services import UserService
-from app.schemas import GoogleAuthBase, MicrosoftAuthBase, AuthModel, TokenModel, UserBase, SSOBase
+from app.schemas import (
+    GoogleAuthBase,
+    MicrosoftAuthBase,
+    AuthModel,
+    TokenModel,
+    UserBase,
+    SSOBase,
+)
+from passlib.context import CryptContext
+from jose import jwt
 import requests
 
 
