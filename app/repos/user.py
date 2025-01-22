@@ -32,7 +32,7 @@ class UserRepository:
         List all users.
         """
         result = await db.execute(select(User))
-        return result.scalars().all()
+        return result.scalars().unique().all()
 
     @staticmethod
     async def get_by_id(db: AsyncSession, user_id: str) -> Optional[User]:

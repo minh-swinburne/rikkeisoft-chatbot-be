@@ -32,7 +32,7 @@ class DocumentRepository:
         List all documents.
         """
         result = await db.execute(select(Document))
-        return result.scalars().all()
+        return result.scalars().unique().all()
 
     @staticmethod
     async def get_by_id(db: AsyncSession, document_id: str) -> Optional[Document]:

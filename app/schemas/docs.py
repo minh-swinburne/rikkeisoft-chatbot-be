@@ -9,6 +9,8 @@ class DocumentStatusModel(BaseModel):
     uploaded: Literal["pending", "processing", "complete", "error"]
     embedded: Literal["pending", "processing", "complete", "error"]
 
+    model_config = ConfigDict(from_attributes=True)
+
 
 class DocumentBase(BaseModel):
     filename: str
@@ -28,7 +30,7 @@ class DocumentModel(DocumentBase):
     categories: list[CategoryModel] # Return categories as objects
     uploaded_time: datetime
     last_modified: datetime
-    status: DocumentStatusModel
+    status: Optional[DocumentStatusModel]
 
     model_config = ConfigDict(from_attributes=True)
 

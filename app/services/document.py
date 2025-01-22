@@ -32,6 +32,7 @@ class DocumentService:
     async def list_documents(db: AsyncSession) -> list[DocumentModel]:
         """List all documents in the database."""
         docs = await DocumentRepository.list(db)
+        print("Docs:", docs[0].__dict__)
         return [DocumentModel.model_validate(doc) for doc in docs]
 
     @staticmethod

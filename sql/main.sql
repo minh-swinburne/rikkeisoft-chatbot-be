@@ -111,4 +111,5 @@ CREATE TABLE `document_status` (
 alter table `document_categories` modify `document_id` char(36);
 alter table `user_roles` modify `user_id` char(36);
 
-alter table `user`
+alter table `users` modify `avatar_url` text default null;
+alter table `documents`
