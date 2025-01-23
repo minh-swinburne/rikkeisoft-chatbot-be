@@ -4,8 +4,10 @@ from app.bot import config
 from app.bot.vector_db import search_context, query_document
 from app.core.config import settings
 from app.utils import extract_content
+from typing import Union
 import httpx
 import re
+
 
 client = Groq(
     api_key=settings.groq_api_key,
@@ -13,59 +15,67 @@ client = Groq(
         timeout=config["timeout"]["total"],
         read=config["timeout"]["read"],
         write=config["timeout"]["write"],
-        connect=config["timeout"]["connect"]
-        ),
+        connect=config["timeout"]["connect"],
+    ),
 )
+
 
 async def generate_answer(chat_history: list):
     user_query = chat_history[-1]["content"]
     context_results = search_context(user_query)
 
-#     system_prompt = f"""
-# Instructions:
-# - Be helpful and answer questions concisely. If you don't know the answer or can't find the relevant documents, let the user know.
-# - Utilize the context provided for accurate and specific information.
-# - Incorporate your pre-existing knowledge to enhance the depth and relevance of your response.
-# - Cite your sources and relevant documents when providing information.
+    #     system_prompt = f"""
+    # Instructions:
+    # - Be helpful and answer questions concisely. If you don't know the answer or can't find the relevant documents, let the user know.
+    # - Utilize the context provided for accurate and specific information.
+    # - Incorporate your pre-existing knowledge to enhance the depth and relevance of your response.
+    # - Cite your sources and relevant documents when providing information.
 
-# Context:
-# { "\n".join(f"- Title: '{doc["title"]}'\nExcerpt: {doc["text"]}\nScore: {doc["score"]}" for doc in context) }
-#     """
+    # Context:
+    # { "\n".join(f"- Title: '{doc["title"]}'\nExcerpt: {doc["text"]}\nScore: {doc["score"]}" for doc in context) }
+    #     """
 
-    context = "\n".join(f"- Title: '{doc["title"]}'\nExcerpt: {doc["text"]}\nScore: {doc["score"]}" for doc in context_results)
+    context = "\n".join(
+        f"- Title: '{doc["title"]}'\nExcerpt: {doc["text"]}\nScore: {doc["score"]}"
+        for doc in context_results
+    )
     sources = []
 
     for title in {doc["title"] for doc in context_results}:
         source = query_document(title)
         if source:
-            sources.append(f"- Title: '{title}'\nDescription: {source["description"]}\nCategories: {source["meta"]["categories"]}")
+            sources.append(
+                f"- Title: '{title}'\nDescription: {source["description"]}\nCategories: {source["meta"]["categories"]}"
+            )
 
     print(len(context_results))
     print("Context: ", context)
     print("Sources: ", sources)
 
-    system_prompt = config["answer_generation"]["system_prompt"].format(context=context, sources="\n".join(sources))
-
-    chat_completion = client.chat.completions.create(
-        messages=[
-            {"role": "system", "content": system_prompt},
-            *chat_history,  # Include the last 10 messages in the chat history including the new query
-        ],
-        **config["answer_generation"]["params"],
+    system_prompt = config["answer_generation"]["system_prompt"].format(
+        context=context, sources="\n".join(sources)
     )
 
-    # bot_response = chat_completion.choices[0].message.content
-
-    # return bot_response
+    chat_completion: Union[ChatCompletion, Stream[ChatCompletionChunk]] = (
+        client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                *chat_history,  # Include the last 10 messages in the chat history including the new query
+            ],
+            **config["answer_generation"]["params"],
+        )
+    )
 
     if isinstance(chat_completion, ChatCompletion):
         print("Chat Completion: ", chat_completion.choices[0].message.content)
         return chat_completion.choices[0].message.content
     else:
         print("Chat Stream: ")
+
         async def async_stream_generator():
             for chunk in chat_completion:
                 yield chunk.choices[0].delta.content
+
         return async_stream_generator()
 
 
@@ -92,10 +102,12 @@ def suggest_questions(chat_history: list, context: str = None):
     system_prompt = config["question_suggestion"]["system_prompt"].format(
         chat_history=chat_history,
         context=f"\nContext: {context}\n" if context else "",
-        message_template="\n".join(f"{i+1}. {question}" for i, question in enumerate(message_template))
+        message_template="\n".join(
+            f"{i+1}. {question}" for i, question in enumerate(message_template)
+        ),
     )
 
-    question_completion:ChatCompletion = client.chat.completions.create(
+    question_completion: ChatCompletion = client.chat.completions.create(
         messages=[
             {
                 "role": "system",
@@ -103,12 +115,6 @@ def suggest_questions(chat_history: list, context: str = None):
             },
             {"role": "user", "content": ""},
         ],
-        # model="llama-3.2-1b-preview",
-        # max_tokens=128,
-        # temperature=1,
-        # top_p=1,
-        # stop=None,
-        # stream=False,
         **config["question_suggestion"]["params"],
     )
 
@@ -118,7 +124,7 @@ def suggest_questions(chat_history: list, context: str = None):
     return suggested_questions if suggested_questions else message_template
 
 
-def generate_name(chat_history: list):
+async def generate_name(chat_history: list):
     #     system_prompt = f"""
     # Instructions:
     # - Generate a name for the chat based on the provided chat history.
@@ -127,32 +133,31 @@ def generate_name(chat_history: list):
     # Chat History: {chat_history}
     # """
 
+    system_prompt = config["name_generation"]["system_prompt"].format(
+        chat_history=chat_history
+    )
 
-    system_prompt = config["name_generation"]["system_prompt"].format(chat_history=chat_history)
-
-    name_completion = client.chat.completions.create(
-        messages=[
-            {
-                "role": "system",
-                "content": system_prompt,
-            },
-            {"role": "user", "content": ""},
-        ],
-        # model="llama-3.2-1b-preview",
-        # max_tokens=8,
-        # temperature=1,
-        # top_p=1,
-        # stop=None,
-        # stream=False,
-        **config["name_generation"]["params"],
+    name_completion: Union[ChatCompletion, Stream[ChatCompletionChunk]] = (
+        client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                {"role": "user", "content": ""},
+            ],
+            **config["name_generation"]["params"],
+        )
     )
 
     if isinstance(name_completion, ChatCompletion):
-        return re.sub(r"['\"\n]", "", name_completion.choices[0].message.content).strip()
-    elif (isinstance(name_completion, Stream[ChatCompletionChunk])):
-        for chunk in name_completion:
-            yield chunk.choices[0].delta.content
+        return re.sub(
+            r"['\"\n]", "", name_completion.choices[0].message.content
+        ).strip()
+    else:
 
-    response = name_completion.choices[0].message.content
+        async def async_stream_generator():
+            for chunk in name_completion:
+                yield chunk.choices[0].delta.content
 
-    return re.sub(r"['\"\n]", "", response).strip()
+        return async_stream_generator()

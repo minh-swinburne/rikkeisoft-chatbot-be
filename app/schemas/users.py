@@ -1,20 +1,35 @@
-from pydantic import BaseModel
-from typing import List, Optional
+from pydantic import BaseModel, ConfigDict
+from datetime import datetime
+from typing import Optional
+from .roles import RoleModel
 
 
 class UserBase(BaseModel):
-    username: str
     email: str
-    firstname: str = None
-    lastname: str = None
-    provider: Optional[str] = None
-    provider_uid: Optional[str] = None
+    firstname: str
+    lastname: Optional[str]
+    username: Optional[str] = None
+    password: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+    @property
+    def full_name(self):
+        return f"{self.firstname} {self.lastname}" if self.lastname else self.firstname
 
 
-class UserCreate(UserBase):
-    password: str  # Password is required when creating a user
-
-
-class UserResponse(UserBase):
+class UserModel(UserBase):
     id: str
-    admin: bool
+    created_time: datetime
+    username_last_changed: Optional[datetime] = None
+    roles: list[RoleModel]  # Represent roles as nested objects
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserUpdate(BaseModel):
+    firstname: Optional[str] = None
+    lastname: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    avatar_url: Optional[str] = None
+    roles: Optional[list[str]] = None  # Allow updating roles by name

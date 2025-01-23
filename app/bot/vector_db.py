@@ -1,7 +1,6 @@
 from pymilvus import MilvusClient, DataType, connections, db
+from app.bot.embedding import get_embedding
 from app.core.config import settings
-from app.bot.model import model
-import json
 
 collection_name = settings.milvus_collection
 
@@ -14,7 +13,7 @@ collection_name = settings.milvus_collection
 client = MilvusClient(uri=settings.milvus_uri, token=settings.milvus_token)
 
 
-def setup_db():
+def setup_vector_db():
     if not client.has_collection(collection_name):
         # Define the schema
         schema = client.create_schema(
@@ -33,9 +32,6 @@ def setup_db():
             field_name="document_id", datatype=DataType.VARCHAR, max_length=128
         )
         schema.add_field(field_name="title", datatype=DataType.VARCHAR, max_length=512)
-        schema.add_field(
-            field_name="description", datatype=DataType.VARCHAR, max_length=1024
-        )
         schema.add_field(field_name="text", datatype=DataType.VARCHAR, max_length=8192)
         schema.add_field(
             field_name="embedding",
@@ -49,9 +45,7 @@ def setup_db():
         index_params.add_index(field_name="embedding", index_type="AUTOINDEX")
 
         client.create_collection(
-            collection_name=collection_name,
-            schema=schema,
-            index_params=index_params
+            collection_name=collection_name, schema=schema, index_params=index_params
         )
 
     print(f"Connected to Milvus version {client.get_server_version()}.")
@@ -59,48 +53,28 @@ def setup_db():
     print(f"Available collections: {client.list_collections()}")
 
 
-def json_to_data(json_path: str):
-    with open(json_path, "r", encoding="utf-8") as file:
-        data = json.load(file)
-
-    rows = []
-    document_id = data["document_id"]
-    title = data["title"]
-    description = data["description"]
-    meta = {
-        "categories": data["categories"],
-        "creator": data["creator"],
-        "created_date": data["created_date"],
-        "restricted": data["restricted"],
-        "uploader": data["uploader"],
-        "uploaded_time": data["uploaded_time"],
-    }
-
-    for chunk in data["chunks"]:
-        rows.append(
-            {
-                "document_id": document_id,
-                "title": title,
-                "description": description,
-                "text": chunk["text"],
-                "embedding": chunk["embedding"],
-                "meta": meta,
-            }
-        )
-    return rows
-
-
-def insert_data_to_db(data):
+def insert_data(data):
     # Insert data
-    client.insert(collection_name=collection_name, data=data)
+    result = client.insert(collection_name=collection_name, data=data)
     client.flush(collection_name=collection_name)
 
-    print(f"Inserted {len(data)} records into '{collection_name}'.")
+    print(f"Inserted {result["insert_count"]} records into '{collection_name}'.")
+    return result["insert_count"]
+
+
+def delete_data(doc_id: str):
+    result = client.delete(
+        collection_name=collection_name,
+        filter=f"document_id == '{doc_id}'",
+    )
+
+    print(f"Deleted {result["delete_count"]} embeddings of document with ID '{doc_id}'.")
+    return result["delete_count"]
 
 
 def search_context(user_query: str, top_k: int = 5):
     context = []
-    query_embedding = model.encode(user_query).tolist()
+    query_embedding = get_embedding(user_query)
     search_results = client.search(
         collection_name=collection_name,
         data=[query_embedding],
@@ -125,15 +99,9 @@ def search_context(user_query: str, top_k: int = 5):
 def query_document(title: str):
     query_results = client.query(
         collection_name=collection_name,
-        filter=f"title == \"{title}\"",
+        filter=f'title == "{title}"',
         output_fields=["description", "meta"],
         limit=1,
     )
 
     return query_results[0] if query_results else None
-
-
-if __name__ == "__main__":
-    json_path = "uploads/COS40005_Unit_Outline_DN_Jan2025.docx.pdf.json"
-    data = json_to_data(json_path)
-    insert_data_to_db(data)

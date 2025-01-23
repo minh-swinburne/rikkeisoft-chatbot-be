@@ -12,18 +12,21 @@ Framework: FastAPI
    ```
    python -m venv venv
    ```
+
 4. Activate the virtual environment:
 
-   * On Windows:
+   - On Windows:
 
      ```
      .\venv\Scripts\activate
      ```
-   * On macOS and Linux:
+
+   - On macOS and Linux:
 
      ```
      source venv/bin/activate
      ```
+
 5. Install required packages:
 
 ```
@@ -43,7 +46,7 @@ Framework: FastAPI
     docker compose up -d
 ```
 
-  This will prepare the Milvus vector database.
+This will prepare the Milvus vector database.
 
 8. Launch the FastAPI server:
 

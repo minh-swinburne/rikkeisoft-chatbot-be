@@ -1,133 +1,143 @@
-from fastapi import APIRouter, HTTPException, Depends
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, HTTPException, status, Depends, Path, Body
+from fastapi.responses import StreamingResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.schemas.chats import ChatBase, ChatResponse
-from app.schemas.messages import MessageRequest, MessageResponse
-from app.services.chats import *
+from app.api.dependencies import validate_access_token
 from app.core.database import get_db
-from app.bot.chat import generate_answer, suggest_questions, generate_name
+from app.services import ChatService
+from app.schemas import (
+    ChatBase,
+    ChatModel,
+    ChatUpdate,
+    MessageBase,
+    MessageModel,
+    TokenModel,
+)
 
 
 router = APIRouter()
 
 
 @router.get("/")
-async def get_history(user_id: str, db: AsyncSession = Depends(get_db)):
-    # Fetch the chats for a given user
-    chats = await list_chats(db, user_id)
-    return chats
+async def get_chat_history(
+    token_payload: TokenModel = Depends(validate_access_token),
+    db: AsyncSession = Depends(get_db),
+) -> list[ChatModel]:
+    try:
+        print("Token payload for chat history:")
+        print(token_payload)
+        user_id = token_payload.sub
+        # Fetch the chats for a given user
+        chats = await ChatService.list_chats_by_user_id(db, user_id)
+        print("Chats:", chats)
+        return chats
+    except Exception as e:
+        print("Failed to fetch chat history:", e)
+        raise e
 
 
 @router.post("/")
-async def create_new_chat(request: ChatBase, db: AsyncSession = Depends(get_db)):
-    chat = await create_chat(db, request.user_id, request.name)
-    return ChatResponse.model_validate({
-        "id": chat.id,
-        "user_id": chat.user_id,
-        "name": chat.name,
-        "last_access": chat.last_access
-    })
+async def create_new_chat(
+    chat_data: ChatBase = Body(...),
+    token_payload: TokenModel = Depends(validate_access_token),
+    db: AsyncSession = Depends(get_db),
+) -> ChatModel:
+    if token_payload.sub != chat_data.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to create this chat",
+        )
+
+    chat = await ChatService.create_chat(db, chat_data)
+    return chat
 
 
 @router.get("/{chat_id}")
-async def get_chat(chat_id: str, db: AsyncSession = Depends(get_db)):
-    messages = await list_messages(db, chat_id)
+async def get_conversation(
+    chat_id: str = Path(...),
+    token_payload: TokenModel = Depends(validate_access_token),
+    db: AsyncSession = Depends(get_db),
+) -> list[MessageModel]:
+    chat = await ChatService.get_chat_by_id(db, chat_id)
+    if token_payload.sub != chat.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to view this chat",
+        )
+
+    messages = await ChatService.list_messages_by_chat_id(db, chat_id)
     return messages
 
 
-@router.post("/{chat_id}", response_model=MessageResponse)
-async def send_query(chat_id: str, request: MessageRequest, db: AsyncSession = Depends(get_db)):
-    if not request:
-        raise HTTPException(status_code=400, detail="Message cannot be empty")
+@router.post("/{chat_id}")
+async def send_query(
+    chat_id: str = Path(...),
+    message_data: MessageBase = Body(...),
+    token_payload: TokenModel = Depends(validate_access_token),
+    db: AsyncSession = Depends(get_db),
+) -> MessageModel:
+    if not message_data.content:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Message cannot be empty")
+    if chat_id != message_data.chat_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Chat ID in the URL does not match the chat ID in the request body",
+        )
 
-    # Create user message
-    await create_message(db, {
-        "chat_id": chat_id,
-        "role": "user",
-        "content": request.query
-    })
+    chat = await ChatService.get_chat_by_id(db, chat_id)
+    if token_payload.sub != chat.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to send a message to this chat",
+        )
 
-    # Get the chat history (limit to the last 10 messages)
-    chat_history = [{"role": message.role, "content": message.content} for message in await list_messages(db, chat_id)][-10:]
+    message = await ChatService.create_message(db, message_data)
 
-# Generate the bot's response (streaming or complete)
-    answer = await generate_answer(chat_history)
-
-    if isinstance(answer, str):
-        # Complete response: Add message to the database and return
-        message = await create_message(db, {
-            "chat_id": chat_id,
-            "role": "assistant",
-            "content": answer
-        })
-
-        # Handle new chat name for the first message
-        if len(chat_history) == 1:
-            new_chat_name = generate_name(chat_history + [{"role": "assistant", "content": answer}])
-            await update_chat_name(db, chat_id, new_chat_name.replace("'", ""))
-
-        await update_chat_last_access(db, chat_id)
-
-        return MessageResponse.model_validate({
-            "id": message.id,
-            "chat_id": message.chat_id,
-            "time": message.time,
-            "role": message.role,
-            "content": message.content
-        })
+    if isinstance(message, MessageModel):
+        return message
     else:
-        # Streaming response: Return a StreamingResponse
-        async def stream_generator():
-            content = ""
-            print("Async generator:", answer)
-            async for chunk in answer:  # Handle async generator for streaming
-                if chunk:
-                    print(chunk, end="")
-                    content += chunk
-                    yield chunk
-
-            print("\n\nAdding message to database...")
-            # Save the full content as a message in the database
-            await create_message(db, {
-                "chat_id": chat_id,
-                "role": "assistant",
-                "content": content
-            })
-
-            # Handle new chat name for the first message
-            if len(chat_history) == 1:
-                new_chat_name = generate_name(chat_history + [{"role": "assistant", "content": answer}])
-                await update_chat_name(db, chat_id, new_chat_name.replace("'", ""))
-
-            await update_chat_last_access(db, chat_id)
-
-        return StreamingResponse(stream_generator(), media_type="text/plain")
+        return StreamingResponse(content=message, media_type="text/plain")
 
 
 @router.post("/{chat_id}/suggestions")
-async def get_suggested_questions(chat_id: str, db: AsyncSession = Depends(get_db)):
-    # Get chat history for suggestions (limit to the last 4 messages)
-    chat_history = [{"role": message.role, "content": message.content} for message in await list_messages(db, chat_id)][-4:]
-
+async def get_suggested_questions(chat_id: str = Path(...), db: AsyncSession = Depends(get_db)):
     # Generate suggestions based on chat history
-    suggestions = suggest_questions(chat_history)
-    return {"suggestions": suggestions}
+    suggestions = await ChatService.suggest_message(db, chat_id)
+    return JSONResponse({"suggestions": suggestions})
 
 
-from fastapi import HTTPException
+@router.delete("/{chat_id}")
+async def delete_chat(
+    chat_id: str = Path(...),
+    token_payload: TokenModel = Depends(validate_access_token),
+    db: AsyncSession = Depends(get_db),
+):
+    chat = await ChatService.get_chat_by_id(db, chat_id)
+    if token_payload.sub != chat.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to delete this chat",
+        )
 
-@router.delete("/{chat_id}/delete")
-async def delete_chat_endpoint(chat_id: str, db: AsyncSession = Depends(get_db)):
-    await delete_chat(db, chat_id)
-    return {"message": "Chat deleted successfully"}
+    result = await ChatService.delete_chat(db, chat_id)
+    if not result:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found")
+    return JSONResponse(content={"message": "Chat deleted successfully"})
 
 
-@router.put("/{chat_id}/rename")
-async def rename_chat(chat_id: str, request: ChatBase, db: AsyncSession = Depends(get_db)):
-    chat = await update_chat_name(db, chat_id, request.name)
-    return ChatResponse.model_validate({
-        "id": chat.id,
-        "user_id": chat.user_id,
-        "name": chat.name,
-        "last_access": chat.last_access
-    })
+@router.put("/{chat_id}")
+async def rename_chat(
+    chat_id: str = Path(...),
+    updates: ChatUpdate = Body(...),
+    token_payload: TokenModel = Depends(validate_access_token),
+    db: AsyncSession = Depends(get_db),
+):
+    chat = await ChatService.get_chat_by_id(db, chat_id)
+    if token_payload.sub != chat.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to rename this chat",
+        )
+
+    chat = await ChatService.update_chat_name(db, chat_id, updates.name)
+
+    return chat

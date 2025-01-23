@@ -16,34 +16,31 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `users`
+-- Table structure for table `sso_accounts`
 --
 
-DROP TABLE IF EXISTS `users`;
+DROP TABLE IF EXISTS `sso_accounts`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `users` (
-  `id` char(36) NOT NULL,
-  `email` varchar(100) NOT NULL,
-  `username` varchar(50) DEFAULT NULL,
-  `password` char(60) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
-  `firstname` varchar(50) NOT NULL,
-  `lastname` varchar(50) DEFAULT NULL,
-  `admin` tinyint(1) DEFAULT '0',
-  `username_last_changed` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`)
+CREATE TABLE `sso_accounts` (
+  `user_id` char(36) NOT NULL,
+  `provider_id` int NOT NULL,
+  `sub` varchar(100) NOT NULL,
+  PRIMARY KEY (`user_id`,`provider_id`),
+  KEY `provider_id` (`provider_id`),
+  CONSTRAINT `sso_accounts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `sso_accounts_ibfk_2` FOREIGN KEY (`provider_id`) REFERENCES `sso_providers` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `users`
+-- Dumping data for table `sso_accounts`
 --
 
-LOCK TABLES `users` WRITE;
-/*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES ('1642be2a-e3a9-4679-87eb-1365f9f470d0','104169617@student.swin.edu.au','','$2b$12$gUr08tFVl1Fvae78DwrEAefIXQGxYdCeqe6TERd.kBoDlkr3hUVNq','Nguyen','Minh',0,NULL),('86ce47d5-0bf4-47c4-adb4-2be068e73580','hoang@gmail.com','hoangdvm','$2a$12$PN2JGhYknKGU2e2oXNA0beW5V760Z7eNWg8q9lLPRzYClBGcfXKNK','Hoang','Duong',0,'2025-01-16 10:41:26'),('c24d9619-848d-4af6-87c8-718444421762','minh@gmail.com','tminh1512','$2a$12$mC5B97wgqzv05s8PBilQDODpRZ.wjwyh1bWSRua7ODBO8H60yjFSu','Minh','Nguyen',1,'2025-01-16 10:41:26'),('ddfa1b08-e3c0-4cca-84d7-ac70e60f856d','thanhminh.nt.1512@gmail.com','','$2b$12$gLvNdtWhgN4p2bIh8xM/qeyrtWewRZWZIRVMX8WpmLHxVqEL0eoNe','Minh','Nguyễn',0,NULL);
-/*!40000 ALTER TABLE `users` ENABLE KEYS */;
+LOCK TABLES `sso_accounts` WRITE;
+/*!40000 ALTER TABLE `sso_accounts` DISABLE KEYS */;
+INSERT INTO `sso_accounts` VALUES ('1642be2a-e3a9-4679-87eb-1365f9f470d0',1,'107360694239114519362'),('ddfa1b08-e3c0-4cca-84d7-ac70e60f856d',2,'AAAAAAAAAAAAAAAAAAAAAAGWQBsfLK99T6YSqJXyY4s');
+/*!40000 ALTER TABLE `sso_accounts` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -55,4 +52,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-01-16 10:42:31
+-- Dump completed on 2025-01-16 10:42:33

@@ -1,33 +1,86 @@
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from app.repos import _commit_and_refresh
+from app.models import Document, DocumentStatus
+from app.schemas import DocumentBase, DocumentUpdate, DocumentStatusModel
+from datetime import datetime
 from typing import Optional
-from app.schemas.docs import Document
 import uuid
 
 
 class DocumentRepository:
-    def __init__(self):
-        self._storage: dict[str, dict] = {}
+    @staticmethod
+    async def create(db: AsyncSession, document_data: DocumentBase) -> Document:
+        """
+        Create a new document entry.
+        """
+        document = Document(
+            id=str(uuid.uuid4()),
+            **document_data.model_dump(),
+            uploaded_time=datetime.now(),
+            last_modified=datetime.now(),
+        )
 
-    def create(self, document: dict) -> str:
-        document_id = str(uuid.uuid4())
-        document["id"] = document_id
-        self._storage[document_id] = document
-        return document_id
+        document.status = DocumentStatus(document_id=document.id)
 
-    def get(self, doc_id: str) -> Optional[dict]:
-        return self._storage.get(doc_id)
+        db.add(document)
+        return await _commit_and_refresh(db, document)
 
-    def list(self) -> list[dict]:
-        return list(self._storage.values())
+    @staticmethod
+    async def list(db: AsyncSession) -> list[Document]:
+        """
+        List all documents.
+        """
+        result = await db.execute(select(Document))
+        return result.scalars().unique().all()
 
-    def update(self, document_id: str, updates: dict) -> bool:
-        document = self.get(document_id)
+    @staticmethod
+    async def get_by_id(db: AsyncSession, document_id: str) -> Optional[Document]:
+        """
+        Get a document by its ID.
+        """
+        return await db.get(Document, document_id)
+
+    @staticmethod
+    async def update(
+        db: AsyncSession, document_id: str, updates: DocumentUpdate
+    ) -> Document:
+        """
+        Update an existing document.
+        """
+        document = await DocumentRepository.get_by_id(db, document_id)
+        if not document:
+            raise ValueError(f"Document with ID {document_id} not found.")
+        for key, value in updates.model_dump(exclude_unset=True).items():
+            setattr(document, key, value)
+        return await _commit_and_refresh(db, document)
+
+    @staticmethod
+    async def update_status(
+        db: AsyncSession, updates: DocumentStatusModel
+    ) -> DocumentStatus:
+        """
+        Update the status of a document.
+        """
+        document_status = await DocumentRepository.get_by_id(db, updates.document_id)
+        if not document_status:
+            raise ValueError(f"Document with ID {updates.document_id} not found.")
+        for key, value in updates.items():
+            setattr(document_status, key, value)
+        return await _commit_and_refresh(db, document_status)
+
+    @staticmethod
+    async def delete(db: AsyncSession, document_id: str) -> bool:
+        """
+        Delete a document by its ID.
+        """
+        document = await DocumentRepository.get_by_id(db, document_id)
         if not document:
             return False
-        document.update(updates)
+        try:
+            await db.delete(document)
+            await db.commit()
+        except:
+            await db.rollback()
+            raise
         return True
-
-    def delete(self, document_id: str) -> bool:
-        if document_id in self._storage:
-            del self._storage[document_id]
-            return True
-        return False
