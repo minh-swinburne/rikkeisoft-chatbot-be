@@ -13,7 +13,7 @@ class Chat(Base):
     )
     name = Column(String(255), nullable=False)
     last_access = Column(
-        DateTime(timezone=True), server_default=func.now(), server_onupdate=func.now()
+        DateTime(timezone=True), server_default=func.now()
     )
 
     user = relationship("User", back_populates="chats")

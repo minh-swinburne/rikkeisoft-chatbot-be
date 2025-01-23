@@ -8,7 +8,7 @@ from app.schemas import (
     UserBase,
     UserModel,
     UserUpdate,
-    SSOBase,
+    SSOModel,
     TokenBase,
     TokenModel,
     AuthModel,
@@ -34,7 +34,11 @@ class UserService:
         if existing_user:
             raise ValueError(f"User with email {user_data.email} already exists")
 
-        existing_user = await UserRepository.get_by_username(db, user_data.username)
+        existing_user = (
+            await UserRepository.get_by_username(db, user_data.username)
+            if user_data.username
+            else None
+        )
         if existing_user:
             raise ValueError(f"User with username {user_data.username} already exists")
 
@@ -43,10 +47,10 @@ class UserService:
         return UserModel.model_validate(user)
 
     @staticmethod
-    async def create_sso(db: AsyncSession, sso_data: SSOBase) -> SSOBase:
+    async def create_sso(db: AsyncSession, sso_data: SSOModel) -> SSOModel:
         """Create a new SSO entry in the database."""
         sso = await SSORepository.create(db, sso_data)
-        return SSOBase.model_validate(sso)
+        return SSOModel.model_validate(sso)
 
     @staticmethod
     async def assign_role(db: AsyncSession, user_id: str, role_name: str) -> UserModel:
@@ -91,10 +95,10 @@ class UserService:
         return [UserModel.model_validate(user) for user in users]
 
     @staticmethod
-    async def list_sso_by_user_id(db: AsyncSession, user_id: str) -> list[SSOBase]:
+    async def list_sso_by_user_id(db: AsyncSession, user_id: str) -> list[SSOModel]:
         """List all SSO entries for a specific user."""
         sso_entries = await SSORepository.list_by_user_id(db, user_id)
-        return [SSOBase.model_validate(sso) for sso in sso_entries]
+        return [SSOModel.model_validate(sso) for sso in sso_entries]
 
     @staticmethod
     async def get_user_by_id(db: AsyncSession, user_id: str) -> Optional[UserModel]:
@@ -123,8 +127,24 @@ class UserService:
     ) -> Optional[UserModel]:
         """Retrieve a user by their provider and provider UID."""
         sso = await SSORepository.get_by_provider_and_sub(db, provider, sub)
-        user = await UserRepository.get_by_id(db, sso.user_id)
+        user = await UserRepository.get_by_id(db, sso.user_id) if sso else None
         return UserModel.model_validate(user) if user else None
+
+    @staticmethod
+    async def get_sso_by_user_provider(
+        db: AsyncSession, user_id: str, provider: str
+    ) -> Optional[SSOModel]:
+        """Retrieve an SSO entry by provider and provider UID."""
+        sso = await SSORepository.get_by_user_id_and_provider(db, user_id, provider)
+        return SSOModel.model_validate(sso) if sso else None
+
+    @staticmethod
+    async def get_sso_by_provider_sub(
+        db: AsyncSession, provider: str, sub: str
+    ) -> Optional[SSOModel]:
+        """Retrieve an SSO entry by provider and provider UID."""
+        sso = await SSORepository.get_by_provider_and_sub(db, provider, sub)
+        return SSOModel.model_validate(sso) if sso else None
 
     @staticmethod
     async def update_user(

@@ -36,7 +36,7 @@ authorized_roles = ["admin"]
 
 
 
-@router.get("/")
+@router.get("")
 async def list_documents(
     token_payload: TokenModel = Depends(validate_access_token),
     db: AsyncSession = Depends(get_db),
@@ -54,7 +54,7 @@ async def list_documents(
     return documents
 
 
-@router.post("/")
+@router.post("")
 async def upload_document(
     file: Optional[UploadFile] = File(None),
     link: Optional[str] = Form(None),

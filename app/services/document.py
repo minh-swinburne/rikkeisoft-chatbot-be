@@ -2,8 +2,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.repos.document import DocumentRepository
 from app.core.config import settings
 from app.schemas import DocumentBase, DocumentModel, DocumentUpdate, DocumentStatusModel
+from app.models import Document
+from .user import UserService
 from bs4 import BeautifulSoup  # For .html
-from docx import Document  # For .docx
+from docx import Document as Docx  # For .docx
 from typing import Optional
 from PIL import Image
 import pytesseract
@@ -19,6 +21,13 @@ class DocumentService:
     """
     Handles business logic for document management, including text extraction, CRUD operations, and processing.
     """
+    @staticmethod
+    async def modelize_document(db: AsyncSession, document: Document) -> DocumentModel:
+        """Create a new document in the database."""
+        document.creator = await UserService.get_user_by_id(db, document.creator)
+        document.uploader = await UserService.get_user_by_id(db, document.uploader)
+        print(document.__dict__)
+        return document
 
     @staticmethod
     async def create_document(
@@ -26,6 +35,7 @@ class DocumentService:
     ) -> DocumentModel:
         """Create a new document in the database."""
         document = await DocumentRepository.create(db, doc_data)
+        document = await DocumentService.modelize_document(db, document)
         return DocumentModel.model_validate(document)
 
     @staticmethod
@@ -33,23 +43,30 @@ class DocumentService:
         """List all documents in the database."""
         docs = await DocumentRepository.list(db)
         print("Docs:", docs[0].__dict__)
-        return [DocumentModel.model_validate(doc) for doc in docs]
+        return [
+            DocumentModel.model_validate(
+                await DocumentService.modelize_document(db, doc)
+            )
+            for doc in docs
+        ]
 
     @staticmethod
     async def get_document_by_id(
         db: AsyncSession, doc_id: str
     ) -> Optional[DocumentModel]:
         """Retrieve a document by its ID."""
-        doc = await DocumentRepository.get_by_id(db, doc_id)
-        return DocumentModel.model_validate(doc) if doc else None
+        document = await DocumentRepository.get_by_id(db, doc_id)
+        document = await DocumentService.modelize_document(db, document)
+        return DocumentModel.model_validate(document) if document else None
 
     @staticmethod
     async def update_document(
         db: AsyncSession, doc_id: str, updates: DocumentUpdate
     ) -> Optional[DocumentModel]:
         """Update document details."""
-        doc = await DocumentRepository.update(db, doc_id, updates)
-        return DocumentModel.model_validate(doc) if doc else None
+        document = await DocumentRepository.update(db, doc_id, updates)
+        document = await DocumentService.modelize_document(db, document)
+        return DocumentModel.model_validate(document) if document else None
 
     @staticmethod
     async def update_status(
@@ -158,7 +175,7 @@ class DocumentService:
 
     @staticmethod
     def _extract_text_from_doc(file_path: str) -> str:
-        doc = Document(file_path)
+        doc = Docx(file_path)
         return "\n".join([p.text for p in doc.paragraphs])
 
     @staticmethod

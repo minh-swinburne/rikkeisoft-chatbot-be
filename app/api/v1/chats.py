@@ -17,25 +17,23 @@ from app.schemas import (
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("")
 async def get_chat_history(
     token_payload: TokenModel = Depends(validate_access_token),
     db: AsyncSession = Depends(get_db),
 ) -> list[ChatModel]:
     try:
-        print("Token payload for chat history:")
-        print(token_payload)
         user_id = token_payload.sub
         # Fetch the chats for a given user
         chats = await ChatService.list_chats_by_user_id(db, user_id)
-        print("Chats:", chats)
+        # print("Chats:", chats)
         return chats
     except Exception as e:
         print("Failed to fetch chat history:", e)
         raise e
 
 
-@router.post("/")
+@router.post("")
 async def create_new_chat(
     chat_data: ChatBase = Body(...),
     token_payload: TokenModel = Depends(validate_access_token),
@@ -105,25 +103,6 @@ async def get_suggested_questions(chat_id: str = Path(...), db: AsyncSession = D
     return JSONResponse({"suggestions": suggestions})
 
 
-@router.delete("/{chat_id}")
-async def delete_chat(
-    chat_id: str = Path(...),
-    token_payload: TokenModel = Depends(validate_access_token),
-    db: AsyncSession = Depends(get_db),
-):
-    chat = await ChatService.get_chat_by_id(db, chat_id)
-    if token_payload.sub != chat.user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You are not authorized to delete this chat",
-        )
-
-    result = await ChatService.delete_chat(db, chat_id)
-    if not result:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found")
-    return JSONResponse(content={"message": "Chat deleted successfully"})
-
-
 @router.put("/{chat_id}")
 async def rename_chat(
     chat_id: str = Path(...),
@@ -141,3 +120,22 @@ async def rename_chat(
     chat = await ChatService.update_chat_name(db, chat_id, updates.name)
 
     return chat
+
+
+@router.delete("/{chat_id}")
+async def delete_chat(
+    chat_id: str = Path(...),
+    token_payload: TokenModel = Depends(validate_access_token),
+    db: AsyncSession = Depends(get_db),
+):
+    chat = await ChatService.get_chat_by_id(db, chat_id)
+    if token_payload.sub != chat.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to delete this chat",
+        )
+
+    result = await ChatService.delete_chat(db, chat_id)
+    if not result:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found")
+    return JSONResponse(content={"message": "Chat deleted successfully"})

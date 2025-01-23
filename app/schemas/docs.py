@@ -2,6 +2,7 @@ from pydantic import BaseModel, ConfigDict
 from datetime import date, datetime
 from typing import Optional, Literal
 from .categories import CategoryModel
+from .users import UserModel
 
 
 class DocumentStatusModel(BaseModel):
@@ -28,6 +29,8 @@ class DocumentBase(BaseModel):
 class DocumentModel(DocumentBase):
     id: str
     categories: list[CategoryModel] # Return categories as objects
+    creator: UserModel
+    uploader: UserModel
     uploaded_time: datetime
     last_modified: datetime
     status: Optional[DocumentStatusModel]

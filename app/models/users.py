@@ -54,7 +54,7 @@ class User(Base):
         Validate the username field for native users.
         """
         if username:
-            if not re.match(r"^[A-Za-z][A-Za-z0-9_]*$", username):
+            if not re.match(r"^[A-Za-z][A-Za-z0-9_]{3,20}$", username):
                 raise ValueError(
                     "Invalid username. Must start with a letter and contain only alphanumeric characters or underscores."
                 )

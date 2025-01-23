@@ -1,14 +1,14 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import Optional
-from app.schemas.sso import SSOBase
+from app.schemas.sso import SSOModel
 from app.models.sso import SSO
 from app.repos import _commit_and_refresh
 
 
 class SSORepository:
     @staticmethod
-    async def create(db: AsyncSession, sso_data: SSOBase) -> SSO:
+    async def create(db: AsyncSession, sso_data: SSOModel) -> SSO:
         """
         Create a new SSO entry.
         """
@@ -27,6 +27,18 @@ class SSORepository:
         """
         result = await db.execute(select(SSO).where(SSO.user_id == user_id))
         return result.scalars().all()
+
+    @staticmethod
+    async def get_by_user_id_and_provider(
+        db: AsyncSession, user_id: str, provider: str
+    ) -> Optional[SSO]:
+        """
+        Get an SSO entry by user ID and provider.
+        """
+        result = await db.execute(
+            select(SSO).where(SSO.user_id == user_id, SSO.provider == provider)
+        )
+        return result.scalars().first()
 
     @staticmethod
     async def get_by_provider_and_sub(

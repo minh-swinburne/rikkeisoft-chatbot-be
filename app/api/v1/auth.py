@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Cookie, Header
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import validate_access_token
 from app.core.database import get_db
@@ -11,7 +12,7 @@ from app.schemas import (
     AuthModel,
     TokenModel,
     UserBase,
-    SSOBase,
+    SSOModel,
 )
 from passlib.context import CryptContext
 from jose import jwt
@@ -31,12 +32,10 @@ def get_microsoft_public_keys():
     return requests.get(jwks_uri).json()
 
 
-MICROSOFT_PUBLIC_KEYS = get_microsoft_public_keys()
-
-
 @router.post(
     "/native",
     response_model=AuthModel,
+    status_code=status.HTTP_200_OK,
     summary="Authenticate native users using username / email and password",
 )
 async def authenticate_native(
@@ -58,7 +57,10 @@ async def authenticate_native(
 
 
 @router.post(
-    "/register", response_model=AuthModel, summary="Register a new native user"
+    "/register",
+    response_model=AuthModel,
+    status_code=status.HTTP_201_CREATED,
+    summary="Register a new native user",
 )
 async def register_native(user_data: UserBase, db: AsyncSession = Depends(get_db)):
     user = await UserService.get_user_by_username(db, user_data.username)
@@ -79,7 +81,11 @@ async def register_native(user_data: UserBase, db: AsyncSession = Depends(get_db
     return UserService.grant_access(user)
 
 
-@router.post("/google")
+@router.post(
+    "/google",
+    response_model=AuthModel,
+    summary="Authenticate users using Google OAuth2",
+)
 async def authenticate_google(
     auth_data: GoogleAuthBase, db: AsyncSession = Depends(get_db)
 ):
@@ -89,10 +95,8 @@ async def authenticate_google(
     ).json()
     print(user_info)
 
-    user = await UserService.get_user_by_provider_sub(
-        db, "google", user_info.get("sub")
-    )
-
+    new_user = False
+    user = await UserService.get_user_by_email(db, user_info.get("email"))
     if not user:
         user_data = UserBase(
             email=user_info.get("email"),
@@ -102,18 +106,28 @@ async def authenticate_google(
         )
         print("\nCreating new Google user..\n")
         user = await UserService.create_user(db, user_data)
+        new_user = True
 
-        sso_data = SSOBase(
+    sso = await UserService.get_sso_by_user_provider(db, user.id, "google")
+    if not sso:
+        sso_data = SSOModel(
             user_id=user.id,
             provider="google",
-            provider_uid=user_info.get("sub"),
+            sub=user_info.get("sub"),
         )
         await UserService.create_sso(db, sso_data)
 
-    return UserService.grant_access(user)
+    return JSONResponse(
+        content=UserService.grant_access(user).model_dump(),
+        status_code=status.HTTP_201_CREATED if new_user else status.HTTP_200_OK,
+    )
 
 
-@router.post("/microsoft")
+@router.post(
+    "/microsoft",
+    response_model=AuthModel,
+    summary="Authenticate users using Microsoft OAuth2",
+)
 async def authenticate_microsoft(
     auth_data: MicrosoftAuthBase,
     db: AsyncSession = Depends(get_db),
@@ -133,10 +147,13 @@ async def authenticate_microsoft(
         print(payload)
     except Exception as e:
         print(f"Error: {e}")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Microsoft ID token",
+        )
 
-    user = await UserService.get_user_by_provider_sub(db, "microsoft", payload["sub"])
-
+    new_user = False
+    user = await UserService.get_user_by_email(db, payload["email"])
     if not user:
         user_data = UserBase(
             email=payload["email"],
@@ -146,15 +163,29 @@ async def authenticate_microsoft(
         )
         print("\nCreating new Microsoft user...\n")
         user = await UserService.create_user(db, user_data)
+        new_user = True
 
-        sso_data = SSOBase(
-            user_id=user.id,
-            provider="google",
-            provider_uid=payload["sub"],
+    try:
+        sso = await UserService.get_sso_by_user_provider(db, user.id, "microsoft")
+        if not sso:
+            sso_data = SSOModel(
+                user_id=user.id,
+                provider="microsoft",
+                sub=payload["sub"],
+            )
+            print("\nCreating new Microsoft SSO entry...\n")
+            await UserService.create_sso(db, sso_data)
+    except Exception as e:
+        print(f"Error: {e}")
+        await UserService.delete_user(db, user.id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
-        await UserService.create_sso(db, sso_data)
 
-    return UserService.grant_access(user)
+    return JSONResponse(
+        content=UserService.grant_access(user).model_dump(),
+        status_code=status.HTTP_201_CREATED if new_user else status.HTTP_200_OK,
+    )
 
 
 @router.get("/validate")
@@ -163,7 +194,7 @@ async def validate_access(token_payload: TokenModel = Depends(validate_access_to
     """
     Validate the token and return the token payload.
     """
-    return {"valid": True, "payload": token_payload}
+    return JSONResponse({"valid": True, "payload": token_payload.model_dump()})
 
 
 # not working

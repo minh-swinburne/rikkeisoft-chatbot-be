@@ -112,4 +112,4 @@ alter table `document_categories` modify `document_id` char(36);
 alter table `user_roles` modify `user_id` char(36);
 
 alter table `users` modify `avatar_url` text default null;
-alter table `documents`
+alter table `sso` add unique (`provider`, `sub`);

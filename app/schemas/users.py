@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, computed_field
 from datetime import datetime
 from typing import Optional
 from .roles import RoleModel
@@ -12,10 +12,6 @@ class UserBase(BaseModel):
     password: Optional[str] = None
     avatar_url: Optional[str] = None
 
-    @property
-    def full_name(self):
-        return f"{self.firstname} {self.lastname}" if self.lastname else self.firstname
-
 
 class UserModel(UserBase):
     id: str
@@ -24,6 +20,11 @@ class UserModel(UserBase):
     roles: list[RoleModel]  # Represent roles as nested objects
 
     model_config = ConfigDict(from_attributes=True)
+
+    @computed_field
+    @property
+    def full_name(self) -> str:
+        return f"{self.firstname} {self.lastname}" if self.lastname else self.firstname
 
 
 class UserUpdate(BaseModel):

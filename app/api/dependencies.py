@@ -17,7 +17,7 @@ async def validate_access_token(
     try:
         # Decode the token
         payload = UserService.validate_token(token)
-        print("Validating token:", payload)
+        # print("Validating token:", payload)
         # Check token type
         if payload.type != "access":
             print("Invalid token type:", payload.type)

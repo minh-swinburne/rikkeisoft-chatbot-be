@@ -52,7 +52,7 @@ CREATE TABLE `chats` (
   `id` char(36) NOT NULL,
   `user_id` char(36) NOT NULL,
   `name` varchar(255) NOT NULL,
-  `last_access` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `last_access` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `chats_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
@@ -155,7 +155,7 @@ CREATE TABLE `documents` (
 
 LOCK TABLES `documents` WRITE;
 /*!40000 ALTER TABLE `documents` DISABLE KEYS */;
-INSERT INTO `documents` VALUES ('075b414e-b346-43ec-8c60-8f3d7e1c4772','COS40005_Unit_Outline_DN_Jan2025.docx.pdf','pdf','','COS40005 Unit Outline','A lot of text','c24d9619-848d-4af6-87c8-718444421762','2025-01-10',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 10:29:45','2025-01-13 10:29:45'),('0b7ead0a-bac2-4fb8-ab2f-33df0fd0f55a','image.pdf','pdf','','PDF with no text','OCR test','c24d9619-848d-4af6-87c8-718444421762','2025-01-10',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 09:30:00','2025-01-13 09:30:00'),('20fec429-7b9d-47e5-bc68-4adcdddeb72c','COS40005 Worklog - Week 2.pdf','pdf','','Worklog week 2','Individual Worklog of COS40005','c24d9619-848d-4af6-87c8-718444421762','2025-01-12',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 09:03:47','2025-01-13 09:03:47'),('44a694c1-9aae-4801-ada4-10cdbd4f712b','image.pdf','pdf','','PDF with no text','OCR test','c24d9619-848d-4af6-87c8-718444421762','2025-01-10',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 09:30:50','2025-01-13 09:30:50'),('cf4593be-0ee6-4257-a9a5-79c27aa9ac61','SWE30003_Unit Outline_Jan_2025_V1 (2).pdf','pdf','','SWE30003 Unit Outline','SWE30003 - Software Architecture and Design\r\nBA-CS at Swinburne Technology\r\nJanuary Semester, 2025','c24d9619-848d-4af6-87c8-718444421762','2024-12-30',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 17:10:10','2025-01-13 17:10:10');
+INSERT INTO `documents` VALUES ('075b414e-b346-43ec-8c60-8f3d7e1c4772','COS40005_Unit_Outline_DN_Jan2025.docx.pdf','pdf','','COS40005 Unit Outline','A lot of text','c24d9619-848d-4af6-87c8-718444421762','2025-01-10',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 10:29:45','2025-01-13 10:29:45'),('20fec429-7b9d-47e5-bc68-4adcdddeb72c','COS40005 Worklog - Week 2.pdf','pdf','','Worklog week 2','Individual Worklog of COS40005','c24d9619-848d-4af6-87c8-718444421762','2025-01-12',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 09:03:47','2025-01-13 09:03:47'),('44a694c1-9aae-4801-ada4-10cdbd4f712b','image.pdf','pdf','','PDF with no text','OCR test','c24d9619-848d-4af6-87c8-718444421762','2025-01-10',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 09:30:50','2025-01-13 09:30:50'),('cf4593be-0ee6-4257-a9a5-79c27aa9ac61','SWE30003_Unit Outline_Jan_2025_V1 (2).pdf','pdf','','SWE30003 Unit Outline','SWE30003 - Software Architecture and Design\r\nBA-CS at Swinburne Technology\r\nJanuary Semester, 2025','c24d9619-848d-4af6-87c8-718444421762','2024-12-30',0,'c24d9619-848d-4af6-87c8-718444421762','2025-01-13 17:10:10','2025-01-13 17:10:10');
 /*!40000 ALTER TABLE `documents` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -226,6 +226,7 @@ CREATE TABLE `sso` (
   `provider` enum('google','microsoft') NOT NULL,
   `sub` varchar(100) NOT NULL,
   PRIMARY KEY (`user_id`,`provider`),
+  UNIQUE KEY `provider` (`provider`,`sub`),
   CONSTRAINT `sso_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -308,4 +309,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-01-22 17:42:51
+-- Dump completed on 2025-01-23 15:27:42
