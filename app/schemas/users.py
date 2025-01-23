@@ -12,6 +12,10 @@ class UserBase(BaseModel):
     password: Optional[str] = None
     avatar_url: Optional[str] = None
 
+    @property
+    def full_name(self):
+        return f"{self.firstname} {self.lastname}" if self.lastname else self.firstname
+
 
 class UserModel(UserBase):
     id: str

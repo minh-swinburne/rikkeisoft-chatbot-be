@@ -1,6 +1,5 @@
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
-from typing import Optional
 from pathlib import Path
 import os
 
@@ -12,6 +11,8 @@ class Settings(BaseSettings):
     root_dir: Path = Path(__file__).resolve().parent.parent
     upload_dir: Path = Path(os.getenv("UPLOAD_DIR") or "./uploads")
     tesseract_cmd: str = os.getenv("TESSERACT_CMD")
+
+    doc_preview_url: str = os.getenv("DOC_PREVIEW_URL")
 
     embedding_model: str = os.getenv("EMBEDDING_MODEL")
     embedding_dimension: int = os.getenv("EMBEDDING_DIMENSION")

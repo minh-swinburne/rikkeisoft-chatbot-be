@@ -1,4 +1,14 @@
-from fastapi import APIRouter, HTTPException, status, UploadFile, Depends, Path, Body, Form, File
+from fastapi import (
+    APIRouter,
+    HTTPException,
+    status,
+    UploadFile,
+    Depends,
+    Path,
+    Body,
+    Form,
+    File,
+)
 from fastapi.responses import JSONResponse, FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import validate_access_token
@@ -136,37 +146,33 @@ async def upload_document(
 
     # Should be done in the background
     try:
-        DocumentService.update_status(db, DocumentStatusModel(
-            document_id=document.id,
-            uploaded="processing"
-        ))
-        file_path = await DocumentService.upload_document(file_content, document.filename)
-        DocumentService.update_status(db, DocumentStatusModel(
-            document_id=document.id,
-            uploaded="complete"
-        ))
+        DocumentService.update_status(
+            db, DocumentStatusModel(document_id=document.id, uploaded="processing")
+        )
+        file_path = await DocumentService.upload_document(
+            file_content, document.filename
+        )
+        DocumentService.update_status(
+            db, DocumentStatusModel(document_id=document.id, uploaded="complete")
+        )
     except:
-        DocumentService.update_status(db, DocumentStatusModel(
-            document_id=document.id,
-            uploaded="error"
-        ))
+        DocumentService.update_status(
+            db, DocumentStatusModel(document_id=document.id, uploaded="error")
+        )
         raise
 
     try:
-        DocumentService.update_status(db, DocumentStatusModel(
-            document_id=document.id,
-            embedded="processing"
-        ))
+        DocumentService.update_status(
+            db, DocumentStatusModel(document_id=document.id, embedded="processing")
+        )
         await DocumentService.embed_document(document, file_path)
-        DocumentService.update_status(db, DocumentStatusModel(
-            document_id=document.id,
-            embedded="complete"
-        ))
+        DocumentService.update_status(
+            db, DocumentStatusModel(document_id=document.id, embedded="complete")
+        )
     except:
-        DocumentService.update_status(db, DocumentStatusModel(
-            document_id=document.id,
-            embedded="error"
-        ))
+        DocumentService.update_status(
+            db, DocumentStatusModel(document_id=document.id, embedded="error")
+        )
         raise
 
     return document
@@ -185,6 +191,7 @@ async def get_document(
         )
 
     document = await DocumentService.get_document_by_id(db, doc_id)
+
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
     return document
@@ -277,6 +284,8 @@ async def preview_document(
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="Document file not found")
 
+    # return settings.doc_preview_url + file_path
+
     # If the file is already a PDF, serve it directly
     if file_type == "pdf":
         return FileResponse(file_path, media_type="application/pdf")
@@ -302,9 +311,7 @@ async def preview_document(
         pdf_filename = document.filename.replace(".html", ".pdf")
         pdf_path = file_dir / pdf_filename
         # Convert HTML to PDF using wkhtmltopdf
-        subprocess.run(
-            ["wkhtmltopdf", file_path, pdf_path], check=True
-        )
+        subprocess.run(["wkhtmltopdf", file_path, pdf_path], check=True)
         return FileResponse(pdf_path, media_type="application/pdf")
 
     # If the file type is not supported, return an error

@@ -68,8 +68,7 @@ class DocumentService:
         return await DocumentRepository.delete(db, doc_id)
 
     @staticmethod
-    async def upload_document(file_content: bytes | str, filename: str
-    ) -> str:
+    async def upload_document(file_content: bytes | str, filename: str) -> str:
         # Prepare directory and file path
         file_dir = settings.upload_dir
         file_dir.mkdir(exist_ok=True)
