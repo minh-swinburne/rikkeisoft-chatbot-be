@@ -132,7 +132,6 @@ async def generate_name(chat_history: list):
     # - Return ONLY the name as a single sentence or phrase, in plaintext. Nothing else should be included.
     # Chat History: {chat_history}
     # """
-
     system_prompt = config["name_generation"]["system_prompt"].format(
         chat_history=chat_history
     )
@@ -155,7 +154,6 @@ async def generate_name(chat_history: list):
             r"['\"\n]", "", name_completion.choices[0].message.content
         ).strip()
     else:
-
         async def async_stream_generator():
             for chunk in name_completion:
                 yield chunk.choices[0].delta.content

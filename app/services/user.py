@@ -13,13 +13,9 @@ from app.schemas import (
     TokenModel,
     AuthModel,
 )
-from passlib.context import CryptContext
 from jose import jwt, JWTError, ExpiredSignatureError
 from datetime import datetime, timezone
 from typing import Optional
-
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class UserService:
@@ -232,6 +228,7 @@ class UserService:
     def validate_token(token: str) -> TokenModel:
         """Validate a JWT token and return its payload."""
         try:
+            print("Validating token:", token)
             payload = jwt.decode(
                 token, key=settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
             )

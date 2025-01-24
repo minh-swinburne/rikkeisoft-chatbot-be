@@ -54,7 +54,7 @@
       "temperature": 0.5,
       "top_p": 1,
       "stop": null,
-      "stream": false
+      "stream": true
     },
     "model_options": [
       "llama-3.2-1b-preview",

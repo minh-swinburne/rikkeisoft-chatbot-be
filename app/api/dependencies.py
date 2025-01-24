@@ -1,10 +1,16 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from passlib.context import CryptContext
 from app.services import UserService
 from app.schemas import TokenModel
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/native")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def get_pwd_context():
+    return pwd_context
 
 
 async def validate_access_token(
@@ -17,7 +23,6 @@ async def validate_access_token(
     try:
         # Decode the token
         payload = UserService.validate_token(token)
-        # print("Validating token:", payload)
         # Check token type
         if payload.type != "access":
             print("Invalid token type:", payload.type)
@@ -26,14 +31,6 @@ async def validate_access_token(
                 detail="Invalid token type",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-
-        # user_roles = payload.get("roles", [])
-        # if not any(role in required_roles for role in user_roles):
-        #     raise HTTPException(
-        #         status_code=status.HTTP_403_FORBIDDEN,
-        #         detail="Insufficient permissions",
-        #         headers={"WWW-Authenticate": "Bearer"},
-        #     )
 
         print("Payload:", payload.__dict__)
         return payload  # The token payload can be used for additional checks
