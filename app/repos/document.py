@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from app.repos.category import CategoryRepository
 from app.repos import _commit_and_refresh
 from app.models import Document, DocumentStatus
 from app.schemas import DocumentBase, DocumentUpdate, DocumentStatusModel
@@ -14,13 +15,23 @@ class DocumentRepository:
         """
         Create a new document entry.
         """
+        print(document_data.categories)
+        categories = []
+        for category_str in document_data.categories:
+            if category_str == "":
+                continue
+            category = await CategoryRepository.get_by_name(db, category_str)
+            if not category:
+                raise ValueError(f"Category with name {category_str} not found.")
+            categories.append(category)
+
+        document_data.categories = categories
         document = Document(
             id=str(uuid.uuid4()),
             **document_data.model_dump(),
             uploaded_time=datetime.now(),
             last_modified=datetime.now(),
         )
-
         document.status = DocumentStatus(document_id=document.id)
 
         db.add(document)

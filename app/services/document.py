@@ -56,8 +56,10 @@ class DocumentService:
     ) -> Optional[DocumentModel]:
         """Retrieve a document by its ID."""
         document = await DocumentRepository.get_by_id(db, doc_id)
+        if not document:
+            return None
         document = await DocumentService.modelize_document(db, document)
-        return DocumentModel.model_validate(document) if document else None
+        return DocumentModel.model_validate(document)
 
     @staticmethod
     async def update_document(
@@ -65,8 +67,10 @@ class DocumentService:
     ) -> Optional[DocumentModel]:
         """Update document details."""
         document = await DocumentRepository.update(db, doc_id, updates)
+        if not document:
+            return None
         document = await DocumentService.modelize_document(db, document)
-        return DocumentModel.model_validate(document) if document else None
+        return DocumentModel.model_validate(document)
 
     @staticmethod
     async def update_status(
@@ -135,20 +139,8 @@ class DocumentService:
             data.append(
                 {
                     "document_id": document.id,
-                    "title": document.title,
                     "text": chunk,
                     "embedding": embedding,
-                    "meta": {
-                        "description": document.description,
-                        "categories": document.categories,
-                        "creator": document.creator,
-                        "created_date": document.created_date,
-                        "restricted": document.restricted,
-                        "uploader": document.uploader,
-                        "uploaded_time": document.uploaded_time,
-                        "url": document.url,
-                        "last_modified": document.last_modified,
-                    },
                 }
             )
 

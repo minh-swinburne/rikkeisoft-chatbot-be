@@ -1,9 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from typing import Optional
 from app.schemas.sso import SSOModel
 from app.models.sso import SSO
 from app.repos import _commit_and_refresh
+from typing import Optional
 
 
 class SSORepository:

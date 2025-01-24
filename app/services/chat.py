@@ -1,7 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.repos.chat import ChatRepository
 from app.repos.message import MessageRepository
-from app.bot.chat import generate_answer, suggest_questions, generate_name
+from app.repos.chat import ChatRepository
 from app.schemas import ChatBase, ChatModel, MessageBase, MessageModel
 from typing import AsyncGenerator, Optional
 import re
@@ -23,7 +22,9 @@ class ChatService:
         db: AsyncSession, message_data: MessageBase
     ) -> MessageModel | AsyncGenerator[str, None]:
         """Create a new message in the database."""
-        await MessageRepository.create(db, message_data)
+        from app.bot.chat import generate_answer
+
+        message = await MessageRepository.create(db, message_data)
         chat_history = [
             {"role": message.role, "content": message.content}
             for message in await MessageRepository.list_by_chat_id(
@@ -31,7 +32,15 @@ class ChatService:
             )
         ][::-1]
 
-        answer = await generate_answer(chat_history)
+        chat = await ChatRepository.get_by_id(db, message_data.chat_id)
+
+        try:
+            # Generate a response based on the chat history
+            answer = await generate_answer(chat_history, db, chat.user_id)
+        except:
+            print("Failed to generate answer. Deleting message, ID:", message.id)
+            MessageRepository.delete(db, message.id)
+            raise
 
         if isinstance(answer, str):
             # Complete response: Add message to the database and return
@@ -65,6 +74,8 @@ class ChatService:
     @staticmethod
     async def suggest_message(db: AsyncSession, chat_id: str) -> list[str]:
         """Generate suggested questions based on chat history."""
+        from app.bot.chat import suggest_questions
+
         chat_history = [
             {"role": message.role, "content": message.content}
             for message in await MessageRepository.list_by_chat_id(db, chat_id, limit=4, descending=True)
@@ -74,6 +85,8 @@ class ChatService:
     @staticmethod
     async def generate_name(db: AsyncSession, chat_id: str) -> ChatModel | AsyncGenerator[str, None]:
         """Generate a name for the chat based on chat history."""
+        from app.bot.chat import generate_name
+
         chat_history = [
             {"role": message.role, "content": message.content}
             for message in await MessageRepository.list_by_chat_id(db, chat_id, limit=2, descending=True)
@@ -82,7 +95,7 @@ class ChatService:
         name = await generate_name(chat_history)
 
         if isinstance(name, str):
-            name = re.sub(r"'\"", "", name).strip()
+            name = re.sub(r"['\"]", "", name).strip()
             chat = await ChatRepository.update_name(db, chat_id, name)
             return ChatModel.model_validate(chat)
         else:
@@ -92,8 +105,8 @@ class ChatService:
                     if chunk:
                         content += chunk
                         yield chunk
-                await ChatRepository.update_name(db, chat_id, content)
-                
+                await ChatRepository.update_name(db, chat_id, re.sub(r"['\"]", "", content))
+
             return stream_generator()
 
     @staticmethod

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import date, datetime
 from typing import Optional, Literal
-from .categories import CategoryModel
+from .cats import CategoryModel
 from .users import UserModel
 
 

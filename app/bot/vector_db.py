@@ -31,14 +31,12 @@ def setup_vector_db():
         schema.add_field(
             field_name="document_id", datatype=DataType.VARCHAR, max_length=128
         )
-        schema.add_field(field_name="title", datatype=DataType.VARCHAR, max_length=512)
         schema.add_field(field_name="text", datatype=DataType.VARCHAR, max_length=8192)
         schema.add_field(
             field_name="embedding",
             datatype=DataType.FLOAT_VECTOR,
             dim=settings.embedding_dimension,
         )
-        schema.add_field(field_name="meta", datatype=DataType.JSON)  # Metadata
 
         index_params = client.prepare_index_params()
 
@@ -72,7 +70,7 @@ def delete_data(doc_id: str):
     return result["delete_count"]
 
 
-def search_context(user_query: str, top_k: int = 5):
+def search_context(user_query: str, top_k: int = 5) -> list[dict]:
     context = []
     query_embedding = get_embedding(user_query)
     search_results = client.search(
@@ -81,27 +79,16 @@ def search_context(user_query: str, top_k: int = 5):
         anns_field="embedding",
         limit=top_k,
         search_params={"metric_type": "COSINE"},
-        output_fields=["title", "text"],  # Fetch relevant fields for context
+        output_fields=["document_id", "text"],  # Fetch relevant fields for context
     )
 
     for result in search_results[0]:
         context.append(
             {
-                "title": result["entity"].get("title"),
+                "document_id": result["entity"].get("document_id"),
                 "text": result["entity"].get("text"),
                 "score": result["distance"],
             }
         )
 
     return context
-
-
-def query_document(title: str):
-    query_results = client.query(
-        collection_name=collection_name,
-        filter=f'title == "{title}"',
-        output_fields=["description", "meta"],
-        limit=1,
-    )
-
-    return query_results[0] if query_results else None

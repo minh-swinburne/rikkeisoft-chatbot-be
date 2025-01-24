@@ -35,7 +35,6 @@ router = APIRouter()
 authorized_roles = ["admin"]
 
 
-
 @router.get("")
 async def list_documents(
     token_payload: TokenModel = Depends(validate_access_token),
@@ -124,11 +123,15 @@ async def upload_document(
             status_code=400, detail="Either a file or a link must be provided."
         )
 
-    creator_user = await UserService.get_user_by_id(db, creator)
+    creator_user = await UserService.get_user_by_email(db, creator)
+
     if not creator_user:
         raise HTTPException(
             status_code=404, detail=f"User with ID '{creator}' not found."
         )
+
+    print("Creator:", creator_user)
+    print("Creator ID:", creator_user.id)
 
     document_data = DocumentBase(
         filename=filename,
@@ -137,7 +140,7 @@ async def upload_document(
         title=title,
         description=description,
         categories=categories,
-        creator=creator,
+        creator=creator_user.id,
         created_date=created_date,
         restricted=restricted,
         uploader=token_payload.sub,
@@ -148,31 +151,49 @@ async def upload_document(
     # Should be done in the background
     try:
         DocumentService.update_status(
-            db, DocumentStatusModel(document_id=document.id, uploaded="processing")
+            db,
+            DocumentStatusModel(
+                document_id=document.id, uploaded="processing", embedded="pending"
+            ),
         )
         file_path = await DocumentService.upload_document(
             file_content, document.filename
         )
         DocumentService.update_status(
-            db, DocumentStatusModel(document_id=document.id, uploaded="complete")
+            db,
+            DocumentStatusModel(
+                document_id=document.id, uploaded="complete", embedded="pending"
+            ),
         )
     except:
         DocumentService.update_status(
-            db, DocumentStatusModel(document_id=document.id, uploaded="error")
+            db,
+            DocumentStatusModel(
+                document_id=document.id, uploaded="error", embedded="pending"
+            ),
         )
         raise
 
     try:
         DocumentService.update_status(
-            db, DocumentStatusModel(document_id=document.id, embedded="processing")
+            db,
+            DocumentStatusModel(
+                document_id=document.id, uploaded="complete", embedded="processing"
+            ),
         )
         await DocumentService.embed_document(document, file_path)
         DocumentService.update_status(
-            db, DocumentStatusModel(document_id=document.id, embedded="complete")
+            db,
+            DocumentStatusModel(
+                document_id=document.id, uploaded="complete", embedded="complete"
+            ),
         )
     except:
         DocumentService.update_status(
-            db, DocumentStatusModel(document_id=document.id, embedded="error")
+            db,
+            DocumentStatusModel(
+                document_id=document.id, uploaded="complete", embedded="error"
+            ),
         )
         raise
 
@@ -235,31 +256,32 @@ async def delete_document(
     return JSONResponse(content={"message": "Document deleted successfully"})
 
 
-@router.get("/{doc_id}/download")
-async def download_document(
-    doc_id: str = Path(...),
-    token_payload: TokenModel = Depends(validate_access_token),
-    db: AsyncSession = Depends(get_db),
-):
-    if not any(role in authorized_roles for role in token_payload.roles):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Insufficient permissions. Only admins can download documents.",
-        )
+# @router.get("/{doc_id}/download")
+# async def download_document(
+#     doc_id: str = Path(...),
+#     token_payload: TokenModel = Depends(validate_access_token),
+#     db: AsyncSession = Depends(get_db),
+# ):
+#     print("Download document")
+#     if not any(role in authorized_roles for role in token_payload.roles):
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="Insufficient permissions. Only admins can download documents.",
+#         )
 
-    document = await DocumentService.get_document_by_id(db, doc_id)
-    if not document:
-        raise HTTPException(status_code=404, detail="Document not found")
+#     document = await DocumentService.get_document_by_id(db, doc_id)
+#     if not document:
+#         raise HTTPException(status_code=404, detail="Document not found")
 
-    file_dir = settings.upload_dir
-    file_path = file_dir / document.filename
+#     file_dir = settings.upload_dir
+#     file_path = file_dir / document.filename
 
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="Document file not found")
+#     if not file_path.exists():
+#         raise HTTPException(status_code=404, detail="Document file not found")
 
-    return FileResponse(
-        file_path, filename=document.filename, media_type="application/octet-stream"
-    )
+#     return FileResponse(
+#         file_path, filename=document.filename, media_type="application/octet-stream"
+#     )
 
 
 @router.get("/{doc_id}/preview")
@@ -268,6 +290,7 @@ async def preview_document(
     token_payload: TokenModel = Depends(validate_access_token),
     db: AsyncSession = Depends(get_db),
 ):
+    print("Preview document")
     if not any(role in authorized_roles for role in token_payload.roles):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -278,42 +301,19 @@ async def preview_document(
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
+    if document.file_type == "html":
+        return document.url
+
     file_dir = settings.upload_dir
     file_path = file_dir / document.filename
-    file_type = document.file_type
 
     if not file_path.exists():
+        print(file_path)
         raise HTTPException(status_code=404, detail="Document file not found")
 
-    # return settings.doc_preview_url + file_path
+    url = settings.doc_preview_url + "http://ieee802.org/secmail/docIZSEwEqHFr.doc"
+    # url = settings.doc_preview_url + file_path.name
 
-    # If the file is already a PDF, serve it directly
-    if file_type == "pdf":
-        return FileResponse(file_path, media_type="application/pdf")
-    # If the file is DOCX, convert it to PDF using LibreOffice
-    elif file_type == "docx":
-        pdf_filename = document.filename.replace(".docx", ".pdf")
-        pdf_path = file_dir / pdf_filename
-        # Convert DOCX to PDF using LibreOffice (headless)
-        subprocess.run(
-            ["libreoffice", "--headless", "--convert-to", "pdf", file_path], check=True
-        )
-        return FileResponse(pdf_path, media_type="application/pdf")
-    # If the file is XLSX, convert it to PDF using LibreOffice
-    elif file_type == "xlsx":
-        pdf_filename = document.filename.replace(".xlsx", ".pdf")
-        pdf_path = file_dir / pdf_filename
-        # Convert XLSX to PDF using LibreOffice (headless)
-        subprocess.run(
-            ["libreoffice", "--headless", "--convert-to", "pdf", file_path], check=True
-        )
-        return FileResponse(pdf_path, media_type="application/pdf")
-    elif file_type == "html":
-        pdf_filename = document.filename.replace(".html", ".pdf")
-        pdf_path = file_dir / pdf_filename
-        # Convert HTML to PDF using wkhtmltopdf
-        subprocess.run(["wkhtmltopdf", file_path, pdf_path], check=True)
-        return FileResponse(pdf_path, media_type="application/pdf")
+    print("Preview URL:", url)
 
-    # If the file type is not supported, return an error
-    raise HTTPException(status_code=415, detail="Unsupported file type")
+    return url

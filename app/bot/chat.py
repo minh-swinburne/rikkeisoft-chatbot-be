@@ -1,9 +1,12 @@
-from groq import Groq, Stream
+from sqlalchemy.ext.asyncio import AsyncSession
 from groq.types.chat import ChatCompletion, ChatCompletionChunk
+from groq import Groq, Stream
+from app.bot.vector_db import search_context
 from app.bot import config
-from app.bot.vector_db import search_context, query_document
 from app.core.config import settings
 from app.utils import extract_content
+from app.services import UserService, DocumentService
+from app.schemas import DocumentModel
 from typing import Union
 import httpx
 import re
@@ -20,40 +23,54 @@ client = Groq(
 )
 
 
-async def generate_answer(chat_history: list):
+async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: str):
     user_query = chat_history[-1]["content"]
     context_results = search_context(user_query)
+    doc_ids = {result["document_id"] for result in context_results}
+    print("Doc IDs:", doc_ids)
 
-    #     system_prompt = f"""
-    # Instructions:
-    # - Be helpful and answer questions concisely. If you don't know the answer or can't find the relevant documents, let the user know.
-    # - Utilize the context provided for accurate and specific information.
-    # - Incorporate your pre-existing knowledge to enhance the depth and relevance of your response.
-    # - Cite your sources and relevant documents when providing information.
+    user = await UserService.get_user_by_id(db, user_id)
+    if not user:
+        raise ValueError("User not found")
 
-    # Context:
-    # { "\n".join(f"- Title: '{doc["title"]}'\nExcerpt: {doc["text"]}\nScore: {doc["score"]}" for doc in context) }
-    #     """
-
-    context = "\n".join(
-        f"- Title: '{doc["title"]}'\nExcerpt: {doc["text"]}\nScore: {doc["score"]}"
-        for doc in context_results
-    )
+    user_roles = [role.name for role in user.roles]
+    documents: list[DocumentModel] = []
+    context = []
     sources = []
 
-    for title in {doc["title"] for doc in context_results}:
-        source = query_document(title)
-        if source:
+    for doc_id in doc_ids:
+        document = await DocumentService.get_document_by_id(db, doc_id)
+        if not document:
+            continue
+
+        restricted = document.restricted
+        if not restricted or any(
+            role in ["admin", "system_admin"] for role in user_roles
+        ):
+            documents.append(document)
             sources.append(
-                f"- Title: '{title}'\nDescription: {source["description"]}\nCategories: {source["meta"]["categories"]}"
+                f"- Title: '{re.sub(r'\'', '', document.title)}'\nDescription: {document.description}\nCategories: {document.categories}\nCreated by: {document.creator.full_name}\nCreated date: {document.created_date}\nURL: {document.url}\nLast modified: {document.last_modified}"
             )
 
+    for result in context_results:
+        document_id = result["document_id"]
+        document = next((doc for doc in documents if doc.id == document_id), None)
+        if not document:
+            continue
+
+        context.append(
+            f"- Title: '{re.sub(r"\'", "", document.title)}'\nExcerpt: {result["text"]}\nScore: {result["score"]}"
+        )
+
     print(len(context_results))
-    print("Context: ", context)
-    print("Sources: ", sources)
+    print("\nContext:\n", context)
+    print("\nSources:\n", sources)
 
     system_prompt = config["answer_generation"]["system_prompt"].format(
-        context=context, sources="\n".join(sources)
+        context="\n".join(context),
+        sources="\n".join(sources),
+        user_info=f"- Name: {user.full_name}\n- Email: {user.email}\n- Roles: {', '.join(user_roles)}",
+        user_query=user_query,
     )
 
     chat_completion: Union[ChatCompletion, Stream[ChatCompletionChunk]] = (
@@ -82,23 +99,6 @@ async def generate_answer(chat_history: list):
 def suggest_questions(chat_history: list, context: str = None):
     message_template = config["question_suggestion"]["message_template"]
 
-    #     system_prompt = f"""
-    # Instructions:
-    # - Suggest 3 to 4 helpful and contextually relevant questions that the user may ask next.
-    # - Base your suggestions on the user's chat history and provided context.
-    # - Keep the questions concise and relevant to the conversation.
-    # - Return suggested questions as a simple ordered list of the questions themselves only, without any additional information, justification or formatting.
-
-    # Format:
-    # 1. Question 1?
-    # 2. Question 2?
-    # 3. Question 3?
-
-    # Chat History: {chat_history}
-    # {"Context: " + context if context else ""}
-    # Examples: {message_template}
-    #     """
-
     system_prompt = config["question_suggestion"]["system_prompt"].format(
         chat_history=chat_history,
         context=f"\nContext: {context}\n" if context else "",
@@ -125,13 +125,6 @@ def suggest_questions(chat_history: list, context: str = None):
 
 
 async def generate_name(chat_history: list):
-    #     system_prompt = f"""
-    # Instructions:
-    # - Generate a name for the chat based on the provided chat history.
-    # - The name should be descriptive and relevant to the conversation.
-    # - Return ONLY the name as a single sentence or phrase, in plaintext. Nothing else should be included.
-    # Chat History: {chat_history}
-    # """
     system_prompt = config["name_generation"]["system_prompt"].format(
         chat_history=chat_history
     )
@@ -154,6 +147,7 @@ async def generate_name(chat_history: list):
             r"['\"\n]", "", name_completion.choices[0].message.content
         ).strip()
     else:
+
         async def async_stream_generator():
             for chunk in name_completion:
                 yield chunk.choices[0].delta.content

@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.schemas import RoleBase, RoleModel
+from app.schemas import RoleBase
 from app.models import Role
 from app.repos import _commit_and_refresh
 from typing import Optional
