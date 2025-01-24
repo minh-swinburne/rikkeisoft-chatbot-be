@@ -66,7 +66,17 @@ async def update_config(config_name: str = Path(...), updates: ConfigUpdate = Bo
     return {"message": f"Config section '{config_name}' updated successfully."}
 
 
-# @router.get("/all", response_model=Config)
-# async def get_all_configs():
-#     """Retrieve the entire configuration."""
-#     return config
+@router.get("/{config_name}/stream")
+async def check_stream(
+    config_name: str = Path(..., title="The name of the configuration section"),
+    token_payload: TokenModel = Depends(validate_access_token),
+) -> bool:
+    """Check whether the configuration section supports streaming."""
+    if config_name not in config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Config section '{config_name}' not found.",
+        )
+
+    print(f"Loading config for: {config_name}")  # Debugging output
+    return config[config_name]["params"]["stream"]

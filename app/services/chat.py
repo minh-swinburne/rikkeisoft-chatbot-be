@@ -39,13 +39,6 @@ class ChatService:
                 db, MessageBase(chat_id=message_data.chat_id, role="assistant", content=answer)
             )
 
-            # Handle new chat name for the first message
-            if len(chat_history) == 1:
-                new_chat_name = generate_name(chat_history + [{"role": "assistant", "content": answer}])
-                await ChatRepository.update_name(
-                    db, message.chat_id, re.sub(r"'\"", "", new_chat_name).strip()
-                )
-
             await ChatRepository.update_last_access(db, message_data.chat_id)
             return MessageModel.model_validate(message)
         else:
@@ -65,15 +58,6 @@ class ChatService:
                     db, MessageBase(chat_id=message_data.chat_id, role="assistant", content=content)
                 )
 
-                # Handle new chat name for the first message
-                if len(chat_history) == 1:
-                    new_chat_name = generate_name(
-                        chat_history + [{"role": "assistant", "content": content}]
-                    )
-                    await ChatRepository.update_name(
-                        db, message_data.chat_id, re.sub(r"'\"", "", new_chat_name).strip()
-                    )
-
                 await ChatRepository.update_last_access(db, message_data.chat_id)
 
             return stream_generator()
@@ -86,6 +70,31 @@ class ChatService:
             for message in await MessageRepository.list_by_chat_id(db, chat_id, limit=4, descending=True)
         ][::-1]
         return suggest_questions(chat_history)
+
+    @staticmethod
+    async def generate_name(db: AsyncSession, chat_id: str) -> ChatModel | AsyncGenerator[str, None]:
+        """Generate a name for the chat based on chat history."""
+        chat_history = [
+            {"role": message.role, "content": message.content}
+            for message in await MessageRepository.list_by_chat_id(db, chat_id, limit=2, descending=True)
+        ][::-1]
+
+        name = await generate_name(chat_history)
+
+        if isinstance(name, str):
+            name = re.sub(r"'\"", "", name).strip()
+            chat = await ChatRepository.update_name(db, chat_id, name)
+            return ChatModel.model_validate(chat)
+        else:
+            async def stream_generator():
+                content = ""
+                async for chunk in name:
+                    if chunk:
+                        content += chunk
+                        yield chunk
+                await ChatRepository.update_name(db, chat_id, content)
+                
+            return stream_generator()
 
     @staticmethod
     async def list_chats_by_user_id(db: AsyncSession, user_id: str) -> list[ChatModel]:

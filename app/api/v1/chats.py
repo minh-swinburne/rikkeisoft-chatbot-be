@@ -66,13 +66,13 @@ async def get_conversation(
     return messages
 
 
-@router.post("/{chat_id}")
+@router.post("/{chat_id}", response_model=None)
 async def send_query(
     chat_id: str = Path(...),
     message_data: MessageBase = Body(...),
     token_payload: TokenModel = Depends(validate_access_token),
     db: AsyncSession = Depends(get_db),
-) -> MessageModel:
+) -> MessageModel | StreamingResponse:
     if not message_data.content:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Message cannot be empty")
     if chat_id != message_data.chat_id:
@@ -96,7 +96,28 @@ async def send_query(
         return StreamingResponse(content=message, media_type="text/plain")
 
 
-@router.post("/{chat_id}/suggestions")
+@router.get("/{chat_id}/name", response_model=None)
+async def generate_chat_name(
+    chat_id: str = Path(...),
+    token_payload: TokenModel = Depends(validate_access_token),
+    db: AsyncSession = Depends(get_db),
+) -> ChatModel | StreamingResponse:
+    chat = await ChatService.get_chat_by_id(db, chat_id)
+    if token_payload.sub != chat.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to generate a name for this chat",
+        )
+
+    chat = await ChatService.generate_name(db, chat_id)
+
+    if isinstance(chat, ChatModel):
+        return chat
+    else:
+        return StreamingResponse(content=chat, media_type="text/plain")
+
+
+@router.get("/{chat_id}/suggestions")
 async def get_suggested_questions(chat_id: str = Path(...), db: AsyncSession = Depends(get_db)):
     # Generate suggestions based on chat history
     suggestions = await ChatService.suggest_message(db, chat_id)
