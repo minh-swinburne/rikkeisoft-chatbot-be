@@ -2,7 +2,8 @@ from fastapi import APIRouter, HTTPException, status, Depends, Cookie, Header
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.api.dependencies import validate_access_token
+from passlib.context import CryptContext
+from app.api.dependencies import get_pwd_context, validate_access_token
 from app.core.database import get_db
 from app.core.config import settings
 from app.services import UserService
@@ -14,13 +15,11 @@ from app.schemas import (
     UserBase,
     SSOModel,
 )
-from passlib.context import CryptContext
 from jose import jwt
 import requests
 
 
 router = APIRouter()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def get_microsoft_public_keys():
@@ -39,7 +38,9 @@ def get_microsoft_public_keys():
     summary="Authenticate native users using username / email and password",
 )
 async def authenticate_native(
-    form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    pwd_context: CryptContext = Depends(get_pwd_context),
+    db: AsyncSession = Depends(get_db),
 ):
     user = await UserService.get_user_by_username(db, form_data.username)
     if not user:
@@ -62,7 +63,11 @@ async def authenticate_native(
     status_code=status.HTTP_201_CREATED,
     summary="Register a new native user",
 )
-async def register_native(user_data: UserBase, db: AsyncSession = Depends(get_db)):
+async def register_native(
+    user_data: UserBase,
+    pwd_context: CryptContext = Depends(get_pwd_context),
+    db: AsyncSession = Depends(get_db),
+):
     user = await UserService.get_user_by_username(db, user_data.username)
     if user:
         raise HTTPException(
@@ -77,6 +82,7 @@ async def register_native(user_data: UserBase, db: AsyncSession = Depends(get_db
             detail="Email already exists",
         )
 
+    user_data.password = pwd_context.hash(user_data.password)
     user = await UserService.create_user(db, user_data)
     return UserService.grant_access(user)
 

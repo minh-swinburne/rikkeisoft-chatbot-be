@@ -30,9 +30,11 @@ async def read_user(
     db: AsyncSession = Depends(get_db),
 ):
     user = await UserService.get_user_by_id(db, user_id)
+    # Hide sensitive information from other users
+    user.password = None
+
     if not any(role in ["admin", "system_admin"] for role in token_payload.roles):
         # Hide sensitive information from non-admin users
-        user.password = None
         user.username_last_changed = None
 
     if not user:
