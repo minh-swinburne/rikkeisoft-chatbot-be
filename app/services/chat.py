@@ -35,41 +35,41 @@ class ChatService:
         chat = await ChatRepository.get_by_id(db, message_data.chat_id)
 
         try:
+            # raise ValueError("Test error")
             # Generate a response based on the chat history
             answer = await generate_answer(chat_history, db, chat.user_id)
-        except:
-            print("Failed to generate answer. Deleting message, ID:", message.id)
-            MessageRepository.delete(db, message.id)
-            raise
 
-        if isinstance(answer, str):
-            # Complete response: Add message to the database and return
-            message = await MessageRepository.create(
-                db, MessageBase(chat_id=message_data.chat_id, role="assistant", content=answer)
-            )
-
-            await ChatRepository.update_last_access(db, message_data.chat_id)
-            return MessageModel.model_validate(message)
-        else:
-            # Streaming response: Return a StreamingResponse
-            async def stream_generator():
-                content = ""
-                print("Async generator:", answer)
-                async for chunk in answer:  # Handle async generator for streaming
-                    if chunk:
-                        print(chunk, end="")
-                        content += chunk
-                        yield chunk
-
-                print("\n\nAdding message to database...")
-                # Save the full content as a message in the database
-                await MessageRepository.create(
-                    db, MessageBase(chat_id=message_data.chat_id, role="assistant", content=content)
+            if isinstance(answer, str):
+                # Complete response: Add message to the database and return
+                message = await MessageRepository.create(
+                    db, MessageBase(chat_id=message_data.chat_id, role="assistant", content=answer)
                 )
 
                 await ChatRepository.update_last_access(db, message_data.chat_id)
+                return MessageModel.model_validate(message)
+            else:
+                # Streaming response: Return a StreamingResponse
+                async def stream_generator():
+                    content = ""
+                    print("Async generator:", answer)
+                    async for chunk in answer:  # Handle async generator for streaming
+                        if chunk:
+                            print(chunk, end="")
+                            content += chunk
+                            yield chunk
 
-            return stream_generator()
+                    print("\n\nAdding message to database...")
+                    # Save the full content as a message in the database
+                    await MessageRepository.create(
+                        db, MessageBase(chat_id=message_data.chat_id, role="assistant", content=content)
+                    )
+                    await ChatRepository.update_last_access(db, message_data.chat_id)
+
+                return stream_generator()
+        except:
+            print("Failed to generate answer. Deleting message, ID:", message.id)
+            await MessageRepository.delete(db, message.id)
+            raise
 
     @staticmethod
     async def suggest_message(db: AsyncSession, chat_id: str) -> list[str]:
@@ -145,3 +145,8 @@ class ChatService:
     async def delete_chat(db: AsyncSession, chat_id: str) -> bool:
         """Delete a chat from the database."""
         return await ChatRepository.delete(db, chat_id)
+
+    @staticmethod
+    async def delete_message(db: AsyncSession, message_id: str) -> bool:
+        """Delete a message from the database."""
+        return await MessageRepository.delete(db, message_id)

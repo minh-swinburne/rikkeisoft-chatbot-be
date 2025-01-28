@@ -88,7 +88,12 @@ async def send_query(
             detail="You are not authorized to send a message to this chat",
         )
 
-    message = await ChatService.create_message(db, message_data)
+    try:
+        message = await ChatService.create_message(db, message_data)
+    except:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to send message"
+        )
 
     if isinstance(message, MessageModel):
         return message

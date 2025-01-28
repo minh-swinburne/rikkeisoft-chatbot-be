@@ -67,7 +67,8 @@ class MessageRepository:
         try:
             await db.delete(message)
             await db.commit()
-        except:
+        except Exception as e:
+            print(e)
             await db.rollback()
             raise
         return True
