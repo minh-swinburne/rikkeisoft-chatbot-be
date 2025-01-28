@@ -181,6 +181,6 @@ class DocumentService:
 
     @staticmethod
     def _extract_text_from_html(file_path: str) -> str:
-        with open(file_path, "r", encoding="utf-8") as file:
+        with open(file_path, "r") as file:
             soup = BeautifulSoup(file, "html.parser")
             return soup.get_text()
