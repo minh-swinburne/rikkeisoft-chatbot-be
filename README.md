@@ -69,3 +69,5 @@ To run server without reloading a certain directory/file, e.g. the embedding mod
 ```
     uvicorn app.main:app --reload --reload-exclude app/bot/model.py
 ```
+
+groq.RateLimitError

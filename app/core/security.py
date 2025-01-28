@@ -5,10 +5,10 @@ from fastapi import FastAPI
 
 def setup_cors(app: FastAPI):
     print("Setting up CORS...")
-    
+
     origins = [
         "http://localhost:8080",  # Vue frontend URL
-        "http://localhost:8081",  # Vue frontend URL 2
+        "http://localhost:5173",  # Vue frontend URL 2
         "http://127.0.0.1:8000",  # Local development URL (optional)
     ]
 
