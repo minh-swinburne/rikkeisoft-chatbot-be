@@ -312,7 +312,7 @@ async def preview_document(
         raise HTTPException(status_code=404, detail="Document file not found")
 
     url = settings.doc_preview_url + "http://ieee802.org/secmail/docIZSEwEqHFr.doc"
-    # url = settings.doc_preview_url + file_path.name
+    url = settings.doc_preview_url + file_path.name
 
     print("Preview URL:", url)
 
