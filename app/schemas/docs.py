@@ -5,21 +5,28 @@ from .cats import CategoryModel
 from .users import UserModel
 
 
-class DocumentStatusModel(BaseModel):
-    document_id: str
-    uploaded: Literal["pending", "processing", "complete", "error"]
-    embedded: Literal["pending", "processing", "complete", "error"]
+class DocumentStatusBase(BaseModel):
+    uploaded: Optional[Literal["pending", "processing", "complete", "error"]] = (
+        "pending"
+    )
+    embedded: Optional[Literal["pending", "processing", "complete", "error"]] = (
+        "pending"
+    )
 
+
+class DocumentStatusModel(DocumentStatusBase):
     model_config = ConfigDict(from_attributes=True)
+
+    document_id: str
 
 
 class DocumentBase(BaseModel):
-    filename: str
+    file_name: str
     file_type: Literal["pdf", "docx", "xlsx", "html"]
-    url: Optional[str]
+    link_url: Optional[str]
     title: str
     description: Optional[str]
-    categories: list[str]   # Allow categories to be passed as strings
+    categories: list[str]  # Allow categories to be passed as strings
     creator: str
     created_date: Optional[date]
     restricted: bool = False
@@ -27,20 +34,21 @@ class DocumentBase(BaseModel):
 
 
 class DocumentModel(DocumentBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
-    categories: list[CategoryModel] # Return categories as objects
+    categories: list[CategoryModel]  # Return categories as objects
     creator: UserModel
     uploader: UserModel
     uploaded_time: datetime
     last_modified: datetime
-    status: Optional[DocumentStatusModel]
-
-    model_config = ConfigDict(from_attributes=True)
+    status: DocumentStatusModel
 
 
 class DocumentUpdate(BaseModel):
-    url: Optional[str] = None
+    link_url: Optional[str] = None
     title: Optional[str] = None
     description: Optional[str] = None
-    categories: Optional[list[int]] = None  # Allow updating categories by ID
+    categories: Optional[list[str]] = None  # Allow updating categories by ID
     restricted: Optional[bool] = None
+    status: Optional[DocumentStatusBase] = None

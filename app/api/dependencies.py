@@ -32,7 +32,7 @@ async def validate_access_token(
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        print("Payload:", payload.__dict__)
+        # print("Payload:", payload.__dict__)
         return payload  # The token payload can be used for additional checks
     except Exception as e:
         print("Failed to validate token:", e)

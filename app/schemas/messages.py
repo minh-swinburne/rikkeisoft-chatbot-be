@@ -9,7 +9,7 @@ class MessageBase(BaseModel):
 
 
 class MessageModel(MessageBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     time: datetime
-
-    model_config = ConfigDict(from_attributes=True)

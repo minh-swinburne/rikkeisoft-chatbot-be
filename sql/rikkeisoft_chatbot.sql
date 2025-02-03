@@ -130,9 +130,9 @@ DROP TABLE IF EXISTS `documents`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `documents` (
   `id` char(36) NOT NULL,
-  `filename` varchar(255) NOT NULL,
+  `file_name` varchar(255) NOT NULL,
   `file_type` enum('pdf','docx','xlsx','html') NOT NULL,
-  `url` text,
+  `link_url` text,
   `title` varchar(255) NOT NULL,
   `description` text,
   `creator` char(36) NOT NULL,

@@ -3,7 +3,7 @@ from groq.types.chat import ChatCompletion, ChatCompletionChunk
 from groq import Groq, Stream
 from app.bot.vector_db import search_context
 from app.bot import config
-from app.core.config import settings
+from app.core.settings import settings
 from app.utils import extract_content
 from app.services import UserService, DocumentService
 from app.schemas import DocumentModel
@@ -50,7 +50,7 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
             categories = [cat.name for cat in document.categories]
             documents.append(document)
             sources.append(
-                f"- Title: '{re.sub(r'\'', '', document.title)}'\nDescription: {document.description}\nCategories: {categories}\nCreated by: {document.creator.full_name}\nCreated date: {document.created_date}\nURL: {document.url}\nLast modified: {document.last_modified}"
+                f"- Title: '{re.sub(r'\'', '', document.title)}'\nDescription: {document.description}\nCategories: {categories}\nCreated by: {document.creator.full_name}\nCreated date: {document.created_date}\nURL: {document.link_url}\nLast modified: {document.last_modified}"
             )
 
     for result in context_results:

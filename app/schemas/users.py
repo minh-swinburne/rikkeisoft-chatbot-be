@@ -14,12 +14,12 @@ class UserBase(BaseModel):
 
 
 class UserModel(UserBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     created_time: datetime
     username_last_changed: Optional[datetime] = None
     roles: list[RoleModel]  # Represent roles as nested objects
-
-    model_config = ConfigDict(from_attributes=True)
 
     @computed_field
     @property

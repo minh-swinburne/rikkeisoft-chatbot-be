@@ -9,25 +9,25 @@ from fastapi import (
     Form,
     File,
 )
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import validate_access_token
 from app.core.database import get_db
-from app.core.config import settings
+from app.core.settings import settings
 from app.services import DocumentService, UserService
 from app.schemas import (
     DocumentBase,
     DocumentModel,
     DocumentUpdate,
-    DocumentStatusModel,
+    DocumentStatusBase,
     TokenModel,
 )
+from app.utils import get_file_type
 from datetime import date, datetime
 from bs4 import BeautifulSoup
 from typing import Optional
 import subprocess
 import requests
-import asyncio
 import re
 
 
@@ -61,7 +61,7 @@ async def upload_document(
     description: Optional[str] = Form(None),
     categories: list[str] = Form([]),
     creator: str = Form(),
-    created_date: Optional[date] = Form(None, alias="createdDate"),
+    created_date: Optional[date] = Form(None),
     restricted: bool = Form(False),
     token_payload: TokenModel = Depends(validate_access_token),
     db: AsyncSession = Depends(get_db),
@@ -76,24 +76,13 @@ async def upload_document(
         )
 
     if file:
-        # Define supported MIME types
-        supported_types = {
-            "application/pdf": "pdf",
-            # "application/msword": "doc",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
-            # "application/vnd.ms-excel": "xls",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
-        }
+        try:
+            file_type = get_file_type(file.content_type)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Error getting file type: {e}")
 
-        # Check if the uploaded file type is supported
-        if file.content_type not in supported_types:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Unsupported file type: {file.content_type}. Supported types are: {', '.join(supported_types.values())}",
-            )
-
-        filename = file.filename
-        file_type = supported_types[file.content_type]
+        file_name = file.filename
+        file_size = file.size
         file_content = await file.read()
 
     elif link:
@@ -103,24 +92,30 @@ async def upload_document(
             response.raise_for_status()
             soup = BeautifulSoup(response.content, "html.parser")
 
-            # Extract page title and sanitize it for filename
+            # Extract page title and sanitize it for file_name
             page_title = soup.title.string if soup.title else title
-            sanitized_title = re.sub(r"[^\w\s-]", "", page_title).strip()
-            sanitized_title = re.sub(r"[-\s]+", "_", sanitized_title)
+            page_title = re.sub(r"[^\w\s-]", "", page_title).strip()
+            # page_title = re.sub(r"[-\s]+", "_", page_title)
 
             # Save crawled content as an .html file
-            filename = f"{sanitized_title}.html"
+            file_name = f"{page_title}.html"
             file_type = "html"
-            file_content = soup.prettify()
+            file_content = soup.prettify().encode("utf-8")
+            file_size = len(file_content)
 
         except requests.RequestException as e:
             raise HTTPException(
                 status_code=400, detail=f"Error crawling web link: {str(e)}"
             )
-
     else:
         raise HTTPException(
             status_code=400, detail="Either a file or a link must be provided."
+        )
+
+    if file_size > settings.upload_max_size * 1024 * 1024:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File size exceeds the maximum limit of {settings.upload_max_size} MB.",
         )
 
     creator_user = await UserService.get_user_by_email(db, creator)
@@ -130,13 +125,24 @@ async def upload_document(
             status_code=404, detail=f"User with ID '{creator}' not found."
         )
 
-    print("Creator:", creator_user)
-    print("Creator ID:", creator_user.id)
+    print("Uploading file:")
+    print("File name:", file_name)
+    print("File type:", file_type)
+    print("File size:", file_size)
+    if link:
+        print("Link:", link)
+    print("Title:", title)
+    print("Description:", description)
+    print("Categories:", categories)
+    print("Creator:", creator_user.id, creator_user.email)
+    print("Created date:", created_date)
+    print("Restricted:", restricted)
+    print("Uploader:", token_payload.sub, token_payload.email)
 
     document_data = DocumentBase(
-        filename=filename,
+        file_name=file_name,
         file_type=file_type,
-        url=link if link else None,
+        link_url=link if link else None,
         title=title,
         description=description,
         categories=categories,
@@ -150,50 +156,49 @@ async def upload_document(
 
     # Should be done in the background
     try:
-        DocumentService.update_status(
+        print("Uploading document to S3...")
+        await DocumentService.update_document(
             db,
-            DocumentStatusModel(
-                document_id=document.id, uploaded="processing", embedded="pending"
-            ),
+            document.id,
+            DocumentUpdate(status=DocumentStatusBase(uploaded="processing")),
         )
-        file_path = await DocumentService.upload_document(
-            file_content, document.filename
-        )
-        DocumentService.update_status(
+        print("Document status updated to 'processing'")
+        await DocumentService.upload_document(document, file_content)
+        await DocumentService.update_document(
             db,
-            DocumentStatusModel(
-                document_id=document.id, uploaded="complete", embedded="pending"
-            ),
+            document.id,
+            DocumentUpdate(status=DocumentStatusBase(uploaded="complete")),
         )
-    except:
-        DocumentService.update_status(
+        print("✅ Document uploaded successfully!")
+    except Exception as e:
+        print("❌ Error uploading document to S3:", e)
+        await DocumentService.update_document(
             db,
-            DocumentStatusModel(
-                document_id=document.id, uploaded="error", embedded="pending"
-            ),
+            document.id,
+            DocumentUpdate(status=DocumentStatusBase(uploaded="error")),
         )
         raise
 
     try:
-        DocumentService.update_status(
+        print("Embedding document...")
+        await DocumentService.update_document(
             db,
-            DocumentStatusModel(
-                document_id=document.id, uploaded="complete", embedded="processing"
-            ),
+            document.id,
+            DocumentUpdate(status=DocumentStatusBase(embedded="processing")),
         )
-        await DocumentService.embed_document(document, file_path)
-        DocumentService.update_status(
+        await DocumentService.embed_document(document, file_content)
+        await DocumentService.update_document(
             db,
-            DocumentStatusModel(
-                document_id=document.id, uploaded="complete", embedded="complete"
-            ),
+            document.id,
+            DocumentUpdate(status=DocumentStatusBase(embedded="complete")),
         )
-    except:
-        DocumentService.update_status(
+        print("✅ Document embedded successfully!")
+    except Exception as e:
+        print("❌ Error embedding document:", e)
+        await DocumentService.update_document(
             db,
-            DocumentStatusModel(
-                document_id=document.id, uploaded="complete", embedded="error"
-            ),
+            document.id,
+            DocumentUpdate(status=DocumentStatusBase(embedded="error")),
         )
         raise
 
@@ -256,32 +261,25 @@ async def delete_document(
     return JSONResponse(content={"message": "Document deleted successfully"})
 
 
-# @router.get("/{doc_id}/download")
-# async def download_document(
-#     doc_id: str = Path(...),
-#     token_payload: TokenModel = Depends(validate_access_token),
-#     db: AsyncSession = Depends(get_db),
-# ):
-#     print("Download document")
-#     if not any(role in authorized_roles for role in token_payload.roles):
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="Insufficient permissions. Only admins can download documents.",
-#         )
+@router.get("/{doc_id}/download")
+async def download_document(
+    doc_id: str = Path(...),
+    token_payload: TokenModel = Depends(validate_access_token),
+    db: AsyncSession = Depends(get_db),
+):
+    print("Download document")
+    if not any(role in authorized_roles for role in token_payload.roles):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions. Only admins can download documents.",
+        )
 
-#     document = await DocumentService.get_document_by_id(db, doc_id)
-#     if not document:
-#         raise HTTPException(status_code=404, detail="Document not found")
+    url = await DocumentService.generate_document_url(db, doc_id)
+    if not url:
+        raise HTTPException(status_code=404, detail="Document not found")
 
-#     file_dir = settings.upload_dir
-#     file_path = file_dir / document.filename
-
-#     if not file_path.exists():
-#         raise HTTPException(status_code=404, detail="Document file not found")
-
-#     return FileResponse(
-#         file_path, filename=document.filename, media_type="application/octet-stream"
-#     )
+    print("Download URL:", url)
+    return JSONResponse(content={"url": url})
 
 
 @router.get("/{doc_id}/preview")
@@ -290,6 +288,8 @@ async def preview_document(
     token_payload: TokenModel = Depends(validate_access_token),
     db: AsyncSession = Depends(get_db),
 ):
+    import urllib.parse
+
     print("Preview document")
     if not any(role in authorized_roles for role in token_payload.roles):
         raise HTTPException(
@@ -297,23 +297,10 @@ async def preview_document(
             detail="Insufficient permissions. Only admins can preview documents.",
         )
 
-    document = await DocumentService.get_document_by_id(db, doc_id)
-    if not document:
+    url = await DocumentService.generate_document_url(db, doc_id)
+    if not url:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    if document.file_type == "html":
-        return document.url
-
-    file_dir = settings.upload_dir
-    file_path = file_dir / document.filename
-
-    if not file_path.exists():
-        print(file_path)
-        raise HTTPException(status_code=404, detail="Document file not found")
-
-    url = settings.doc_preview_url + "http://ieee802.org/secmail/docIZSEwEqHFr.doc"
-    url = settings.doc_preview_url + file_path.name
-
+    url = settings.doc_preview_url + urllib.parse.quote(url, safe="")
     print("Preview URL:", url)
-
-    return url
+    return JSONResponse(content={"url": url})

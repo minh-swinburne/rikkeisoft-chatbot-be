@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.repos.user import UserRepository
 from app.repos.role import RoleRepository
 from app.repos.sso import SSORepository
-from app.core.config import settings
+from app.core.settings import settings
 from app.utils import parse_timedelta
 from app.schemas import (
     UserBase,
@@ -228,7 +228,7 @@ class UserService:
     def validate_token(token: str) -> TokenModel:
         """Validate a JWT token and return its payload."""
         try:
-            print("Validating token:", token)
+            # print("Validating token:", token)
             payload = jwt.decode(
                 token, key=settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
             )

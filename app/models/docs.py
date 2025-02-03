@@ -50,11 +50,11 @@ class Document(Base):
     __tablename__ = "documents"
 
     id = Column(String(36), primary_key=True)
-    filename = Column(String(255), nullable=False)
+    file_name = Column(String(255), nullable=False)
     file_type = Column(
         Enum("pdf", "docx", "xlsx", "html", name="file_type_enum"), nullable=False
     )
-    url = Column(Text, nullable=True)
+    link_url = Column(Text, nullable=True)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     creator = Column(

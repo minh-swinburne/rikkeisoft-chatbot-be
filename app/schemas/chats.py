@@ -9,10 +9,10 @@ class ChatBase(BaseModel):
 
 
 class ChatModel(ChatBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     last_access: datetime
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 class ChatUpdate(BaseModel):

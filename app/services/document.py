@@ -1,33 +1,28 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repos.document import DocumentRepository
-from app.core.config import settings
-from app.schemas import DocumentBase, DocumentModel, DocumentUpdate, DocumentStatusModel
+from app.core.settings import settings
+from app.schemas import DocumentBase, DocumentModel, DocumentUpdate
 from app.models import Document
+from app.aws import s3
 from .user import UserService
-from bs4 import BeautifulSoup  # For .html
-from docx import Document as Docx  # For .docx
 from typing import Optional
-from PIL import Image
-import pytesseract
-import openpyxl  # For .xlsx
-import fitz  # PyMuPDF for PDF
+from copy import deepcopy
 import io
-
-
-pytesseract.pytesseract.tesseract_cmd = settings.tesseract_cmd
+import os
 
 
 class DocumentService:
     """
     Handles business logic for document management, including text extraction, CRUD operations, and processing.
     """
+
     @staticmethod
     async def modelize_document(db: AsyncSession, document: Document) -> DocumentModel:
         """Create a new document in the database."""
-        document.creator = await UserService.get_user_by_id(db, document.creator)
-        document.uploader = await UserService.get_user_by_id(db, document.uploader)
-        print(document.__dict__)
-        return document
+        model = deepcopy(document)
+        model.creator = await UserService.get_user_by_id(db, document.creator)
+        model.uploader = await UserService.get_user_by_id(db, document.uploader)
+        return DocumentModel.model_validate(model)
 
     @staticmethod
     async def create_document(
@@ -35,20 +30,14 @@ class DocumentService:
     ) -> DocumentModel:
         """Create a new document in the database."""
         document = await DocumentRepository.create(db, doc_data)
-        document = await DocumentService.modelize_document(db, document)
-        return DocumentModel.model_validate(document)
+        return await DocumentService.modelize_document(db, document)
 
     @staticmethod
     async def list_documents(db: AsyncSession) -> list[DocumentModel]:
         """List all documents in the database."""
         docs = await DocumentRepository.list(db)
-        print("Docs:", docs[0].__dict__)
-        return [
-            DocumentModel.model_validate(
-                await DocumentService.modelize_document(db, doc)
-            )
-            for doc in docs
-        ]
+        # print("Docs:", docs[0].__dict__)
+        return [await DocumentService.modelize_document(db, doc) for doc in docs]
 
     @staticmethod
     async def get_document_by_id(
@@ -58,8 +47,7 @@ class DocumentService:
         document = await DocumentRepository.get_by_id(db, doc_id)
         if not document:
             return None
-        document = await DocumentService.modelize_document(db, document)
-        return DocumentModel.model_validate(document)
+        return await DocumentService.modelize_document(db, document)
 
     @staticmethod
     async def update_document(
@@ -69,39 +57,38 @@ class DocumentService:
         document = await DocumentRepository.update(db, doc_id, updates)
         if not document:
             return None
-        document = await DocumentService.modelize_document(db, document)
-        return DocumentModel.model_validate(document)
-
-    @staticmethod
-    async def update_status(
-        db: AsyncSession, updates: DocumentStatusModel
-    ) -> Optional[DocumentModel]:
-        """Update document status."""
-        status = await DocumentRepository.update_status(db, updates)
-        return DocumentStatusModel.model_validate(status) if status else None
+        return await DocumentService.modelize_document(db, document)
 
     @staticmethod
     async def delete_document(db: AsyncSession, doc_id: str) -> bool:
         """Delete a document by its ID."""
-        from app.bot.vector_db import delete_data
+        from app.bot import vector_db
 
-        delete_data(doc_id)
+        document = await DocumentRepository.get_by_id(db, doc_id)
+        object_name = os.path.join(
+            settings.upload_folder, f"{doc_id}.{document.file_type}"
+        )
+        s3.delete_file(object_name)
+        vector_db.delete_data(doc_id)
         return await DocumentRepository.delete(db, doc_id)
 
     @staticmethod
-    async def upload_document(file_content: bytes | str, filename: str) -> str:
-        # Prepare directory and file path
-        file_dir = settings.upload_dir
-        file_dir.mkdir(exist_ok=True)
-        file_path = file_dir / filename
+    async def generate_document_url(db: AsyncSession, doc_id: str) -> str:
+        """Get the URL of a document for previewing."""
+        document = await DocumentRepository.get_by_id(db, doc_id)
+        object_name = os.path.join(
+            settings.upload_folder, f"{doc_id}.{document.file_type}"
+        )
+        return s3.generate_presigned_url(object_name)
 
-        if not file_dir.exists():
-            raise FileNotFoundError("Upload directory not found.")
-
-        with open(file_path, "wb" if isinstance(file_content, bytes) else "w") as file:
-            file.write(file_content)
-
-        return file_path
+    @staticmethod
+    async def upload_document(document: DocumentModel, file_content: bytes) -> str:
+        """Upload file directly to S3 and return its key (path)."""
+        file_obj = io.BytesIO(file_content)
+        object_name = os.path.join(
+            settings.upload_folder, f"{document.id}.{document.file_type}"
+        )
+        return s3.upload_file(object_name, file_obj, document.file_name)
 
     @staticmethod
     def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
@@ -113,7 +100,7 @@ class DocumentService:
         return chunks
 
     @staticmethod
-    def extract_text(file_path: str, file_type: str) -> str:
+    def extract_text(file_content: bytes, file_type: str) -> str:
         """Extract text from a file based on its type."""
         extractors = {
             "pdf": DocumentService._extract_text_from_pdf,
@@ -123,14 +110,14 @@ class DocumentService:
         }
         if file_type not in extractors:
             raise ValueError(f"Unsupported file type: {file_type}")
-        return extractors[file_type](file_path)
+        return extractors[file_type](file_content)
 
     @staticmethod
-    async def embed_document(document: DocumentModel, file_path: str) -> bool:
+    async def embed_document(document: DocumentModel, file_content: bytes) -> bool:
         from app.bot.embedding import get_embedding
         from app.bot.vector_db import insert_data
 
-        text = DocumentService.extract_text(file_path, document.file_type)
+        text = DocumentService.extract_text(file_content, document.file_type)
         chunks = DocumentService.chunk_text(text)
         embeddings = get_embedding(chunks)
         data = []
@@ -147,9 +134,14 @@ class DocumentService:
         insert_data(data)
 
     @staticmethod
-    def _extract_text_from_pdf(file_path: str) -> str:
+    def _extract_text_from_pdf(file_content: bytes) -> str:
+        from PIL import Image
+        import pytesseract
+        import fitz  # PyMuPDF for PDF
+
+        pytesseract.pytesseract.tesseract_cmd = settings.tesseract_cmd
         text = ""
-        with fitz.open(file_path) as pdf:
+        with fitz.open(stream=file_content, filetype="pdf") as pdf:
             for page in pdf:
                 page_text = page.get_text()
                 if not page_text.strip():
@@ -166,21 +158,29 @@ class DocumentService:
         return text
 
     @staticmethod
-    def _extract_text_from_doc(file_path: str) -> str:
-        doc = Docx(file_path)
+    def _extract_text_from_doc(file_content: bytes) -> str:
+        from docx import Document as Docx  # For .docx
+
+        file_obj = io.BytesIO(file_content)
+        doc = Docx(file_obj)
         return "\n".join([p.text for p in doc.paragraphs])
 
     @staticmethod
-    def _extract_text_from_excel(file_path: str) -> str:
+    def _extract_text_from_excel(file_content: bytes) -> str:
+        import openpyxl  # For .xlsx
+
+        file_obj = io.BytesIO(file_content)
         text = ""
-        workbook = openpyxl.load_workbook(file_path)
+        workbook = openpyxl.load_workbook(file_obj)
         for sheet in workbook.worksheets:
             for row in sheet.iter_rows(values_only=True):
                 text += " ".join(map(str, row)) + "\n"
         return text
 
     @staticmethod
-    def _extract_text_from_html(file_path: str) -> str:
-        with open(file_path, "r") as file:
-            soup = BeautifulSoup(file, "html.parser")
-            return soup.get_text()
+    def _extract_text_from_html(file_content: bytes) -> str:
+        from bs4 import BeautifulSoup  # For .html
+
+        html_content = file_content.decode("utf-8")
+        soup = BeautifulSoup(html_content, "html.parser")
+        return soup.get_text()

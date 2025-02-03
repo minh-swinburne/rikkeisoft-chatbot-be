@@ -37,7 +37,7 @@ Framework: FastAPI
 
 ```
     GROQ_API_KEY
-    UPLOAD_DIR (optional)
+    UPLOAD_PATH (optional)
 ```
 
 7. Compose Docker containers with this command:
@@ -61,7 +61,7 @@ This will prepare the Milvus vector database.
 To save tree structure of a directory, run command:
 
 ```
-    tree /f /a [<drive>:][<path>] > [<drive>:]/[<file_path>]/<filename>.txt
+    tree /f /a [<drive>:][<path>] > [<drive>:]/[<file_path>]/<file_name>.txt
 ```
 
 To run server without reloading a certain directory/file, e.g. the embedding model, run command:

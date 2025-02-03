@@ -63,22 +63,21 @@ class DocumentRepository:
         if not document:
             raise ValueError(f"Document with ID {document_id} not found.")
         for key, value in updates.model_dump(exclude_unset=True).items():
+            if key == "status": # One-to-one relationship
+                print("Status value:", value)
+                for status_key, status_value in value.items():
+                    setattr(document.status, status_key, status_value)
+                continue
+            if key == "categories": # One-to-many relationship
+                categories = []
+                for category_str in value:
+                    category = await CategoryRepository.get_by_name(db, category_str)
+                    if not category:
+                        raise ValueError(f"Category with name {category_str} not found.")
+                    categories.append(category)
+                value = categories
             setattr(document, key, value)
         return await _commit_and_refresh(db, document)
-
-    @staticmethod
-    async def update_status(
-        db: AsyncSession, updates: DocumentStatusModel
-    ) -> DocumentStatus:
-        """
-        Update the status of a document.
-        """
-        document_status = await DocumentRepository.get_by_id(db, updates.document_id)
-        if not document_status:
-            raise ValueError(f"Document with ID {updates.document_id} not found.")
-        for key, value in updates.items():
-            setattr(document_status, key, value)
-        return await _commit_and_refresh(db, document_status)
 
     @staticmethod
     async def delete(db: AsyncSession, document_id: str) -> bool:

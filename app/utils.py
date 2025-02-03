@@ -51,3 +51,27 @@ def parse_timedelta(time_str: str):
         return timedelta(minutes=quantity)
     else:
         raise ValueError(f"Unsupported unit: {unit}")
+
+
+def get_file_type(mime_type: str) -> str:
+    """
+    Get the file type based on the MIME content type.
+
+    Args:
+        - mime_type (str): MIME type to get the content type for.
+
+    Returns:
+        - str: Content type based on the MIME type.
+    """
+    # Define supported MIME types
+    supported_types = {
+        "application/pdf": "pdf",
+        # "application/msword": "doc",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+        # "application/vnd.ms-excel": "xls",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+        "text/html": "html",
+    }
+    if mime_type not in supported_types:
+        raise ValueError(f"Unsupported MIME type: {mime_type}")
+    return supported_types[mime_type]

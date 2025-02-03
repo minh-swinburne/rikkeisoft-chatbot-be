@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from passlib.context import CryptContext
 from app.api.dependencies import get_pwd_context, validate_access_token
 from app.core.database import get_db
-from app.core.config import settings
+from app.core.settings import settings
 from app.services import UserService
 from app.schemas import (
     GoogleAuthBase,

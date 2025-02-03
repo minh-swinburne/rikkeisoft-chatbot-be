@@ -8,6 +8,6 @@ class RoleBase(BaseModel):
 
 
 class RoleModel(RoleBase):
-    id: int
-
     model_config = ConfigDict(from_attributes=True)
+
+    id: int
