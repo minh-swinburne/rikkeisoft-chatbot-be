@@ -50,7 +50,7 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
             categories = [cat.name for cat in document.categories]
             documents.append(document)
             sources.append(
-                f"- Title: '{re.sub(r'\'', '', document.title)}'\nDescription: {document.description}\nCategories: {categories}\nCreated by: {document.creator.full_name}\nCreated date: {document.created_date}\nURL: {document.link_url}\nLast modified: {document.last_modified}"
+                f"- Title: '{re.sub(r'\'', '', document.title)}'\nDescription: {document.description}\nCategories: {categories}\nCreated by: {document.creator_user.full_name}\nCreated date: {document.created_date}\nURL: {document.link_url}\nLast modified: {document.last_modified}"
             )
 
     for result in context_results:

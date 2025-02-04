@@ -87,3 +87,15 @@ class Document(Base):
         lazy="joined",
         uselist=False,
     )
+
+    creator_user = relationship(
+        "User",
+        foreign_keys=[creator],
+        lazy="joined",
+    )
+
+    uploader_user = relationship(
+        "User",
+        foreign_keys=[uploader],
+        lazy="joined",
+    )

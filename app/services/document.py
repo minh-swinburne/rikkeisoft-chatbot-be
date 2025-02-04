@@ -2,11 +2,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.repos.document import DocumentRepository
 from app.core.settings import settings
 from app.schemas import DocumentBase, DocumentModel, DocumentUpdate
-from app.models import Document
 from app.aws import s3
-from .user import UserService
 from typing import Optional
-from copy import deepcopy
 import io
 import os
 
@@ -17,27 +14,19 @@ class DocumentService:
     """
 
     @staticmethod
-    async def modelize_document(db: AsyncSession, document: Document) -> DocumentModel:
-        """Create a new document in the database."""
-        model = deepcopy(document)
-        model.creator = await UserService.get_user_by_id(db, document.creator)
-        model.uploader = await UserService.get_user_by_id(db, document.uploader)
-        return DocumentModel.model_validate(model)
-
-    @staticmethod
     async def create_document(
         db: AsyncSession, doc_data: DocumentBase
     ) -> DocumentModel:
         """Create a new document in the database."""
         document = await DocumentRepository.create(db, doc_data)
-        return await DocumentService.modelize_document(db, document)
+        return DocumentModel.model_validate(document)
 
     @staticmethod
     async def list_documents(db: AsyncSession) -> list[DocumentModel]:
         """List all documents in the database."""
         docs = await DocumentRepository.list(db)
         # print("Docs:", docs[0].__dict__)
-        return [await DocumentService.modelize_document(db, doc) for doc in docs]
+        return [DocumentModel.model_validate(doc) for doc in docs]
 
     @staticmethod
     async def get_document_by_id(
@@ -47,7 +36,7 @@ class DocumentService:
         document = await DocumentRepository.get_by_id(db, doc_id)
         if not document:
             return None
-        return await DocumentService.modelize_document(db, document)
+        return DocumentModel.model_validate(document)
 
     @staticmethod
     async def update_document(
@@ -57,7 +46,7 @@ class DocumentService:
         document = await DocumentRepository.update(db, doc_id, updates)
         if not document:
             return None
-        return await DocumentService.modelize_document(db, document)
+        return DocumentModel.model_validate(document)
 
     @staticmethod
     async def delete_document(db: AsyncSession, doc_id: str) -> bool:
