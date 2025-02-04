@@ -4,7 +4,9 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy import create_engine, text
 from app.core.settings import settings
+from app.models import Base
 from typing import AsyncGenerator, Any
 
 
@@ -17,12 +19,21 @@ DATABASE_URL = URL.create(
     database=settings.db_database,
 )
 
-# Create async engine for the database connection
-engine = create_async_engine(DATABASE_URL, echo=False)
+DATABASE_URL_ASYNC = URL.create(
+    drivername=f"{settings.db_dialect}+{settings.db_driver_async}",
+    username=settings.db_username,
+    password=settings.db_password,
+    host=settings.db_host,
+    port=settings.db_port,
+    database=settings.db_database,
+)
+
+# Create an async engine to connect to the database
+async_engine = create_async_engine(DATABASE_URL_ASYNC, echo=settings.db_logging)
 
 # Session configuration to manage DB connections
 AsyncSessionLocal = async_sessionmaker(
-    bind=engine,
+    bind=async_engine,
     autoflush=False,
     expire_on_commit=False,
 )
@@ -35,27 +46,24 @@ async def get_db() -> AsyncGenerator[AsyncSession, Any]:
 
 
 def setup_database():
-    from sqlalchemy import text
-    from app.models import Base
-    import asyncio
-
-    async def create_tables():
-        try:
-            async with engine.begin() as conn:
-                result = await conn.execute(
-                    text(
-                        f"SELECT table_name FROM information_schema.tables WHERE table_schema = '{settings.db_database}'"
-                    )
+    engine = create_engine(DATABASE_URL, echo=settings.db_logging)
+    try:
+        with engine.begin() as conn:
+            result = conn.execute(
+                text(
+                    f"SELECT table_name FROM information_schema.tables WHERE table_schema = '{settings.db_database}'"
                 )
-                tables = result.scalars().all()
-                if len(tables) == 0:
-                    print("Creating tables...")
-                    await conn.run_sync(Base.metadata.create_all)
-            print("✅ Database setup complete!")
-            print("Connected to MySQL database at:", settings.db_host)
-            print("Database:", settings.db_database)
-            print("Tables:", tables)
-        except Exception as e:
-            print("❌ Database setup failed:", e)
+            )
+            tables = result.scalars().all()
+            if len(tables) == 0:
+                print("Creating tables...")
+                Base.metadata.create_all
 
-    asyncio.create_task(create_tables())
+        print("✅ Database setup complete!")
+        print("Connected to MySQL database at:", settings.db_host)
+        print("Database:", settings.db_database)
+        print("Tables:", tables)
+    except Exception as e:
+        print("❌ Database setup failed:", e)
+    finally:
+        engine.dispose()

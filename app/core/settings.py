@@ -27,11 +27,13 @@ class Settings(BaseSettings):
 
     db_dialect: str
     db_driver: str
+    db_driver_async: str
     db_username: str
     db_password: str
     db_host: str
     db_port: str
     db_database: str
+    db_logging: bool
 
     google_client_id: str
     google_client_secret: str
