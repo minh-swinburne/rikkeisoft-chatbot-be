@@ -10,7 +10,15 @@ collection_name = settings.milvus_collection
 # if settings.milvus_db not in db.list_database():
 #     database = db.create_database(settings.milvus_db)
 
-client = MilvusClient(uri=settings.milvus_uri, token=settings.milvus_token)
+for _ in range(5):
+    try:
+        client = MilvusClient(uri=settings.milvus_uri, token=settings.milvus_token)
+        print(f"✅ Connected to Milvus version {client.get_server_version()}.")
+        print(f"Available databases: {client.list_databases()}")
+        print(f"Available collections: {client.list_collections()}")
+        break
+    except Exception as e:
+        print(f"❌ Failed to connect to Milvus: {e}")
 
 
 def setup_vector_db():
@@ -46,12 +54,9 @@ def setup_vector_db():
             client.create_collection(
                 collection_name=collection_name, schema=schema, index_params=index_params
             )
-
-        print(f"✅ Connected to Milvus version {client.get_server_version()}.")
-        print(f"Available databases: {client.list_databases()}")
-        print(f"Available collections: {client.list_collections()}")
+        print(f"✅ Milvus collection setup successfully.")
     except Exception as e:
-        print(f"❌ Failed to connect to Milvus: {e}")
+        print(f"❌ Failed to setup Milvus: {e}")
 
 
 def insert_data(data):
