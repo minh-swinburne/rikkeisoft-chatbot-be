@@ -240,16 +240,20 @@ async def edit_document(
 
     document = await DocumentService.update_document(db, doc_id, updates)
     if not document:
-        raise HTTPException(status_code=404, detail="Document not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
+        )
     return document
 
 
-@router.delete("/{doc_id}")
+@router.delete(
+    "/{doc_id}", status_code=status.HTTP_204_NO_CONTENT, response_class=JSONResponse
+)
 async def delete_document(
     doc_id: str = Path(...),
     token_payload: TokenModel = Depends(validate_access_token),
     db: AsyncSession = Depends(get_db),
-):
+) -> JSONResponse:
     if not any(role in authorized_roles for role in token_payload.roles):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -258,8 +262,12 @@ async def delete_document(
 
     result = await DocumentService.delete_document(db, doc_id)
     if not result:
-        raise HTTPException(status_code=404, detail="Document not found")
-    return JSONResponse(content={"message": "Document deleted successfully"})
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
+        )
+    return JSONResponse(
+        content={"success": result, "message": "Document deleted successfully"}
+    )
 
 
 @router.get("/{doc_id}/download")
@@ -277,7 +285,9 @@ async def download_document(
 
     url = await DocumentService.generate_document_url(db, doc_id)
     if not url:
-        raise HTTPException(status_code=404, detail="Document not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
+        )
 
     print("Download URL:", url)
     return JSONResponse(content={"url": url})
@@ -300,7 +310,9 @@ async def preview_document(
 
     url = await DocumentService.generate_document_url(db, doc_id)
     if not url:
-        raise HTTPException(status_code=404, detail="Document not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
+        )
 
     url = settings.doc_preview_url + urllib.parse.quote(url, safe="")
     print("Preview URL:", url)

@@ -1,7 +1,7 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
-from app.services import UserService
+from app.services import AuthService
 from app.schemas import TokenModel
 
 
@@ -22,7 +22,7 @@ async def validate_access_token(
     """
     try:
         # Decode the token
-        payload = UserService.validate_token(token)
+        payload = AuthService.validate_token(token)
         # Check token type
         if payload.type != "access":
             print("Invalid token type:", payload.type)

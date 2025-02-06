@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Depends, Cookie, Header
+from fastapi import APIRouter, HTTPException, status, Depends, Body, Cookie, Header
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,7 +6,7 @@ from passlib.context import CryptContext
 from app.api.dependencies import get_pwd_context, validate_access_token
 from app.core.database import get_db
 from app.core.settings import settings
-from app.services import UserService
+from app.services import AuthService, UserService
 from app.schemas import (
     GoogleAuthBase,
     MicrosoftAuthBase,
@@ -67,7 +67,7 @@ async def authenticate_native(
         )
 
     # return user  # DEBUG
-    return UserService.grant_access(user)
+    return AuthService.grant_access(user)
 
 
 @router.post(
@@ -77,7 +77,7 @@ async def authenticate_native(
     summary="Register a new native user",
 )
 async def register_native(
-    user_data: UserBase,
+    user_data: UserBase = Body(...),
     pwd_context: CryptContext = Depends(get_pwd_context),
     db: AsyncSession = Depends(get_db),
 ):
@@ -97,7 +97,7 @@ async def register_native(
 
     user_data.password = pwd_context.hash(user_data.password)
     user = await UserService.create_user(db, user_data)
-    return UserService.grant_access(user)
+    return AuthService.grant_access(user)
 
 
 @router.post(
@@ -106,7 +106,7 @@ async def register_native(
     summary="Authenticate users using Google OAuth2",
 )
 async def authenticate_google(
-    auth_data: GoogleAuthBase, db: AsyncSession = Depends(get_db)
+    auth_data: GoogleAuthBase = Body(...), db: AsyncSession = Depends(get_db)
 ):
     user_info = requests.get(
         settings.google_user_info_url,
@@ -137,7 +137,7 @@ async def authenticate_google(
         await UserService.create_sso(db, sso_data)
 
     return JSONResponse(
-        content=UserService.grant_access(user, "google").model_dump(),
+        content=AuthService.grant_access(user, "google").model_dump(),
         status_code=status.HTTP_201_CREATED if new_user else status.HTTP_200_OK,
     )
 
@@ -148,7 +148,7 @@ async def authenticate_google(
     summary="Authenticate users using Microsoft OAuth2",
 )
 async def authenticate_microsoft(
-    auth_data: MicrosoftAuthBase,
+    auth_data: MicrosoftAuthBase = Body(...),
     db: AsyncSession = Depends(get_db),
     microsoft_public_keys=Depends(get_microsoft_public_keys),
 ):
@@ -223,7 +223,7 @@ async def authenticate_microsoft(
         )
 
     return JSONResponse(
-        content=UserService.grant_access(user, "microsoft").model_dump(),
+        content=AuthService.grant_access(user, "microsoft").model_dump(),
         status_code=status.HTTP_201_CREATED if new_user else status.HTTP_200_OK,
     )
 

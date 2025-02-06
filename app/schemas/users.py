@@ -33,7 +33,6 @@ class UserUpdate(BaseModel):
     username: Optional[str] = None
     password: Optional[str] = None
     avatar_url: Optional[str] = None
-    roles: Optional[list[str]] = None  # Allow updating roles by name
 
 
 class UserProfile(BaseModel):
