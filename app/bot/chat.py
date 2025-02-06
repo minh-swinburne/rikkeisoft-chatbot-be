@@ -35,8 +35,8 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
 
     user_roles = [role.name for role in user.roles]
     documents: list[DocumentModel] = []
-    context = []
-    sources = []
+    context = ["| Title | Excerpt | Score |", "| --- | --- | --- |"]
+    sources = ["| Title | Description | Categories | Created by | Created date | URL | Last modified |", "| --- | --- | --- | --- | --- | --- | --- |"]
 
     for doc_id in doc_ids:
         document = await DocumentService.get_document_by_id(db, doc_id)
@@ -48,9 +48,14 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
             role in ["admin", "system_admin"] for role in user_roles
         ):
             categories = [cat.name for cat in document.categories]
+            url = (
+                document.link_url
+                if document.link_url
+                else DocumentService.generate_document_url(db, doc_id)
+            )
             documents.append(document)
             sources.append(
-                f"- Title: '{re.sub(r'\'', '', document.title)}'\nDescription: {document.description}\nCategories: {categories}\nCreated by: {document.creator_user.full_name}\nCreated date: {document.created_date}\nURL: {document.link_url}\nLast modified: {document.last_modified}"
+                f"| {document.title} | {re.sub("\n", "<br>", document.description)} | {categories} | {document.creator_user.full_name} | {document.created_date} | {url} | {document.last_modified} |"
             )
 
     for result in context_results:
@@ -60,7 +65,7 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
             continue
 
         context.append(
-            f"- Title: '{re.sub(r"\'", "", document.title)}'\nExcerpt: {result["text"]}\nScore: {result["score"]}"
+            f"| {document.title} | {re.sub("\n", "<br>", result["text"])} | {result["score"]} |"
         )
 
     print(len(context_results))
