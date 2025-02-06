@@ -13,7 +13,7 @@ def generate_presigned_url(object_name: str, expiration=3600):
     try:
         response = client.head_object(Bucket=bucket_name, Key=object_name)
         file_name = response["Metadata"].get("filename")
-        print(f"Generating presigned URL for {file_name}...")
+        print(f"🔗 Generated presigned URL for {file_name}.")
 
         return client.generate_presigned_url(
             "get_object",
@@ -25,7 +25,7 @@ def generate_presigned_url(object_name: str, expiration=3600):
             ExpiresIn=expiration,
         )
     except (ClientError, NoCredentialsError) as e:
-        print(f"S3 Presigned URL Error: {e}")
+        print(f"❌ S3 Presigned URL Error: {e}")
         return None
 
 
@@ -40,9 +40,10 @@ def upload_file(object_name: str, file_obj: IO[bytes], extra_args: dict = None) 
             object_name,
             ExtraArgs=extra_args,
         )
+        print("📤 Uploaded file to S3 successfully.")
         return object_name
     except (ClientError, NoCredentialsError) as e:
-        print(f"S3 Upload Error: {e}")
+        print(f"❌ S3 Upload Error: {e}")
         raise e
 
 
@@ -50,9 +51,10 @@ def delete_file(object_name: str) -> bool:
     """Delete a file from the S3 bucket."""
     try:
         client.delete_object(Bucket=bucket_name, Key=object_name)
+        print("🗑️ Deleted file from S3 successfully.")
         return True
     except (ClientError, NoCredentialsError) as e:
-        print(f"S3 Delete Error: {e}")
+        print(f"❌ S3 Delete Error: {e}")
         return False
 
 

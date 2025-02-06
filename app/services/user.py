@@ -173,6 +173,7 @@ class UserService:
             "lastname": auth_data.lastname,  # Optional
             "username": auth_data.username,  # Optional claim
             "avatar_url": auth_data.avatar_url,  # Optional claim
+            "provider": auth_data.provider,  # Optional claim
             "roles": auth_data.roles,  # Optional claim
             "type": "access",  # Custom claim
             "iat": datetime.now(timezone.utc),  # Issued at
@@ -201,7 +202,7 @@ class UserService:
         )
 
     @staticmethod
-    def grant_access(user: UserModel) -> AuthModel:
+    def grant_access(user: UserModel, provider: str = "") -> AuthModel:
         """Generate access and refresh tokens for a user."""
         roles = list(map(lambda role: role.name, user.roles))
         auth_data = TokenBase(
@@ -211,6 +212,7 @@ class UserService:
             lastname=user.lastname,
             username=user.username,
             avatar_url=user.avatar_url,
+            provider=provider,
             roles=roles,
         )
         access_token = UserService.create_access_token(auth_data)
@@ -233,10 +235,10 @@ class UserService:
                 token, key=settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
             )
             return TokenModel.model_validate(payload)
-        except JWTError:
-            raise ValueError("Invalid token")
         except ExpiredSignatureError:
             raise ValueError("Token expired")
+        except JWTError:
+            raise ValueError("Invalid token")
 
     @staticmethod
     async def refresh_token(db: AsyncSession, refresh_token: str) -> str:

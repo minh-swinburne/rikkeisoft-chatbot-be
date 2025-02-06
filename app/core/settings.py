@@ -6,6 +6,7 @@ load_dotenv(override=True)
 
 
 class Settings(BaseSettings):
+    aws_region: str
     aws_s3_bucket: str
     avatar_folder: str
     upload_folder: str
@@ -44,6 +45,7 @@ class Settings(BaseSettings):
     microsoft_client_secret: str
     microsoft_redirect_uri: str
     microsoft_authority: str
+    microsoft_avatar_api: str
 
     milvus_host: str
     milvus_port: str

@@ -61,21 +61,29 @@ def setup_vector_db():
 
 def insert_data(data):
     # Insert data
-    result = client.insert(collection_name=collection_name, data=data)
-    client.flush(collection_name=collection_name)
+    try:
+        result = client.insert(collection_name=collection_name, data=data)
+        client.flush(collection_name=collection_name)
 
-    print(f"Inserted {result["insert_count"]} records into '{collection_name}'.")
-    return result["insert_count"]
+        print(f"📤 Inserted {result["insert_count"]} records into collection '{collection_name}' of Milvus.")
+        return result["insert_count"]
+    except Exception as e:
+        print(f"❌ Failed to insert data into Milvus: {e}")
+        return 0
 
 
 def delete_data(doc_id: str):
-    result = client.delete(
-        collection_name=collection_name,
-        filter=f"document_id == '{doc_id}'",
-    )
+    try:
+        result = client.delete(
+            collection_name=collection_name,
+            filter=f"document_id == '{doc_id}'",
+        )
 
-    print(f"Deleted {result["delete_count"]} embeddings of document with ID '{doc_id}'.")
-    return result["delete_count"]
+        print(f"🗑️ Deleted {result["delete_count"]} embeddings of document with ID '{doc_id}' from collection '{collection_name}' of Milvus.")
+        return result["delete_count"]
+    except Exception as e:
+        print(f"❌ Failed to delete data from Milvus: {e}")
+        return 0
 
 
 def search_context(user_query: str, top_k: int = 5) -> list[dict]:

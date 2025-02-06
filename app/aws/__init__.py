@@ -1,8 +1,9 @@
 import boto3
 from botocore.config import Config
+from app.core.settings import settings
 
 aws_config = Config(
-    region_name="ap-southeast-2",
+    region_name=settings.aws_region,
     signature_version="v4",
     retries={"max_attempts": 10, "mode": "standard"},
 )

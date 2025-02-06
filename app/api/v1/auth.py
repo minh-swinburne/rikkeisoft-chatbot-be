@@ -15,6 +15,7 @@ from app.schemas import (
     UserBase,
     SSOModel,
 )
+from typing import Optional
 from jose import jwt
 import requests
 
@@ -22,13 +23,25 @@ import requests
 router = APIRouter()
 
 
-def get_microsoft_public_keys():
+def get_microsoft_public_keys() -> dict:
     discovery_url = (
         f"{settings.microsoft_authority}/v2.0/.well-known/openid-configuration"
     )
     response = requests.get(discovery_url)
     jwks_uri = response.json()["jwks_uri"]
     return requests.get(jwks_uri).json()
+
+
+def get_microsoft_user_photo(access_token: str) -> Optional[bytes]:
+    response = requests.get(
+        settings.microsoft_avatar_api,
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    if response.status_code == 200:
+        return response.content  # Raw image data
+    else:
+        print(f"Failed to retrieve user photo: {response.text}")
+    return None
 
 
 @router.post(
@@ -124,7 +137,7 @@ async def authenticate_google(
         await UserService.create_sso(db, sso_data)
 
     return JSONResponse(
-        content=UserService.grant_access(user).model_dump(),
+        content=UserService.grant_access(user, "google").model_dump(),
         status_code=status.HTTP_201_CREATED if new_user else status.HTTP_200_OK,
     )
 
@@ -161,11 +174,32 @@ async def authenticate_microsoft(
     new_user = False
     user = await UserService.get_user_by_email(db, payload["email"])
     if not user:
+        from app.aws import s3
+        import io
+        import os
+
+        avatar_url = ""
+        image_data = get_microsoft_user_photo(auth_data.access_token)
+
+        if image_data is not None:
+            file_obj = io.BytesIO(image_data)
+            object_name = os.path.join(
+                settings.avatar_folder, f"microsoft_{payload['sub']}.jpg"
+            )
+            s3.upload_file(
+                object_name,
+                file_obj,
+                extra_args={"ContentType": "image/jpeg"},
+            )
+            avatar_url = (
+                f"https://{settings.aws_s3_bucket}.s3.amazonaws.com/{object_name}"
+            )
+
         user_data = UserBase(
             email=payload["email"],
             firstname=payload["given_name"],
             lastname=payload["family_name"],
-            avatar_url="",
+            avatar_url=avatar_url,
         )
         print("\nCreating new Microsoft user...\n")
         user = await UserService.create_user(db, user_data)
@@ -189,7 +223,7 @@ async def authenticate_microsoft(
         )
 
     return JSONResponse(
-        content=UserService.grant_access(user).model_dump(),
+        content=UserService.grant_access(user, "microsoft").model_dump(),
         status_code=status.HTTP_201_CREATED if new_user else status.HTTP_200_OK,
     )
 

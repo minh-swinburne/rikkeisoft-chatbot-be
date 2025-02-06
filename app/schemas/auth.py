@@ -18,6 +18,7 @@ class TokenBase(BaseModel):
     lastname: Optional[str]
     username: Optional[str]
     avatar_url: Optional[str]
+    provider: Optional[str]
     roles: list[str]
 
 

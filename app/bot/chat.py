@@ -8,6 +8,7 @@ from app.utils import extract_content
 from app.services import UserService, DocumentService
 from app.schemas import DocumentModel
 from typing import Union
+import urllib.parse
 import httpx
 import re
 
@@ -36,7 +37,10 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
     user_roles = [role.name for role in user.roles]
     documents: list[DocumentModel] = []
     context = ["| Title | Excerpt | Score |", "| --- | --- | --- |"]
-    sources = ["| Title | Description | Categories | Created by | Created date | URL | Last modified |", "| --- | --- | --- | --- | --- | --- | --- |"]
+    sources = [
+        "| Title | Description | Categories | Created by | Created date | Preview URL | Download URL | Last modified |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
 
     for doc_id in doc_ids:
         document = await DocumentService.get_document_by_id(db, doc_id)
@@ -48,14 +52,17 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
             role in ["admin", "system_admin"] for role in user_roles
         ):
             categories = [cat.name for cat in document.categories]
-            url = (
+            download_url = await DocumentService.generate_document_url(db, doc_id)
+            preview_url = (
                 document.link_url
                 if document.link_url
-                else DocumentService.generate_document_url(db, doc_id)
+                else settings.doc_preview_url
+                + urllib.parse.quote(download_url, safe="")
             )
+            
             documents.append(document)
             sources.append(
-                f"| {document.title} | {re.sub("\n", "<br>", document.description)} | {categories} | {document.creator_user.full_name} | {document.created_date} | {url} | {document.last_modified} |"
+                f"| {document.title} | {re.sub("\n", "<br>", document.description)} | {categories} | {document.creator_user.full_name} | {document.created_date} | {preview_url} | {download_url} | {document.last_modified} |"
             )
 
     for result in context_results:
