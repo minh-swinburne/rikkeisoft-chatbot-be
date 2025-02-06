@@ -29,9 +29,7 @@ def generate_presigned_url(object_name: str, expiration=3600):
         return None
 
 
-def upload_file(
-    object_name: str, file_obj: IO[bytes], file_name: str
-) -> str:
+def upload_file(object_name: str, file_obj: IO[bytes], extra_args: dict = None) -> str:
     """Uploads a file to S3 with a unique filename if necessary."""
     try:
         # if not overwrite:
@@ -40,7 +38,7 @@ def upload_file(
             file_obj,
             bucket_name,
             object_name,
-            ExtraArgs={"Metadata": {"Filename": file_name}},
+            ExtraArgs=extra_args,
         )
         return object_name
     except (ClientError, NoCredentialsError) as e:

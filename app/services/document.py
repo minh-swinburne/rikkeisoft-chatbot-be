@@ -3,6 +3,7 @@ from app.repos.document import DocumentRepository
 from app.core.settings import settings
 from app.schemas import DocumentBase, DocumentModel, DocumentUpdate
 from app.aws import s3
+# from cachetools import TTLCache
 from typing import Optional
 import io
 import os
@@ -77,7 +78,8 @@ class DocumentService:
         object_name = os.path.join(
             settings.upload_folder, f"{document.id}.{document.file_type}"
         )
-        return s3.upload_file(object_name, file_obj, document.file_name)
+        extra_args = {"Metadata": {"filename": document.file_name}}
+        return s3.upload_file(object_name, file_obj, extra_args)
 
     @staticmethod
     def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:

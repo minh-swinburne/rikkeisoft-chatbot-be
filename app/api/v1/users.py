@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import validate_access_token
 from app.core.database import get_db
 from app.services import UserService
-from app.schemas import TokenModel
+from app.schemas import TokenModel, UserModel
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
@@ -15,7 +15,7 @@ import requests
 router = APIRouter()
 
 
-@router.get("/me")
+@router.get("/me", response_model=UserModel)
 async def read_users_me(token_payload: TokenModel = Depends(validate_access_token), db: AsyncSession = Depends(get_db)):
     print("Debug: Token validated and current user retrieved.")
     user_id = token_payload.sub
@@ -23,7 +23,7 @@ async def read_users_me(token_payload: TokenModel = Depends(validate_access_toke
     return user
 
 
-@router.get("/{user_id}")
+@router.get("/{user_id}", response_model=UserModel, response_model_exclude={"password", "username_last_changed"})
 async def read_user(
     user_id: str,
     token_payload: TokenModel = Depends(validate_access_token),
@@ -34,8 +34,7 @@ async def read_user(
     user.password = None
 
     if not any(role in ["admin", "system_admin"] for role in token_payload.roles):
-        # Hide sensitive information from non-admin users
-        user.username_last_changed = None
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to view this user")
 
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
