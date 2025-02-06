@@ -236,6 +236,7 @@ async def edit_document(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions. Only admins can update documents.",
         )
+    print(updates)
 
     document = await DocumentService.update_document(db, doc_id, updates)
     if not document:
