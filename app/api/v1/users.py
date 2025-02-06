@@ -132,9 +132,7 @@ async def revoke_role_from_user(
     return user
 
 
-@router.delete(
-    "/me", status_code=status.HTTP_204_NO_CONTENT, response_class=JSONResponse
-)
+@router.delete("/me", response_class=JSONResponse)
 async def delete_user_me(
     token_payload: TokenModel = Depends(validate_access_token),
     db: AsyncSession = Depends(get_db),

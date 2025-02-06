@@ -246,9 +246,7 @@ async def edit_document(
     return document
 
 
-@router.delete(
-    "/{doc_id}", status_code=status.HTTP_204_NO_CONTENT, response_class=JSONResponse
-)
+@router.delete("/{doc_id}", response_class=JSONResponse)
 async def delete_document(
     doc_id: str = Path(...),
     token_payload: TokenModel = Depends(validate_access_token),
