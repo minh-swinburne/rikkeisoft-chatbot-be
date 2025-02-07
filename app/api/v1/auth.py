@@ -67,7 +67,7 @@ async def authenticate_native(
         )
 
     # return user  # DEBUG
-    return AuthService.grant_access(user)
+    return AuthService.grant_access(user, "native")
 
 
 @router.post(
@@ -97,7 +97,7 @@ async def register_native(
 
     user_data.password = pwd_context.hash(user_data.password)
     user = await UserService.create_user(db, user_data)
-    return AuthService.grant_access(user)
+    return AuthService.grant_access(user, "native")
 
 
 @router.post(
