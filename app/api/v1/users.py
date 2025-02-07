@@ -11,7 +11,11 @@ from passlib.context import CryptContext
 router = APIRouter()
 
 
-@router.get("/me", response_model=UserModel)
+@router.get(
+    "/me",
+    response_model=UserModel,
+    response_model_exclude={"password", "username_last_changed"}
+)
 async def read_users_me(
     token_payload: TokenModel = Depends(validate_access_token),
     db: AsyncSession = Depends(get_db),
@@ -80,12 +84,13 @@ async def update_user_me(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    
+
     if bool(updates.new_password) ^ bool(updates.old_password):
         if not updates.old_password:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Old pasword must be provided.")
+    if updates.new_password:
         if not pwd_context.verify(updates.old_password, user.password):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Old password incorrect.")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect old password.")
         updates.new_password = pwd_context.hash(updates.new_password)
 
     user = await UserService.update_user(db, token_payload.sub, updates)
@@ -103,7 +108,7 @@ async def assign_role_to_user(
     token_payload: TokenModel = Depends(validate_access_token),
     db: AsyncSession = Depends(get_db),
 ) -> UserModel:
-    if not any(role in ["admin", "system_admin"] for role in token_payload.roles):
+    if "system_admin" not in token_payload.roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User does not have permission to assign roles to users",
@@ -128,7 +133,7 @@ async def revoke_role_from_user(
     token_payload: TokenModel = Depends(validate_access_token),
     db: AsyncSession = Depends(get_db),
 ) -> UserModel:
-    if not any(role in ["admin", "system_admin"] for role in token_payload.roles):
+    if "system_admin" not in token_payload.roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User does not have permission to revoke roles from users",
@@ -146,7 +151,7 @@ async def revoke_role_from_user(
 async def delete_user_me(
     token_payload: TokenModel = Depends(validate_access_token),
     db: AsyncSession = Depends(get_db),
-) -> bool:
+) -> JSONResponse:
     user_id = token_payload.sub
     result = await UserService.delete_user(db, user_id)
     if not result:
