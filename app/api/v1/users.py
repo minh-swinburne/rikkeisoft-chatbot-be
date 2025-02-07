@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import validate_access_token, get_pwd_context
 from app.core.database import get_db
-from app.services import UserService
+from app.services import AuthService, UserService
 from app.schemas import TokenModel, UserModel, UserUpdate
 from passlib.context import CryptContext
 
@@ -82,15 +82,15 @@ async def update_user_me(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
     
-    if updates.new_password:
+    if bool(updates.new_password) ^ bool(updates.old_password):
         if not updates.old_password:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Old pasword must be provided.")
         if not pwd_context.verify(updates.old_password, user.password):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Old password incorrect.")
         updates.new_password = pwd_context.hash(updates.new_password)
-        
+
     user = await UserService.update_user(db, token_payload.sub, updates)
-    return user
+    return AuthService.grant_access(user, token_payload.provider)
 
 
 @router.put(
