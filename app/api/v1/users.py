@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import validate_access_token, get_pwd_context
 from app.core.database import get_db
 from app.services import AuthService, UserService
-from app.schemas import TokenModel, UserModel, UserUpdate
+from app.schemas import AuthModel, TokenModel, UserModel, UserUpdate
 from passlib.context import CryptContext
 
 
@@ -67,15 +67,14 @@ async def read_user(
 
 @router.put(
     "/me",
-    response_model=UserModel,
-    response_model_exclude={"password", "username_last_changed"},
+    response_model=AuthModel,
 )
 async def update_user_me(
     updates: UserUpdate = Body(...),
     token_payload: TokenModel = Depends(validate_access_token),
     pwd_context: CryptContext = Depends(get_pwd_context),
     db: AsyncSession = Depends(get_db),
-) -> UserModel:
+) -> AuthModel:
     user = await UserService.get_user_by_id(db, token_payload.sub)
     if not user:
         raise HTTPException(
