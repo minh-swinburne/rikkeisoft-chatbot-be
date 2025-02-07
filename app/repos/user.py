@@ -76,7 +76,12 @@ class UserRepository:
             user.username_last_changed = datetime.now()
 
         for key, value in updates.model_dump(exclude_unset=True).items():
-            setattr(user, key, value)
+            if key == "old_password":
+                continue
+            if key == "new_password":
+                setattr(user, "password", value)
+            else:
+                setattr(user, key, value)
 
         return await _commit_and_refresh(db, user)
 

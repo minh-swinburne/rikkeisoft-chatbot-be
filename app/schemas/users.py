@@ -31,7 +31,8 @@ class UserUpdate(BaseModel):
     firstname: Optional[str] = None
     lastname: Optional[str] = None
     username: Optional[str] = None
-    password: Optional[str] = None
+    old_password: Optional[str] = None
+    new_password: Optional[str] = None
     avatar_url: Optional[str] = None
 
 
