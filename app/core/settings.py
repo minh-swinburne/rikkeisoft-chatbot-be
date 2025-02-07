@@ -6,6 +6,8 @@ load_dotenv(override=True)
 
 
 class Settings(BaseSettings):
+    frontend_origin: str
+
     aws_region: str
     aws_s3_bucket: str
     avatar_folder: str

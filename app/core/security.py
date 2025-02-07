@@ -1,14 +1,13 @@
 # app/core/security.py
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
+from app.core.settings import settings
 
 
 def setup_cors(app: FastAPI):
     try:
         origins = [
-            "http://localhost:8080",  # Vue frontend URL
-            "http://localhost:5173",  # Vue frontend URL 2
-            "http://127.0.0.1:8000",  # Local development URL (optional)
+            settings.frontend_origin
         ]
 
         app.add_middleware(
