@@ -1,11 +1,15 @@
-from fastapi import APIRouter, HTTPException, status, Depends, Path, Body
+from fastapi import File, UploadFile, APIRouter, HTTPException, status, Depends, Path, Body
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import validate_access_token, get_pwd_context
 from app.core.database import get_db
+from app.core.settings import settings
 from app.services import AuthService, UserService
 from app.schemas import AuthModel, TokenModel, UserModel, UserUpdate
 from passlib.context import CryptContext
+from app.aws import s3
+import io
+import os
 
 
 router = APIRouter()
@@ -161,3 +165,25 @@ async def delete_user_me(
     return JSONResponse(
         content={"success": result, "message": "User deleted successfully"}
     )
+
+
+@router.post("/avatar/upload")
+async def upload_avatar(
+    avatar_file: UploadFile = File(...),
+    token_payload: TokenModel = Depends(validate_access_token),
+):
+    user_id = token_payload.sub
+    if avatar_file is not None:
+        file_obj = io.BytesIO(await avatar_file.read())
+        object_name = os.path.join(
+            settings.avatar_folder, f"{user_id}.jpg"
+        )
+        s3.upload_file(
+            object_name,
+            file_obj,
+            extra_args={"ContentType": "image/jpeg"},
+        )
+        avatar_url = (
+            f"https://{settings.aws_s3_bucket}.s3.amazonaws.com/{object_name}"
+        )
+        return {"url": avatar_url}

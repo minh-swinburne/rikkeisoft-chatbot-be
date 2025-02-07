@@ -16,6 +16,7 @@ from app.schemas import (
 from jose import jwt, JWTError, ExpiredSignatureError
 from datetime import datetime, timezone
 from typing import Optional
+from app.aws import s3
 
 
 class UserService:
