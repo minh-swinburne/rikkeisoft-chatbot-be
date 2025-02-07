@@ -29,7 +29,7 @@ class DocumentBase(BaseModel):
     categories: list[str]  # Allow categories to be passed as strings
     creator: str
     created_date: Optional[date]
-    restricted: bool = False
+    restricted: bool
     uploader: str
 
 

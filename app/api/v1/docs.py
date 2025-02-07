@@ -3,6 +3,7 @@ from fastapi import (
     HTTPException,
     status,
     UploadFile,
+    WebSocket,
     Depends,
     Path,
     Body,
@@ -128,7 +129,7 @@ async def upload_document(
     print("Uploading file:")
     print("File name:", file_name)
     print("File type:", file_type)
-    print("File size:", file_size)
+    print("File size:", file_size, f"({file_size/1024/1024:.2f} MB)")
     if link:
         print("Link:", link)
     print("Title:", title)
