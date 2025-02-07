@@ -76,9 +76,9 @@ class UserRepository:
             user.username_last_changed = datetime.now()
 
         for key, value in updates.model_dump(exclude_unset=True).items():
-            if key == "old_password":
+            if key == "old_password": # Skip old password
                 continue
-            if key == "new_password":
+            if key == "new_password": # Set new password
                 setattr(user, "password", value)
             else:
                 setattr(user, key, value)
