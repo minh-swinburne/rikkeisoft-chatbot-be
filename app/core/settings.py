@@ -1,12 +1,13 @@
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 
+
 # Load .env at startup
 load_dotenv(override=True)
 
 
 class Settings(BaseSettings):
-    frontend_origin: str
+    frontend_origins: str
 
     aws_region: str
     aws_s3_bucket: str
@@ -19,7 +20,7 @@ class Settings(BaseSettings):
 
     embedding_model: str
     embedding_dimension: int
-    groq_api_key: str
+    groq_api_keys: str
 
     jwt_secret_key: str
     jwt_algorithm: str

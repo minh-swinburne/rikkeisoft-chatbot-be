@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from groq.types.chat import ChatCompletion, ChatCompletionChunk
-from groq import Groq, Stream
+from groq import Groq, Stream, RateLimitError
 from app.bot.vector_db import search_context
 from app.bot import config
 from app.core.settings import settings
@@ -13,8 +13,12 @@ import httpx
 import re
 
 
+GROQ_API_KEYS = settings.groq_api_keys.split(",")
+current_key_index = 0
+
+
 client = Groq(
-    api_key=settings.groq_api_key,
+    api_key=GROQ_API_KEYS[0],
     timeout=httpx.Timeout(
         timeout=config["timeout"]["total"],
         read=config["timeout"]["read"],
@@ -28,7 +32,7 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
     user_query = chat_history[-1]["content"]
     context_results = search_context(user_query)
     doc_ids = {result["document_id"] for result in context_results}
-    print("Doc IDs:", doc_ids)
+    # print("Doc IDs:", doc_ids)
 
     user = await UserService.get_user_by_id(db, user_id)
     if not user:
@@ -59,7 +63,7 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
                 else settings.doc_preview_url
                 + urllib.parse.quote(download_url, safe="")
             )
-            
+
             documents.append(document)
             sources.append(
                 f"| {document.title} | {re.sub("\n", "<br>", document.description)} | {categories} | {document.creator_user.full_name} | {document.created_date} | {preview_url} | {download_url} | {document.last_modified} |"
@@ -75,9 +79,9 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
             f"| {document.title} | {re.sub("\n", "<br>", result["text"])} | {result["score"]} |"
         )
 
-    print(len(context_results))
-    print("\nContext:\n", context)
-    print("\nSources:\n", sources)
+    # print(len(context_results))
+    # print("\nContext:\n", context)
+    # print("\nSources:\n", sources)
 
     system_prompt = config["answer_generation"]["system_prompt"].format(
         context="\n".join(context),
@@ -86,15 +90,24 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
         user_query=user_query,
     )
 
-    chat_completion: Union[ChatCompletion, Stream[ChatCompletionChunk]] = (
-        client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": system_prompt},
-                *chat_history,  # Include the last 10 messages in the chat history including the new query
-            ],
-            **config["answer_generation"]["params"],
-        )
-    )
+    for _ in range(len(GROQ_API_KEYS)):
+        try:
+            chat_completion: Union[ChatCompletion, Stream[ChatCompletionChunk]] = (
+                client.chat.completions.create(
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        *chat_history,  # Include the last 10 messages in the chat history including the new query
+                    ],
+                    **config["answer_generation"]["params"],
+                )
+            )
+            break
+        except RateLimitError as e:
+            print("❌ Rate Limit Error:", e)
+            current_key_index += 1
+            current_key_index %= len(GROQ_API_KEYS)
+            client.api_key = GROQ_API_KEYS[current_key_index]
+
 
     if isinstance(chat_completion, ChatCompletion):
         print("Chat Completion: ", chat_completion.choices[0].message.content)

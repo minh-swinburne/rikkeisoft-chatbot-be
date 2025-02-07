@@ -36,7 +36,7 @@ Framework: FastAPI
 6. Create a `.env` file in the root dir (where this file is in) and provide these environment variables:
 
 ```
-    GROQ_API_KEY
+    GROQ_API_KEYSS
     UPLOAD_PATH (optional)
 ```
 

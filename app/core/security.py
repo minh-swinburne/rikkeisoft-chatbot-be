@@ -6,9 +6,7 @@ from app.core.settings import settings
 
 def setup_cors(app: FastAPI):
     try:
-        origins = [
-            settings.frontend_origin
-        ]
+        origins = settings.frontend_origins.split(",")
 
         app.add_middleware(
             CORSMiddleware,
