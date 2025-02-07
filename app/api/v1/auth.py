@@ -54,7 +54,7 @@ async def authenticate_native(
     form_data: OAuth2PasswordRequestForm = Depends(),
     pwd_context: CryptContext = Depends(get_pwd_context),
     db: AsyncSession = Depends(get_db),
-):
+) -> AuthModel:
     user = await UserService.get_user_by_username(db, form_data.username)
     if not user:
         user = await UserService.get_user_by_email(db, form_data.username)
