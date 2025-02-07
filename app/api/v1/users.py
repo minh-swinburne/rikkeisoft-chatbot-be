@@ -5,7 +5,7 @@ from app.api.dependencies import validate_access_token, get_pwd_context
 from app.core.database import get_db
 from app.core.settings import settings
 from app.services import AuthService, UserService
-from app.schemas import AuthModel, TokenModel, UserModel, UserUpdate
+from app.schemas import AuthModel, TokenModel, UserModel, UserUpdate, SSOModel
 from passlib.context import CryptContext
 from app.aws import s3
 import io
@@ -16,26 +16,11 @@ router = APIRouter()
 
 
 @router.get(
-    "/me",
-    response_model=UserModel,
-    response_model_exclude={"password", "username_last_changed"}
-)
-async def read_users_me(
-    token_payload: TokenModel = Depends(validate_access_token),
-    db: AsyncSession = Depends(get_db),
-) -> UserModel:
-    print("Debug: Token validated and current user retrieved.")
-    user_id = token_payload.sub
-    user = await UserService.get_user_by_id(db, user_id)
-    return user
-
-
-@router.get(
     "",
     response_model=list[UserModel],
     response_model_exclude={"password", "username_last_changed"},
 )
-async def read_users(
+async def list_users(
     token_payload: TokenModel = Depends(validate_access_token),
     db: AsyncSession = Depends(get_db),
 ) -> list[UserModel]:
@@ -45,8 +30,32 @@ async def read_users(
             detail="User does not have permission to view this user",
         )
 
-    users = await UserService.get_users(db)
+    users = await UserService.list_users(db)
     return users
+
+
+@router.get(
+    "/me",
+    response_model=UserModel,
+    response_model_exclude={"password", "username_last_changed"},
+)
+async def get_current_user(
+    token_payload: TokenModel = Depends(validate_access_token),
+    db: AsyncSession = Depends(get_db),
+) -> UserModel:
+    print("Debug: Token validated and current user retrieved.")
+    user_id = token_payload.sub
+    user = await UserService.get_user_by_id(db, user_id)
+    return user
+
+
+@router.get("/me/sso", response_model=list[SSOModel])
+async def list_sso_current_user(
+    token_payload: TokenModel = Depends(validate_access_token),
+    db: AsyncSession = Depends(get_db),
+) -> list[SSOModel]:
+    sso = await UserService.list_sso_by_user_id(db, token_payload.sub)
+    return sso
 
 
 @router.get(
@@ -77,7 +86,7 @@ async def read_user(
     "/me",
     response_model=AuthModel,
 )
-async def update_user_me(
+async def update_current_user(
     updates: UserUpdate = Body(...),
     token_payload: TokenModel = Depends(validate_access_token),
     pwd_context: CryptContext = Depends(get_pwd_context),
@@ -152,7 +161,7 @@ async def revoke_role_from_user(
 
 
 @router.delete("/me", response_class=JSONResponse)
-async def delete_user_me(
+async def delete_current_user(
     token_payload: TokenModel = Depends(validate_access_token),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:

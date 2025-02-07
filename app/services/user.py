@@ -2,21 +2,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.repos.user import UserRepository
 from app.repos.role import RoleRepository
 from app.repos.sso import SSORepository
-from app.core.settings import settings
-from app.utils import parse_timedelta
 from app.schemas import (
     UserBase,
     UserModel,
     UserUpdate,
     SSOModel,
-    TokenBase,
-    TokenModel,
-    AuthModel,
 )
-from jose import jwt, JWTError, ExpiredSignatureError
-from datetime import datetime, timezone
 from typing import Optional
-from app.aws import s3
 
 
 class UserService:
