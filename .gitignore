@@ -1,6 +1,8 @@
 # Milvus generated files
 volumes/
 
+.env_aws
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

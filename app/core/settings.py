@@ -19,9 +19,7 @@ class Settings(BaseSettings):
 
     embedding_model: str
     embedding_dimension: int
-
     groq_api_key: str
-    openai_api_key: str
 
     jwt_secret_key: str
     jwt_algorithm: str
