@@ -2,6 +2,7 @@
 volumes/
 
 .env_aws
+.venv_Acer/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
