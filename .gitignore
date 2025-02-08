@@ -1,8 +1,10 @@
 # Milvus generated files
 volumes/
 
-.env_aws
+.env.production
 .venv_Acer/
+.venv_Admin/
+.aws/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
