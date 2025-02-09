@@ -15,6 +15,6 @@ def setup_cors(app: FastAPI):
             allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
             allow_headers=["*"],  # Allow all headers
         )
-        print("✅ CORS configured")
+        print("✅ CORS configured. Allowed origins:", origins)
     except Exception as e:
         print("❌ CORS configuration failed:", e)

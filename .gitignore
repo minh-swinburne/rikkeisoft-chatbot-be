@@ -1,7 +1,7 @@
 # Milvus generated files
 volumes/
 
-.env.production
+.env*
 .venv_Acer/
 .venv_Admin/
 .aws/
