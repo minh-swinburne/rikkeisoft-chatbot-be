@@ -74,7 +74,9 @@ async def send_query(
     db: AsyncSession = Depends(get_db),
 ) -> MessageModel | StreamingResponse:
     if not message_data.content:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Message cannot be empty")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Message cannot be empty"
+        )
     if chat_id != message_data.chat_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -92,7 +94,8 @@ async def send_query(
         message = await ChatService.create_message(db, message_data)
     except:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to send message"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to send message",
         )
 
     if isinstance(message, MessageModel):
@@ -123,7 +126,9 @@ async def generate_chat_name(
 
 
 @router.get("/{chat_id}/suggestions")
-async def get_suggested_questions(chat_id: str = Path(...), db: AsyncSession = Depends(get_db)):
+async def get_suggested_questions(
+    chat_id: str = Path(...), db: AsyncSession = Depends(get_db)
+):
     # Generate suggestions based on chat history
     suggestions = await ChatService.suggest_message(db, chat_id)
     return JSONResponse({"suggestions": suggestions})
@@ -163,5 +168,9 @@ async def delete_chat(
 
     result = await ChatService.delete_chat(db, chat_id)
     if not result:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found")
-    return JSONResponse(content={"message": "Chat deleted successfully"})
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found"
+        )
+    return JSONResponse(
+        content={"success": result, "message": "Chat deleted successfully"}
+    )

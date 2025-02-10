@@ -3,7 +3,7 @@ from sqlalchemy import select
 from app.schemas import UserBase, UserUpdate
 from app.models import User
 from app.repos import _commit_and_refresh
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 import uuid
 
@@ -70,9 +70,12 @@ class UserRepository:
 
         if updates.username and user.username != updates.username:
             existing_user = await UserRepository.get_by_username(db, updates.username)
-
             if existing_user:
                 raise ValueError("Username already exists.")
+
+            delta: timedelta = datetime.now() - user.username_last_changed
+            if delta.days < 30:
+                raise ValueError("Username cannot be changed more than once in 30 days.")
             user.username_last_changed = datetime.now()
 
         for key, value in updates.model_dump(exclude_unset=True).items():

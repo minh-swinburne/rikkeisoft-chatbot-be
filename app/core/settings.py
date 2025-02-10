@@ -51,7 +51,6 @@ class Settings(BaseSettings):
     milvus_host: str
     milvus_port: str
     milvus_db: str
-    milvus_uri: str
     milvus_token: str
     # milvus_user: str
     # milvus_password: str

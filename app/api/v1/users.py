@@ -1,13 +1,31 @@
-from fastapi import File, UploadFile, APIRouter, HTTPException, status, Depends, Path, Body
+from fastapi import (
+    UploadFile,
+    APIRouter,
+    HTTPException,
+    status,
+    Depends,
+    Path,
+    Body,
+    File,
+)
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import validate_access_token, get_pwd_context
 from app.core.database import get_db
 from app.core.settings import settings
 from app.services import AuthService, UserService
-from app.schemas import AuthModel, TokenModel, UserModel, UserUpdate, SSOModel
-from passlib.context import CryptContext
+from app.schemas import (
+    AuthModel,
+    TokenModel,
+    UserModel,
+    UserUpdate,
+    SSOModel,
+    GoogleAuthBase,
+    MicrosoftAuthBase,
+)
 from app.aws import s3
+from passlib.context import CryptContext
+from typing import Union
 import io
 import os
 
@@ -37,7 +55,7 @@ async def list_users(
 @router.get(
     "/me",
     response_model=UserModel,
-    response_model_exclude={"password", "username_last_changed"},
+    response_model_exclude={"password"},
 )
 async def get_current_user(
     token_payload: TokenModel = Depends(validate_access_token),
@@ -56,6 +74,75 @@ async def list_sso_current_user(
 ) -> list[SSOModel]:
     sso = await UserService.list_sso_by_user_id(db, token_payload.sub)
     return sso
+
+
+@router.post("/me/sso/{provider}", response_model=SSOModel)
+async def link_sso_current_user(
+    provider: str = Path(...),
+    auth_data: Union[GoogleAuthBase, MicrosoftAuthBase] = Body(...),
+    token_payload: TokenModel = Depends(validate_access_token),
+    db: AsyncSession = Depends(get_db),
+) -> SSOModel:
+    sso = await UserService.get_sso_by_user_provider(db, token_payload.sub, provider)
+    if sso:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="SSO already linked",
+        )
+
+    if provider == "google":
+        user_info = AuthService.get_google_user_info(auth_data.access_token)
+        if not user_info:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid Google access token",
+            )
+    elif provider == "microsoft":
+        user_info = AuthService.get_microsoft_user_info(
+            auth_data.id_token, auth_data.access_token
+        )
+        if not user_info:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid Microsoft access token",
+            )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid provider",
+        )
+
+    sso = await UserService.get_sso_by_provider_sub(db, provider, user_info.get("sub"))
+    if sso:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="SSO already linked to another user",
+        )
+
+    sso_data = SSOModel(
+        user_id=token_payload.sub,
+        provider=provider,
+        sub=user_info.get("sub"),
+    )
+    sso = await UserService.create_sso(db, sso_data)
+    return sso
+
+
+@router.delete("/me/sso/{provider}")
+async def unlink_sso_current_user(
+    provider: str = Path(...),
+    token_payload: TokenModel = Depends(validate_access_token),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    sso = await UserService.get_sso_by_user_provider(db, token_payload.sub, provider)
+    if not sso:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="SSO not found",
+        )
+
+    result = await UserService.delete_sso(db, token_payload.sub, provider)
+    return JSONResponse({"success": result, "message": "SSO unlinked successfully"})
 
 
 @router.get(
@@ -100,10 +187,18 @@ async def update_current_user(
 
     if bool(updates.new_password) ^ bool(updates.old_password):
         if not updates.old_password:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Old pasword must be provided.")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Old pasword must be provided",
+            )
+    if updates.old_password and not pwd_context.verify(
+        updates.old_password, user.password
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect old password",
+        )
     if updates.new_password:
-        if not pwd_context.verify(updates.old_password, user.password):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect old password.")
         updates.new_password = pwd_context.hash(updates.new_password)
 
     user = await UserService.update_user(db, token_payload.sub, updates)
@@ -176,23 +271,34 @@ async def delete_current_user(
     )
 
 
-@router.post("/avatar/upload")
+@router.post("/me/avatar")
 async def upload_avatar(
     avatar_file: UploadFile = File(...),
     token_payload: TokenModel = Depends(validate_access_token),
 ):
-    user_id = token_payload.sub
-    if avatar_file is not None:
-        file_obj = io.BytesIO(await avatar_file.read())
-        object_name = os.path.join(
-            settings.avatar_folder, f"{user_id}.jpg"
-        )
-        s3.upload_file(
-            object_name,
-            file_obj,
-            extra_args={"ContentType": "image/jpeg"},
-        )
-        avatar_url = (
-            f"https://{settings.aws_s3_bucket}.s3.amazonaws.com/{object_name}"
-        )
-        return {"url": avatar_url}
+    from PIL import Image
+
+    file_obj = io.BytesIO(await avatar_file.read())
+    avatar_image = Image.open(file_obj).convert("RGB")
+    avatar_image.save(file_obj, format="JPEG")
+    file_obj.seek(0)
+
+    object_name = os.path.join(settings.avatar_folder, f"{token_payload.sub}.jpg")
+    avatar_url = f"https://{settings.aws_s3_bucket}.s3.amazonaws.com/{object_name}"
+
+    s3.upload_file(
+        object_name,
+        file_obj,
+        extra_args={"ContentType": "image/jpeg"},
+    )
+    return {"url": avatar_url}
+
+
+@router.delete("/me/avatar")
+async def delete_avatar(
+    token_payload: TokenModel = Depends(validate_access_token),
+) -> JSONResponse:
+    object_name = os.path.join(settings.avatar_folder, f"{token_payload.sub}.jpg")
+    result = s3.delete_file(object_name)
+
+    return JSONResponse({"success": result, "message": "Avatar deleted successfully"})

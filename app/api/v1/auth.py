@@ -15,33 +15,9 @@ from app.schemas import (
     SSOModel,
 )
 from passlib.context import CryptContext
-from typing import Optional
-from jose import jwt
-import requests
 
 
 router = APIRouter()
-
-
-def get_microsoft_public_keys() -> dict:
-    discovery_url = (
-        f"{settings.microsoft_authority}/v2.0/.well-known/openid-configuration"
-    )
-    response = requests.get(discovery_url)
-    jwks_uri = response.json()["jwks_uri"]
-    return requests.get(jwks_uri).json()
-
-
-def get_microsoft_user_photo(access_token: str) -> Optional[bytes]:
-    response = requests.get(
-        settings.microsoft_avatar_api,
-        headers={"Authorization": f"Bearer {access_token}"},
-    )
-    if response.status_code == 200:
-        return response.content  # Raw image data
-    else:
-        print(f"Failed to retrieve user photo: {response.text}")
-    return None
 
 
 @router.post(
@@ -108,10 +84,7 @@ async def register_native(
 async def authenticate_google(
     auth_data: GoogleAuthBase = Body(...), db: AsyncSession = Depends(get_db)
 ):
-    user_info = requests.get(
-        settings.google_user_info_url,
-        headers={"Authorization": f"Bearer {auth_data.access_token}"},
-    ).json()
+    user_info = AuthService.get_google_user_info(auth_data.access_token)
     print(user_info)
 
     new_user = False
@@ -150,20 +123,11 @@ async def authenticate_google(
 async def authenticate_microsoft(
     auth_data: MicrosoftAuthBase = Body(...),
     db: AsyncSession = Depends(get_db),
-    microsoft_public_keys=Depends(get_microsoft_public_keys),
 ):
     try:
-        header = jwt.get_unverified_header(auth_data.id_token)
-        key = next(
-            key for key in microsoft_public_keys["keys"] if key["kid"] == header["kid"]
+        user_info = AuthService.get_microsoft_user_info(
+            auth_data.id_token, auth_data.access_token
         )
-        payload = jwt.decode(
-            auth_data.id_token,
-            key=key,
-            algorithms=["RS256"],
-            audience=settings.microsoft_client_id,
-        )
-        print(payload)
     except Exception as e:
         print(f"Error: {e}")
         raise HTTPException(
@@ -172,19 +136,17 @@ async def authenticate_microsoft(
         )
 
     new_user = False
-    user = await UserService.get_user_by_email(db, payload["email"])
+    user = await UserService.get_user_by_email(db, user_info.get("email"))
     if not user:
         from app.aws import s3
         import io
         import os
 
-        avatar_url = ""
-        image_data = get_microsoft_user_photo(auth_data.access_token)
-
+        image_data = AuthService.get_microsoft_user_photo(auth_data.access_token)
         if image_data is not None:
             file_obj = io.BytesIO(image_data)
             object_name = os.path.join(
-                settings.avatar_folder, f"microsoft_{payload['sub']}.jpg"
+                settings.avatar_folder, f"microsoft_{user_info.get("sub")}.jpg"
             )
             s3.upload_file(
                 object_name,
@@ -196,9 +158,9 @@ async def authenticate_microsoft(
             )
 
         user_data = UserBase(
-            email=payload["email"],
-            firstname=payload["given_name"],
-            lastname=payload["family_name"],
+            email=user_info.get("email"),
+            firstname=user_info.get("given_name"),
+            lastname=user_info.get("family_name"),
             avatar_url=avatar_url,
         )
         print("\nCreating new Microsoft user...\n")
@@ -211,7 +173,7 @@ async def authenticate_microsoft(
             sso_data = SSOModel(
                 user_id=user.id,
                 provider="microsoft",
-                sub=payload["sub"],
+                sub=user_info.get("sub"),
             )
             print("\nCreating new Microsoft SSO entry...\n")
             await UserService.create_sso(db, sso_data)

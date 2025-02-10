@@ -12,7 +12,7 @@ collection_name = settings.milvus_collection
 
 for _ in range(5):
     try:
-        client = MilvusClient(uri=settings.milvus_uri, token=settings.milvus_token)
+        client = MilvusClient(uri=settings.milvus_host, token=settings.milvus_token)
         print(f"✅ Connected to Milvus version {client.get_server_version()}.")
         print(f"Available databases: {client.list_databases()}")
         print(f"Available collections: {client.list_collections()}")

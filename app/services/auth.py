@@ -6,6 +6,7 @@ from app.schemas import UserModel, TokenBase, TokenModel, AuthModel
 from jose import jwt, JWTError, ExpiredSignatureError
 from datetime import datetime, timezone
 from typing import Optional
+import requests
 
 
 class AuthService:
@@ -114,3 +115,53 @@ class AuthService:
             roles=user.roles,
         )
         return AuthService.create_access_token(auth_data)
+
+    @staticmethod
+    def get_google_user_info(access_token: str) -> dict:
+        response = requests.get(
+            settings.google_user_info_url,
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        return response.json()
+
+    @staticmethod
+    def get_microsoft_user_photo(access_token: str) -> Optional[bytes]:
+        response = requests.get(
+            settings.microsoft_avatar_api,
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        if response.status_code == 200:
+            return response.content  # Raw image data
+        else:
+            print(f"Failed to retrieve user photo: {response.text}")
+        return None
+
+    @staticmethod
+    def get_microsoft_user_info(id_token: str, access_token: str) -> dict:
+        """Decode Microsoft ID token and fetch additional user info."""
+        try:
+            # Get Microsoft public keys
+            discovery_url = (
+                f"{settings.microsoft_authority}/v2.0/.well-known/openid-configuration"
+            )
+            jwks_uri = requests.get(discovery_url).json()["jwks_uri"]
+            public_keys = requests.get(jwks_uri).json()["keys"]
+
+            # Decode ID token
+            header = jwt.get_unverified_header(id_token)
+            key = next(key for key in public_keys if key["kid"] == header["kid"])
+            payload = jwt.decode(
+                id_token,
+                key=key,
+                algorithms=["RS256"],
+                audience=settings.microsoft_client_id,
+            )
+        except Exception as e:
+            raise ValueError(f"Invalid Microsoft ID token: {e}")
+
+        return {
+            "sub": payload.get("sub"),
+            "email": payload.get("email"),
+            "firstname": payload.get("given_name"),
+            "lastname": payload.get("family_name"),
+        }
