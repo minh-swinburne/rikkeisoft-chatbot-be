@@ -4,9 +4,8 @@ ECR_REPO_PUBLIC=v7s8u3o1
 # ECR_REPO=rikkeisoft-chatbot/backend
 ECR_REPO=rikkeigpt/backend
 IMAGE_TAG=latest
-ECS_CLUSTER=rikkeisoft-chatbot
-ECS_SERVICE=rikkeisoft-chatbot-be
-ECS_TASK=rikkei-chatbot
+ECS_CLUSTER=rikkeigpt-cluster
+ECS_SERVICE=rikkeigpt-service
 
 .PHONY: clear-env load-creds login login-public build tag push update-ecs deploy
 
@@ -29,7 +28,7 @@ login: clear-env load-creds
 
 # Need to delete `"credsStore": "desktop",` in `~/.docker/config.json` to use this command
 login-public: clear-env load-creds
-	@aws ecr-public get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin public.ecr.aws/$(ECR_REPO_PUBLIC)
+	@aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/$(ECR_REPO_PUBLIC)
 
 # Build Docker image
 build:
@@ -44,9 +43,9 @@ push:
 	@docker push $(ECR_REGISTRY)/$(ECR_REPO):$(IMAGE_TAG)
 
 # Force ECS to use the latest pushed image
-update-ecs:
-	@aws ecs update-service --cluster $(ECS_CLUSTER) --service $(ECS_SERVICE) --task-definition $(ECS_TASK) --force-new-deployment --region $(AWS_REGION)
+serve:
+	@aws ecs update-service --cluster $(ECS_CLUSTER) --service $(ECS_SERVICE) --force-new-deployment
 
-# Full deployment pipeline: build, tag and push
-deploy: login build tag push
+# Full deployment pipeline: build, tag, push, serve
+deploy: build tag push serve
 	@echo Deployment completed!

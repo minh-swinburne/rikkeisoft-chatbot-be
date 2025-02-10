@@ -3,12 +3,12 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: rikkeigpt-db.cb4mi4quoniq.ap-southeast-2.rds.amazonaws.com
--- Generation Time: Feb 09, 2025 at 07:51 AM
+-- Generation Time: Feb 09, 2025 at 06:58 PM
 -- Server version: 8.0.40
 -- PHP Version: 7.2.34
 
+SET FOREIGN_KEY_CHECKS=0;
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-START TRANSACTION;
 SET time_zone = "+00:00";
 
 
@@ -27,11 +27,14 @@ SET time_zone = "+00:00";
 -- Table structure for table `categories`
 --
 
-CREATE TABLE `categories` (
-  `id` int NOT NULL,
+DROP TABLE IF EXISTS `categories`;
+CREATE TABLE IF NOT EXISTS `categories` (
+  `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(50) NOT NULL,
-  `description` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  `description` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `categories`
@@ -51,11 +54,14 @@ INSERT INTO `categories` (`id`, `name`, `description`) VALUES
 -- Table structure for table `chats`
 --
 
-CREATE TABLE `chats` (
+DROP TABLE IF EXISTS `chats`;
+CREATE TABLE IF NOT EXISTS `chats` (
   `id` char(36) NOT NULL,
   `user_id` char(36) NOT NULL,
   `name` varchar(255) NOT NULL,
-  `last_access` datetime DEFAULT CURRENT_TIMESTAMP
+  `last_access` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
@@ -79,6 +85,10 @@ INSERT INTO `chats` (`id`, `user_id`, `name`, `last_access`) VALUES
 ('0194da84-2162-7b61-80e8-756bb35ed772', 'c24d9619-848d-4af6-87c8-718444421762', 'Project Management Mastery', '2025-02-06 16:08:07'),
 ('0194da8b-5efe-7b49-9893-a52fc57ff89d', 'c24d9619-848d-4af6-87c8-718444421762', 'SmartHealth Week 2 Review', '2025-02-09 07:30:11'),
 ('0194da93-b057-7c9e-9e0b-137d7c305d96', 'f7e0386e-8e56-464b-82ef-19747f6a9bae', ' COS40005 Context', '2025-02-06 16:25:04'),
+('0194e9cd-3086-7612-bb1c-14fa0620d1d4', '88b2bf74-feab-4b49-919c-45c59bf6bfe3', 'Document Assistant', '2025-02-09 08:23:36'),
+('0194ea01-fbf7-778b-b70d-f43c150f01e3', '52676658-2055-4e53-b7b2-cab4957aad0b', 'SchedulingChatSessions', '2025-02-09 09:22:19'),
+('0194eadc-9a12-7cc2-9824-4e6f821d7403', '54d14db4-7fd2-4791-b7d2-6e5c0ae00235', 'Conversational AI Companion', '2025-02-09 13:19:56'),
+('0194eae1-08e4-7c86-9245-6068d1162f55', '54d14db4-7fd2-4791-b7d2-6e5c0ae00235', 'The Weight Loss Whisperer', '2025-02-09 13:26:04'),
 ('67763113-27cc-800f-a79c-3663c53de570', 'c24d9619-848d-4af6-87c8-718444421762', 'Birthday Gift for Father', '2019-01-20 00:01:00'),
 ('6776cdc6-cfa0-800f-bf3f-e3dedb47431f', 'c24d9619-848d-4af6-87c8-718444421762', 'New Chat', '2025-01-13 15:34:02'),
 ('a1e8d106-6589-4e45-97c6-f623d5824a49', 'c24d9619-848d-4af6-87c8-718444421762', 'Expert Marketing Strategies', '2025-01-13 05:54:46'),
@@ -91,7 +101,8 @@ INSERT INTO `chats` (`id`, `user_id`, `name`, `last_access`) VALUES
 -- Table structure for table `documents`
 --
 
-CREATE TABLE `documents` (
+DROP TABLE IF EXISTS `documents`;
+CREATE TABLE IF NOT EXISTS `documents` (
   `id` char(36) NOT NULL,
   `file_name` varchar(255) NOT NULL,
   `file_type` enum('pdf','docx','xlsx','html') NOT NULL,
@@ -103,7 +114,10 @@ CREATE TABLE `documents` (
   `restricted` tinyint DEFAULT '0',
   `uploader` char(36) NOT NULL,
   `uploaded_time` datetime DEFAULT CURRENT_TIMESTAMP,
-  `last_modified` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `last_modified` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `creator` (`creator`),
+  KEY `uploader` (`uploader`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
@@ -111,6 +125,7 @@ CREATE TABLE `documents` (
 --
 
 INSERT INTO `documents` (`id`, `file_name`, `file_type`, `link_url`, `title`, `description`, `creator`, `created_date`, `restricted`, `uploader`, `uploaded_time`, `last_modified`) VALUES
+('50cb94b2-4a01-4978-b550-0c9dd7bb2b40', 'Configuration and credential file settings in the AWS CLI - AWS Command Line Interface.html', 'html', 'https://docs.aws.amazon.com/cli/v1/userguide/cli-configure-files.html', 'Configuration and credential file settings in the AWS CLI', 'This documentation is for Version 1 of the AWS CLI only. For documentation related to Version 2 of the AWS CLI, see the Version 2 User Guide.', 'c24d9619-848d-4af6-87c8-718444421762', '2025-02-09', 0, 'c24d9619-848d-4af6-87c8-718444421762', '2025-02-09 08:08:31', '2025-02-09 08:08:31'),
 ('835babdf-2b81-413e-aa71-61483b4cb3a5', 'progression-2023-tables.xlsx', 'xlsx', NULL, 'progression-2023-tables', 'progression-2023-tables', 'c24d9619-848d-4af6-87c8-718444421762', '2025-02-06', 0, 'c24d9619-848d-4af6-87c8-718444421762', '2025-02-06 09:39:54', '2025-02-06 09:39:54'),
 ('88062a21-84f2-4015-9f5c-200fcdda6c33', 'COS40005 Sprint 1 Project Specification.docx', 'docx', NULL, 'COS40005 Sprint 1 Project Specification', 'COS40005 Sprint 1', 'c24d9619-848d-4af6-87c8-718444421762', '2025-02-06', 1, 'c24d9619-848d-4af6-87c8-718444421762', '2025-02-06 09:39:10', '2025-02-06 09:39:10'),
 ('9465c7e0-8560-4c84-9d78-2b970c75db84', 'Markdown multiline code blocks in tables when rows have to be specified with one-liners - Stack Overflow.html', 'html', 'https://stackoverflow.com/questions/24190085/markdown-multiline-code-blocks-in-tables-when-rows-have-to-be-specified-with-one', 'Markdown multiline code blocks in tables when rows have to be specified with one-liners', '', 'f7e0386e-8e56-464b-82ef-19747f6a9bae', '2025-02-06', 0, 'c24d9619-848d-4af6-87c8-718444421762', '2025-02-06 15:37:45', '2025-02-06 15:37:45'),
@@ -123,9 +138,12 @@ INSERT INTO `documents` (`id`, `file_name`, `file_type`, `link_url`, `title`, `d
 -- Table structure for table `document_categories`
 --
 
-CREATE TABLE `document_categories` (
+DROP TABLE IF EXISTS `document_categories`;
+CREATE TABLE IF NOT EXISTS `document_categories` (
   `document_id` char(36) NOT NULL,
-  `category_id` int NOT NULL
+  `category_id` int NOT NULL,
+  PRIMARY KEY (`document_id`,`category_id`),
+  KEY `category_id` (`category_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
@@ -133,12 +151,15 @@ CREATE TABLE `document_categories` (
 --
 
 INSERT INTO `document_categories` (`document_id`, `category_id`) VALUES
+('50cb94b2-4a01-4978-b550-0c9dd7bb2b40', 1),
 ('835babdf-2b81-413e-aa71-61483b4cb3a5', 1),
 ('9465c7e0-8560-4c84-9d78-2b970c75db84', 1),
 ('f086ae23-dd83-4611-9ca0-04d75c9a9fb3', 1),
 ('88062a21-84f2-4015-9f5c-200fcdda6c33', 3),
 ('dd43369c-575c-425a-aaa9-3ada0486cfa3', 3),
 ('dd43369c-575c-425a-aaa9-3ada0486cfa3', 4),
+('50cb94b2-4a01-4978-b550-0c9dd7bb2b40', 5),
+('50cb94b2-4a01-4978-b550-0c9dd7bb2b40', 6),
 ('9465c7e0-8560-4c84-9d78-2b970c75db84', 6),
 ('f086ae23-dd83-4611-9ca0-04d75c9a9fb3', 6);
 
@@ -148,10 +169,12 @@ INSERT INTO `document_categories` (`document_id`, `category_id`) VALUES
 -- Table structure for table `document_status`
 --
 
-CREATE TABLE `document_status` (
+DROP TABLE IF EXISTS `document_status`;
+CREATE TABLE IF NOT EXISTS `document_status` (
   `document_id` char(36) NOT NULL,
   `uploaded` enum('pending','processing','complete','error') DEFAULT 'pending',
-  `embedded` enum('pending','processing','complete','error') DEFAULT 'pending'
+  `embedded` enum('pending','processing','complete','error') DEFAULT 'pending',
+  PRIMARY KEY (`document_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
@@ -159,6 +182,7 @@ CREATE TABLE `document_status` (
 --
 
 INSERT INTO `document_status` (`document_id`, `uploaded`, `embedded`) VALUES
+('50cb94b2-4a01-4978-b550-0c9dd7bb2b40', 'complete', 'complete'),
 ('835babdf-2b81-413e-aa71-61483b4cb3a5', 'complete', 'complete'),
 ('88062a21-84f2-4015-9f5c-200fcdda6c33', 'complete', 'complete'),
 ('9465c7e0-8560-4c84-9d78-2b970c75db84', 'complete', 'complete'),
@@ -171,12 +195,15 @@ INSERT INTO `document_status` (`document_id`, `uploaded`, `embedded`) VALUES
 -- Table structure for table `messages`
 --
 
-CREATE TABLE `messages` (
+DROP TABLE IF EXISTS `messages`;
+CREATE TABLE IF NOT EXISTS `messages` (
   `id` char(36) NOT NULL,
   `chat_id` char(36) NOT NULL,
   `time` datetime DEFAULT CURRENT_TIMESTAMP,
   `role` varchar(50) NOT NULL,
-  `content` text NOT NULL
+  `content` text NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `chat_id` (`chat_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
@@ -272,7 +299,27 @@ INSERT INTO `messages` (`id`, `chat_id`, `time`, `role`, `content`) VALUES
 ('0194db73-8a79-7faf-bdcb-272056d3200a', '0194da8b-5efe-7b49-9893-a52fc57ff89d', '2025-02-06 20:29:30', 'user', 'give me new link'),
 ('0194db73-e9fb-7a38-a5b0-350e6697ddf1', '0194da8b-5efe-7b49-9893-a52fc57ff89d', '2025-02-06 20:29:54', 'assistant', 'It seems that I don\'t have any information about the worklog week 2 of COS40005. The provided context doesn\'t contain any details about this specific topic.\n\nIf you\'re looking for information about COS40005, I can try to help you with the provided context. The COS40005 Sprint 1 Project Specification document is available, and I can provide you with a summary of its content.\n\nReferences:\n* COS40005 Sprint 1 Project Specification (<a href=\"https://docs.google.com/gview?embedded=true&url=https%3A%2F%2Frikkeisoft-s3.s3.ap-southeast-2.amazonaws.com%2Fuploads%2F88062a21-84f2-4015-9f5c-200fcdda6c33.docx%3Fresponse-content-disposition%3Dattachment%253B%2520filename%253DCOS40005%2520Sprint%25201%2520Project%2520Specification.docx%26AWSAccessKeyId%3DAKIAXNGUVTVY3JHPYK5E%26Signature%3D65MvwtFs3qI0UG6EKUzYsLCZ6iI%253D%26Expires%3D1738852187\" target=\"_blank\">Preview</a>, <a href=\"https://rikkeisoft-s3.s3.ap-southeast-2.amazonaws.com/uploads/88062a21-84f2-4015-9f5c-200fcdda6c33.docx?response-content-disposition=attachment%3B%20filename%3DCOS40005%20Sprint%201%20Project%20Specification.docx&AWSAccessKeyId=AKIAXNGUVTVY3JHPYK5E&Signature=65MvwtFs3qI0UG6EKUzYsLCZ6iI%3D&Expires=1738852187\" target=\"_blank\">Download</a>) by Minh Nguyen, 2025-02-06.'),
 ('0194e99d-9f3a-74fb-b0e1-26d8fdb85bfa', '0194da8b-5efe-7b49-9893-a52fc57ff89d', '2025-02-09 07:30:09', 'user', 'send me a high five!'),
-('0194e99d-a7f5-7816-864a-200c9822abf3', '0194da8b-5efe-7b49-9893-a52fc57ff89d', '2025-02-09 07:30:11', 'assistant', 'I\'d be happy to send you a virtual high five! ***HIGH FIVE*** Unfortunately, I couldn\'t find any relevant information to provide an answer with references. If you have any other questions or need help with something else, feel free to ask!');
+('0194e99d-a7f5-7816-864a-200c9822abf3', '0194da8b-5efe-7b49-9893-a52fc57ff89d', '2025-02-09 07:30:11', 'assistant', 'I\'d be happy to send you a virtual high five! ***HIGH FIVE*** Unfortunately, I couldn\'t find any relevant information to provide an answer with references. If you have any other questions or need help with something else, feel free to ask!'),
+('0194e9cd-3633-7f7e-8621-1bead632106d', '0194e9cd-3086-7612-bb1c-14fa0620d1d4', '2025-02-09 08:22:08', 'user', 'Hello'),
+('0194e9cd-3d77-7bd0-a437-aa5672ee2337', '0194e9cd-3086-7612-bb1c-14fa0620d1d4', '2025-02-09 08:22:10', 'assistant', 'Hello Nguyen Huong, how can I assist you with documents today?'),
+('0194e9cd-f08f-7041-8dfb-3e7dda7f42b1', '0194e9cd-3086-7612-bb1c-14fa0620d1d4', '2025-02-09 08:22:55', 'user', 'Nói tiếng Việt được không?'),
+('0194e9cd-f67a-7127-b967-a0ccc1d95bc2', '0194e9cd-3086-7612-bb1c-14fa0620d1d4', '2025-02-09 08:22:57', 'assistant', 'Dĩ nhiên, tôi có thể hỗ trợ bạn bằng tiếng Việt. Tôi có thể giúp gì cho bạn về các tài liệu hôm nay?'),
+('0194e9ce-8a30-7576-88ab-64d75be61971', '0194e9cd-3086-7612-bb1c-14fa0620d1d4', '2025-02-09 08:23:35', 'user', 'Bạn đang làm gì'),
+('0194e9ce-906e-7766-a498-3473b4e5bbc2', '0194e9cd-3086-7612-bb1c-14fa0620d1d4', '2025-02-09 08:23:36', 'assistant', 'Tôi đang sẵn sàng giúp bạn với các câu hỏi hoặc vấn đề liên quan đến tài liệu. Tôi có thể tìm kiếm, giải thích, hoặc cung cấp thông tin về các tài liệu mà bạn cần. Bạn có thể hỏi tôi bất kỳ điều gì về tài liệu \"progression-2023-tables\" hoặc bất kỳ tài liệu nào khác mà bạn quan tâm.'),
+('0194ea02-03b9-72d2-b5af-8c839e8a835e', '0194ea01-fbf7-778b-b70d-f43c150f01e3', '2025-02-09 09:19:48', 'user', 'Do you have any documents about AWS?'),
+('0194ea02-1d79-765b-9125-80e8654d7f72', '0194ea01-fbf7-778b-b70d-f43c150f01e3', '2025-02-09 09:19:55', 'assistant', 'Yes, I have documents about AWS. Specifically, I have a document titled \"Configuration and credential file settings in the AWS CLI\" which provides information on how to configure and manage credentials for the AWS Command Line Interface (CLI). \n\nHere is the list of relevant document:\n* Configuration and credential file settings in the AWS CLI by Minh Nguyen, created on 2025-02-09, can be accessed through <a href=\"https://docs.aws.amazon.com/cli/v1/userguide/cli-configure-files.html\" target=\"_blank\">Preview</a> and <a href=\"https://rikkeigpt-bucket.s3.amazonaws.com/documents/50cb94b2-4a01-4978-b550-0c9dd7bb2b40.html?response-content-disposition=attachment%3B%20filename%3DConfiguration%20and%20credential%20file%20settings%20in%20the%20AWS%20CLI%20-%20AWS%20Command%20Line%20Interface.html&AWSAccessKeyId=ASIAXNGUVTVY5YXQBPIQ&Signature=Zxt9ggiAaPySEyoqt%2BQSPgqyrpM%3D&x-amz-security-token=IQoJb3JpZ2luX2VjEIf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaDmFwLXNvdXRoZWFzdC0yIkcwRQIhAOiW360OpE5A5tInjkKW9Vglz5rZhSl4SJi5ATvs7oJ6AiBEVqnc8pl1w5w2DESjCo%2FHC5FYeRzBdaUvOPIqBLvAVyqHBAig%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F8BEAAaDDUwOTM5OTYzNzM2MSIM1LVLxMcdG45dH3MOKtsDycHPbeqU%2FMT7lMginyge%2F4Ds8719O8Lzet1%2BF0OwF%2FuDTBU3yfwjqon%2F7xiS1W6HpUbRColED1TWDFWWCp3tzTK2aE%2B0NuBBIZXyljbKFn1%2FVgG1X4B%2BPJuXeAkDNd4VBswdRjePWiPI0pGHQEwemV%2Figkp1TpEIxgBbhm0upKwIssPnVOQy%2Fhm0UeNlZ14U0fZ7ZdExjpptOULxJqDTKOY2g6EAUVJZk%2FGOp%2FCG4J0CuaO2kLcMEYI1HAMvhopdW1qSph8%2FWSx7PuS6Z167e7gz4oqT0tdAkaKpXdmjUeqj2EdZmqU1GTsK16v3S0H5D42mIKqGdV5fZJawsnitO6QIoAeNugWqEC1PVBx8Lo9MvDZFVL1r94UyFW1nSgYo9NU6iOLKghoHAXOIDFJvL0aEs74nB0H109cFntJPxJrCwzciP5Y8crZN3wumxdOIN8HgU4O9eo%2BP7uOI6epvIA0L9W1jKA1bisXu6pWuPDvT6ipLsiFMJNoTqsCHih6W%2BI1FPz45sK0f12nSnYjb0AbgGYMwvDSwsh0HrciLPoN0FQKk%2BalCkEdTTf5L3Rp0v%2BptE6Lu%2BStTj89iSnqxklbjNuLwhdk8o0PnT%2F9w3RZYOw0ehTBwpFy%2FHzDIraG9BjqlAXo%2FzpHxGEWg7OqR3xrBE6P3IDBNcsJjEsElFmtfol9IRbG7k9BpdPsqEyHchRW6W46M3D7yTSmVlgrPknVxXfFhyyXKiWceFg9d20sMayihp9rAdeGV8kN%2FJd7Z7es2jqVD898e28h8P81qdB2KHwVpbefpoJUWx4xA4SRFOwtj%2BAUdZkmsxT6yi%2BD7UMxLqmThjvxLbHVKbzrbyFBI9M60ZOkDaw%3D%3D&Expires=1739096389\" target=\"_blank\">Download</a> \n\nPlease let me know if you would like to know more about this document or if there\'s anything else I can help you with.'),
+('0194ea04-387b-7eae-811c-a4f8ee23a755', '0194ea01-fbf7-778b-b70d-f43c150f01e3', '2025-02-09 09:22:13', 'user', 'Where are configuration settings stored?'),
+('0194ea04-5212-7347-b4a1-5c05fbcc9d7d', '0194ea01-fbf7-778b-b70d-f43c150f01e3', '2025-02-09 09:22:19', 'assistant', 'The configuration settings for the AWS CLI are stored in files that are maintained by the AWS CLI. These files are divided into profiles, and by default, the AWS CLI uses the settings found in the profile named \"default\". \n\nThe configuration settings can be stored in the following locations:\n\n1. The config file: This file stores the configuration settings, such as the region and output format, for each profile.\n2. The credentials file: This file stores the credentials, such as the access key ID and secret access key, for each profile.\n3. Environment variables: You can override individual settings by setting environment variables, such as AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.\n4. The AWS CLI cache: When you use a shared profile that specifies an IAM role, the AWS CLI calls the AWS STS AssumeRole operation to retrieve temporary credentials, which are then stored in the AWS CLI cache.\n\nHere is the list of relevant document:\n* Configuration and credential file settings in the AWS CLI by Minh Nguyen, created on 2025-02-09, can be accessed through <a href=\"https://docs.aws.amazon.com/cli/v1/userguide/cli-configure-files.html\" target=\"_blank\">Preview</a> and <a href=\"https://rikkeigpt-bucket.s3.amazonaws.com/documents/50cb94b2-4a01-4978-b550-0c9dd7bb2b40.html?response-content-disposition=attachment%3B%20filename%3DConfiguration%20and%20credential%20file%20settings%20in%20the%20AWS%20CLI%20-%20AWS%20Command%20Line%20Interface.html&AWSAccessKeyId=ASIAXNGUVTVY5YXQBPIQ&Signature=Zxt9ggiAaPySEyoqt%2BQSPgqyrpM%3D&x-amz-security-token=IQoJb3JpZ2luX2VjEIf%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaDmFwLXNvdXRoZWFzdC0yIkcwRQIhAOiW360OpE5A5tInjkKW9Vglz5rZhSl4SJi5ATvs7oJ6AiBEVqnc8pl1w5w2DESjCo%2FHC5FYeRzBdaUvOPIqBLvAVyqHBAig%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F8BEAAaDDUwOTM5OTYzNzM2MSIM1LVLxMcdG45dH3MOKtsDycHPbeqU%2FMT7lMginyge%2F4Ds8719O8Lzet1%2BF0OwF%2FuDTBU3yfwjqon%2F7xiS1W6HpUbRColED1TWDFWWCp3tzTK2aE%2B0NuBBIZXyljbKFn1%2FVgG1X4B%2BPJuXeAkDNd4VBswdRjePWiPI0pGHQEwemV%2Figkp1TpEIxgBbhm0upKwIssPnVOQy%2Fhm0UeNlZ14U0fZ7ZdExjpptOULxJqDTKOY2g6EAUVJZk%2FGOp%2FCG4J0CuaO2kLcMEYI1HAMvhopdW1qSph8%2FWSx7PuS6Z167e7gz4oqT0tdAkaKpXdmjUeqj2EdZmqU1GTsK16v3S0H5D42mIKqGdV5fZJawsnitO6QIoAeNugWqEC1PVBx8Lo9MvDZFVL1r94UyFW1nSgYo9NU6iOLKghoHAXOIDFJvL0aEs74nB0H109cFntJPxJrCwzciP5Y8crZN3wumxdOIN8HgU4O9eo%2BP7uOI6epvIA0L9W1jKA1bisXu6pWuPDvT6ipLsiFMJNoTqsCHih6W%2BI1FPz45sK0f12nSnYjb0AbgGYMwvDSwsh0HrciLPoN0FQKk%2BalCkEdTTf5L3Rp0v%2BptE6Lu%2BStTj89iSnqxklbjNuLwhdk8o0PnT%2F9w3RZYOw0ehTBwpFy%2FHzDIraG9BjqlAXo%2FzpHxGEWg7OqR3xrBE6P3IDBNcsJjEsElFmtfol9IRbG7k9BpdPsqEyHchRW6W46M3D7yTSmVlgrPknVxXfFhyyXKiWceFg9d20sMayihp9rAdeGV8kN%2FJd7Z7es2jqVD898e28h8P81qdB2KHwVpbefpoJUWx4xA4SRFOwtj%2BAUdZkmsxT6yi%2BD7UMxLqmThjvxLbHVKbzrbyFBI9M60ZOkDaw%3D%3D&Expires=1739096389\" target=\"_blank\">Download</a> \n\nPlease let me know if you would like to know more about this document or if there\'s anything else I can help you with.'),
+('0194eadc-9fce-726c-b010-499ba134fea7', '0194eadc-9a12-7cc2-9824-4e6f821d7403', '2025-02-09 13:18:35', 'user', 'who making you ?'),
+('0194eadc-a87c-7122-beaf-fb5d6544dbd8', '0194eadc-9a12-7cc2-9824-4e6f821d7403', '2025-02-09 13:18:37', 'assistant', 'I was created by a team of developers using a range of technologies, including natural language processing (NLP) and machine learning algorithms. My knowledge was built from a massive dataset of text from various sources, including books, articles, and websites. I\'m constantly learning and improving my responses based on the conversations I have with users like you.\n\nAs for my specific \"makers,\" I don\'t have a single creator or owner. I\'m a product of a collaboration between multiple individuals and organizations who have contributed to my development and training.\n\nHere are some references that might be helpful:\n* None \n\nNote: Since there are no relevant sources provided for this answer, the references list is not included.'),
+('0194eadd-d101-714a-b70e-ae3804f1abf6', '0194eadc-9a12-7cc2-9824-4e6f821d7403', '2025-02-09 13:19:53', 'user', 'what can you do ?'),
+('0194eadd-dca4-71f4-81d2-c609005811fa', '0194eadc-9a12-7cc2-9824-4e6f821d7403', '2025-02-09 13:19:56', 'assistant', 'I can perform a variety of tasks to assist you with your questions and needs. Here are some examples:\n\n1. **Answering questions**: I can process natural language queries and provide relevant answers based on my training data.\n2. **Providing information**: I can offer information on a wide range of topics, from science and history to entertainment and culture.\n3. **Summarizing content**: I can summarize long pieces of text into shorter, more digestible versions.\n4. **Translating text**: I can translate text from one language to another.\n5. **Generating text**: I can create text based on a prompt or topic.\n6. **Offering suggestions**: I can provide suggestions for things like gift ideas, travel destinations, or books to read.\n7. **Explaining concepts**: I can explain complex concepts in simple terms.\n8. **Helping with language**: I can assist with language-related tasks, such as grammar, syntax, and vocabulary.\n\nIn the context of documents, I can:\n\n1. **Search for documents**: I can help you find specific documents or information within documents.\n2. **Summarize documents**: I can summarize the content of a document for you.\n3. **Answer questions about documents**: I can answer questions about the content of a document.\n4. **Provide information about documents**: I can provide information about a document, such as its author, publication date, or relevance to a particular topic.\n\nHere are some references that might be helpful:\n* None \n\nNote: Since there are no relevant sources provided for this answer, the references list is not included.'),
+('0194eae1-0d18-736b-a276-10fa4cde0c80', '0194eae1-08e4-7c86-9245-6068d1162f55', '2025-02-09 13:23:25', 'user', 'do you know best way to losing weight'),
+('0194eae1-1785-7d3b-bfc0-8bc062c71341', '0194eae1-08e4-7c86-9245-6068d1162f55', '2025-02-09 13:23:28', 'assistant', 'As a document assistant, I can provide general information on weight loss, but I must emphasize that it\'s essential to consult a healthcare professional or a registered dietitian for personalized advice. \n\nThat being said, here are some evidence-based tips for losing weight:\n\n1. **Create a calorie deficit**: Reduce your daily caloric intake by eating fewer calories than you burn. You can do this by eating smaller portions, skipping unhealthy snacks, and avoiding high-calorie foods.\n2. **Eat a balanced diet**: Focus on whole, unprocessed foods like vegetables, fruits, whole grains, lean proteins, and healthy fats. Aim to include a variety of colors on your plate to ensure you\'re getting a range of nutrients.\n3. **Stay hydrated**: Drink plenty of water throughout the day to help control hunger and boost metabolism.\n4. **Incorporate physical activity**: Aim for at least 150 minutes of moderate-intensity exercise or 75 minutes of vigorous-intensity exercise per week. You can also incorporate strength training, high-intensity interval training (HIIT), and other forms of physical activity to help you lose weight and maintain weight loss.\n5. **Get enough sleep**: Poor sleep can disrupt hormones that regulate hunger and fullness, leading to overeating and weight gain. Aim for 7-9 hours of sleep per night.\n6. **Manage stress**: Chronic stress can lead to emotional eating and weight gain. Try stress-reducing techniques like meditation, yoga, or deep breathing exercises.\n\nRemember, losing weight too quickly is not healthy and is unlikely to be sustainable. Aim for a slow and steady weight loss of 1-2 pounds per week.\n\nReferences:\n* None\n\nPlease note that I couldn\'t find any relevant documents in the provided context that specifically address weight loss. If you have any further questions or concerns, I\'ll do my best to help.'),
+('0194eae2-2f71-707f-8818-8838fa2a4ec4', '0194eae1-08e4-7c86-9245-6068d1162f55', '2025-02-09 13:24:39', 'user', 'can you make a physical activity schedule for losing weight ?'),
+('0194eae2-3d11-7aa5-9864-6d99419b1638', '0194eae1-08e4-7c86-9245-6068d1162f55', '2025-02-09 13:24:43', 'assistant', 'As a document assistant, I can provide a general physical activity schedule that can help with weight loss. However, please note that it\'s essential to consult a healthcare professional or a certified fitness expert to create a personalized exercise plan that suits your needs and goals.\n\nHere\'s a sample physical activity schedule that you can modify to suit your lifestyle:\n\n**Monday (Upper Body Workout):**\n\n1. Warm-up: 5-10 minutes of light cardio (jogging, jumping jacks, etc.)\n2. Push-ups: 3 sets of 10-12 reps\n3. Bicep curls: 3 sets of 10-12 reps\n4. Tricep dips: 3 sets of 10-12 reps\n5. Shoulder press: 3 sets of 10-12 reps\n6. Cool-down: 5-10 minutes of stretching\n\n**Tuesday (Lower Body Workout):**\n\n1. Warm-up: 5-10 minutes of light cardio\n2. Squats: 3 sets of 10-12 reps\n3. Lunges: 3 sets of 10-12 reps (per leg)\n4. Calf raises: 3 sets of 15-20 reps\n5. Leg press: 3 sets of 10-12 reps\n6. Cool-down: 5-10 minutes of stretching\n\n**Wednesday (Rest Day)**\n\n**Thursday (Core Workout):**\n\n1. Warm-up: 5-10 minutes of light cardio\n2. Plank: 3 sets of 30-60 seconds\n3. Russian twists: 3 sets of 10-12 reps\n4. Leg raises: 3 sets of 10-12 reps\n5. Bicycle crunches: 3 sets of 10-12 reps\n6. Cool-down: 5-10 minutes of stretching\n\n**Friday (Cardio Day):**\n\n1. Choose one type of cardio: jogging, cycling, swimming, or brisk walking\n2. Perform the chosen cardio activity for 30-45 minutes at moderate intensity\n\n**Saturday (Rest Day)**\n\n**Sunday (Active Recovery):**\n\n1. Engage in light physical activity, such as yoga, Pilates, or a leisurely walk\n\nRemember to:\n\n* Start slowly and gradually increase the intensity and duration of your workouts\n* Listen to your body and rest when needed\n* Stay hydrated and fuel your body with a balanced diet\n* Consult a healthcare professional or certified fitness expert to create a personalized exercise plan\n\nReferences:\n* <a href=\"https://www.acsm.org/docs/default-source/files-for-resource-library/acsms-guidelines-for-exercise-testing-and-prescription-10th-edition.pdf\" target=\"_blank\">Preview</a> and <a href=\"https://www.acsm.org/docs/default-source/files-for-resource-library/acsms-guidelines-for-exercise-testing-and-prescription-10th-edition.pdf?sfvrsn=6\" target=\"_blank\">Download</a> ACSM\'s Guidelines for Exercise Testing and Prescription, 10th Edition by American College of Sports Medicine (ACSM), 2018\n* <a href=\"https://www.cdc.gov/physical-activity/downloads/pa_health_factsheet.pdf\" target=\"_blank\">Preview</a> and <a href=\"https://www.cdc.gov/physical-activity/downloads/pa_health_factsheet.pdf\" target=\"_blank\">Download</a> Physical Activity and Health by Centers for Disease Control and Prevention (CDC), 2020'),
+('0194eae3-6b43-760c-87f2-a065d5d7a80b', '0194eae1-08e4-7c86-9245-6068d1162f55', '2025-02-09 13:26:00', 'user', 'can you send picture ?'),
+('0194eae3-77e3-70b7-9043-20a241e99438', '0194eae1-08e4-7c86-9245-6068d1162f55', '2025-02-09 13:26:03', 'assistant', 'As a text-based AI model, I don\'t have the capability to send pictures or any other type of media. I can only provide text-based information and responses.\n\nHowever, I can try to help you find a picture or provide a description of what you\'re looking for. If you have a specific topic or subject in mind, I can try to provide more information or point you in the direction of a relevant resource.\n\nPlease let me know if there\'s anything else I can help you with!\n\nReferences:\n* None');
 
 -- --------------------------------------------------------
 
@@ -280,11 +327,14 @@ INSERT INTO `messages` (`id`, `chat_id`, `time`, `role`, `content`) VALUES
 -- Table structure for table `roles`
 --
 
-CREATE TABLE `roles` (
-  `id` int NOT NULL,
+DROP TABLE IF EXISTS `roles`;
+CREATE TABLE IF NOT EXISTS `roles` (
+  `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(50) NOT NULL,
-  `description` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  `description` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `roles`
@@ -301,10 +351,13 @@ INSERT INTO `roles` (`id`, `name`, `description`) VALUES
 -- Table structure for table `sso`
 --
 
-CREATE TABLE `sso` (
+DROP TABLE IF EXISTS `sso`;
+CREATE TABLE IF NOT EXISTS `sso` (
   `user_id` char(36) NOT NULL,
   `provider` enum('google','microsoft') NOT NULL,
-  `sub` varchar(100) NOT NULL
+  `sub` varchar(100) NOT NULL,
+  PRIMARY KEY (`user_id`,`provider`),
+  UNIQUE KEY `provider` (`provider`,`sub`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
@@ -314,6 +367,9 @@ CREATE TABLE `sso` (
 INSERT INTO `sso` (`user_id`, `provider`, `sub`) VALUES
 ('e524734c-549c-44b4-84d2-5f144613ab1c', 'google', '106272218561460451545'),
 ('1642be2a-e3a9-4679-87eb-1365f9f470d0', 'google', '107360694239114519362'),
+('88b2bf74-feab-4b49-919c-45c59bf6bfe3', 'google', '108382656924964254204'),
+('54d14db4-7fd2-4791-b7d2-6e5c0ae00235', 'google', '112432743642618716904'),
+('510b51b0-5511-4820-9749-c022993a8f50', 'google', '117309226250954200649'),
 ('f7e0386e-8e56-464b-82ef-19747f6a9bae', 'microsoft', 'AAAAAAAAAAAAAAAAAAAAAAGWQBsfLK99T6YSqJXyY4s'),
 ('52676658-2055-4e53-b7b2-cab4957aad0b', 'microsoft', 'suS03TZEAYkMuTigHe9LvwWrwcsPnWkDObw2SCrrITM');
 
@@ -323,7 +379,8 @@ INSERT INTO `sso` (`user_id`, `provider`, `sub`) VALUES
 -- Table structure for table `users`
 --
 
-CREATE TABLE `users` (
+DROP TABLE IF EXISTS `users`;
+CREATE TABLE IF NOT EXISTS `users` (
   `id` char(36) NOT NULL,
   `email` varchar(100) NOT NULL,
   `firstname` varchar(50) NOT NULL,
@@ -332,7 +389,9 @@ CREATE TABLE `users` (
   `password` char(60) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `avatar_url` text,
   `created_time` datetime NOT NULL,
-  `username_last_changed` datetime DEFAULT NULL
+  `username_last_changed` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
@@ -341,8 +400,11 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `email`, `firstname`, `lastname`, `username`, `password`, `avatar_url`, `created_time`, `username_last_changed`) VALUES
 ('1642be2a-e3a9-4679-87eb-1365f9f470d0', '104169617@student.swin.edu.au', 'Nguyen', 'Minh', '', '$2b$12$gUr08tFVl1Fvae78DwrEAefIXQGxYdCeqe6TERd.kBoDlkr3hUVNq', 'https://lh3.googleusercontent.com/a/ACg8ocIeYtfsHCc2K2Ujapow2nSd6R3zr8kEx_YgWIuv_FnsoAkoWB4=s360-c-no', '2025-01-18 15:00:09', NULL),
+('510b51b0-5511-4820-9749-c022993a8f50', 'dvmh2k3@gmail.com', 'Ensheath', NULL, NULL, NULL, 'https://lh3.googleusercontent.com/a/ACg8ocIeUYOLTefiwX7TEAfBUzhgHVn6qvnRdaK5dZXCRY_RX47z6hH9=s96-c', '2025-02-09 12:38:05', NULL),
 ('52676658-2055-4e53-b7b2-cab4957aad0b', 'minhntt3_tts@rikkeisoft.com', 'Minh', 'Nguyen Thi Thanh', NULL, NULL, 'https://rikkeigpt-bucket.s3.amazonaws.com/avatars/52676658-2055-4e53-b7b2-cab4957aad0b.jpg', '2025-02-06 14:35:26', NULL),
+('54d14db4-7fd2-4791-b7d2-6e5c0ae00235', 'thaihuy.le1610@gmail.com', 'huy', 'le', NULL, NULL, 'https://lh3.googleusercontent.com/a/ACg8ocII_EJvEFEBhQtvd_4QNczdhPzFt2DWK2ZczsnB5i10PAVCkA=s96-c', '2025-02-09 13:18:17', NULL),
 ('86ce47d5-0bf4-47c4-adb4-2be068e73580', 'hoang@gmail.com', 'Hoang', 'Duong', 'hoangdvm', '$2b$12$A2z0GT136/XX.7a5MeL3eOlYWX4AWoPCsnm738iRxFZcn2Gk2oN8W', 'https://rikkeigpt-bucket.s3.ap-southeast-2.amazonaws.com/avatars/86ce47d5-0bf4-47c4-adb4-2be068e73580.png', '2025-01-16 10:41:26', '2025-01-16 10:41:26'),
+('88b2bf74-feab-4b49-919c-45c59bf6bfe3', 'huongytdphc@gmail.com', 'Nguỹên', 'Hường', NULL, NULL, 'https://lh3.googleusercontent.com/a/ACg8ocIj2NMJYLrhxrkPs-kvB7_NXNvE-9nICZASeZc-M2XCMm3g=s96-c', '2025-02-09 08:21:57', NULL),
 ('c24d9619-848d-4af6-87c8-718444421762', 'minh@gmail.com', 'Minh', 'Nguyen', 'tminh1512', '$2b$12$4aI1752f0eN4YZbjdB5PQeIwzv5GDs/waVMGZFTBPNyuJUm7jBiS.', 'https://rikkeigpt-bucket.s3.ap-southeast-2.amazonaws.com/avatars/c24d9619-848d-4af6-87c8-718444421762.jpg', '2025-01-16 10:41:26', '2025-01-16 10:41:26'),
 ('e524734c-549c-44b4-84d2-5f144613ab1c', 'minhnttswd00087@fpt.edu.vn', 'Nguyen Thi Thanh Minh', '(Swinburne DN)', NULL, NULL, 'https://lh3.googleusercontent.com/a/ACg8ocL_9noZAziIEx_bV9AJ3vXww3vdEZu_3ojXRoih7FvL_SJY4A=s96-c', '2025-02-06 13:01:16', NULL),
 ('f7e0386e-8e56-464b-82ef-19747f6a9bae', 'thanhminh.nt.1512@gmail.com', 'Minh', 'Nguyễn', NULL, NULL, 'https://rikkeigpt-bucket.s3.ap-southeast-2.amazonaws.com/avatars/microsoft_AAAAAAAAAAAAAAAAAAAAAAGWQBsfLK99T6YSqJXyY4s.jpg', '2025-02-06 14:40:39', NULL);
@@ -353,9 +415,12 @@ INSERT INTO `users` (`id`, `email`, `firstname`, `lastname`, `username`, `passwo
 -- Table structure for table `user_roles`
 --
 
-CREATE TABLE `user_roles` (
+DROP TABLE IF EXISTS `user_roles`;
+CREATE TABLE IF NOT EXISTS `user_roles` (
   `user_id` char(36) NOT NULL,
-  `role_id` int NOT NULL
+  `role_id` int NOT NULL,
+  PRIMARY KEY (`user_id`,`role_id`),
+  KEY `role_id` (`role_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
@@ -367,101 +432,14 @@ INSERT INTO `user_roles` (`user_id`, `role_id`) VALUES
 ('86ce47d5-0bf4-47c4-adb4-2be068e73580', 2),
 ('c24d9619-848d-4af6-87c8-718444421762', 2),
 ('1642be2a-e3a9-4679-87eb-1365f9f470d0', 3),
+('510b51b0-5511-4820-9749-c022993a8f50', 3),
 ('52676658-2055-4e53-b7b2-cab4957aad0b', 3),
+('54d14db4-7fd2-4791-b7d2-6e5c0ae00235', 3),
 ('86ce47d5-0bf4-47c4-adb4-2be068e73580', 3),
+('88b2bf74-feab-4b49-919c-45c59bf6bfe3', 3),
 ('c24d9619-848d-4af6-87c8-718444421762', 3),
 ('e524734c-549c-44b4-84d2-5f144613ab1c', 3),
 ('f7e0386e-8e56-464b-82ef-19747f6a9bae', 3);
-
---
--- Indexes for dumped tables
---
-
---
--- Indexes for table `categories`
---
-ALTER TABLE `categories`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `name` (`name`);
-
---
--- Indexes for table `chats`
---
-ALTER TABLE `chats`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `user_id` (`user_id`);
-
---
--- Indexes for table `documents`
---
-ALTER TABLE `documents`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `creator` (`creator`),
-  ADD KEY `uploader` (`uploader`);
-
---
--- Indexes for table `document_categories`
---
-ALTER TABLE `document_categories`
-  ADD PRIMARY KEY (`document_id`,`category_id`),
-  ADD KEY `category_id` (`category_id`);
-
---
--- Indexes for table `document_status`
---
-ALTER TABLE `document_status`
-  ADD PRIMARY KEY (`document_id`);
-
---
--- Indexes for table `messages`
---
-ALTER TABLE `messages`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `chat_id` (`chat_id`);
-
---
--- Indexes for table `roles`
---
-ALTER TABLE `roles`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `name` (`name`);
-
---
--- Indexes for table `sso`
---
-ALTER TABLE `sso`
-  ADD PRIMARY KEY (`user_id`,`provider`),
-  ADD UNIQUE KEY `provider` (`provider`,`sub`);
-
---
--- Indexes for table `users`
---
-ALTER TABLE `users`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `email` (`email`);
-
---
--- Indexes for table `user_roles`
---
-ALTER TABLE `user_roles`
-  ADD PRIMARY KEY (`user_id`,`role_id`),
-  ADD KEY `role_id` (`role_id`);
-
---
--- AUTO_INCREMENT for dumped tables
---
-
---
--- AUTO_INCREMENT for table `categories`
---
-ALTER TABLE `categories`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
-
---
--- AUTO_INCREMENT for table `roles`
---
-ALTER TABLE `roles`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Constraints for dumped tables
@@ -511,7 +489,7 @@ ALTER TABLE `sso`
 ALTER TABLE `user_roles`
   ADD CONSTRAINT `user_roles_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `user_roles_ibfk_2` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE;
-COMMIT;
+SET FOREIGN_KEY_CHECKS=1;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
