@@ -1,7 +1,8 @@
-from fastapi import HTTPException, status, APIRouter, Depends, Path, Body
+from fastapi import APIRouter, HTTPException, status, Depends, Path, Body
+from fastapi.responses import JSONResponse
 from app.api.dependencies import validate_access_token
+from app.bot.config import load_config, save_config
 from app.schemas import Config, ConfigUpdate, TokenModel
-from app.bot import config, save_config
 
 
 router = APIRouter()
@@ -21,10 +22,11 @@ async def get_config(
             detail="Insufficient permissions. Only admins can access the configuration.",
         )
 
+    config = load_config()
     if config_name not in config:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Config section '{config_name}' not found."
+            detail=f"Config section '{config_name}' not found.",
         )
 
     print(f"Loading config for: {config_name}")  # Debugging output
@@ -32,7 +34,11 @@ async def get_config(
 
 
 @router.put("/{config_name}")
-async def update_config(config_name: str = Path(...), updates: ConfigUpdate = Body(...), token_payload: TokenModel = Depends(validate_access_token)):
+async def update_config(
+    config_name: str = Path(...),
+    updates: ConfigUpdate = Body(...),
+    token_payload: TokenModel = Depends(validate_access_token),
+):
     """Update a specific configuration section."""
     # config_name = config_name.replace("-", "_")
     if not any(role in authorized_roles for role in token_payload.roles):
@@ -41,10 +47,11 @@ async def update_config(config_name: str = Path(...), updates: ConfigUpdate = Bo
             detail="Insufficient permissions. Only admins can update the configuration.",
         )
 
+    config = load_config()
     if config_name not in config:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Config section '{config_name}' not found."
+            detail=f"Config section '{config_name}' not found.",
         )
 
     print(f"Replacing config for: {config_name}")  # Debugging output
@@ -52,18 +59,25 @@ async def update_config(config_name: str = Path(...), updates: ConfigUpdate = Bo
 
     # Update the configuration section
     config[config_name]["system_prompt"] = updates.system_prompt
-    config[config_name]["params"].update({
-        "model": updates.model,
-        "max_tokens": updates.max_tokens,
-        "temperature": updates.temperature,
-    })
+    config[config_name]["params"].update(
+        {
+            "model": updates.model,
+            "max_tokens": updates.max_tokens,
+            "temperature": updates.temperature,
+        }
+    )
 
     if updates.message_template:
         config[config_name]["message_template"] = updates.message_template
 
-    save_config()
+    save_config(config)
 
-    return {"message": f"Config section '{config_name}' updated successfully."}
+    return JSONResponse(
+        {
+            "success": True,
+            "message": f"Config section '{config_name}' updated successfully.",
+        }
+    )
 
 
 @router.get("/{config_name}/stream")
@@ -72,6 +86,7 @@ async def check_stream(
     token_payload: TokenModel = Depends(validate_access_token),
 ) -> bool:
     """Check whether the configuration section supports streaming."""
+    config = load_config()
     if config_name not in config:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

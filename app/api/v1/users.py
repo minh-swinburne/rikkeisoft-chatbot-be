@@ -123,6 +123,7 @@ async def link_sso_current_user(
         user_id=token_payload.sub,
         provider=provider,
         sub=user_info.get("sub"),
+        email=user_info.get("email"),
     )
     sso = await UserService.create_sso(db, sso_data)
     return sso

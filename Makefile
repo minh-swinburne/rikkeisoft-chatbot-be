@@ -23,11 +23,9 @@ load-creds:
 	@aws sts get-caller-identity
 
 # Authenticate Docker to AWS ECR
+# If using ECR public, we need to delete `"credsStore": "desktop",` in `~/.docker/config.json` to use this command
 login: clear-env load-creds
-	@aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(ECR_REGISTRY)
-
-# Need to delete `"credsStore": "desktop",` in `~/.docker/config.json` to use this command
-login-public: clear-env load-creds
+# @aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(ECR_REGISTRY)
 	@aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/$(ECR_REPO_PUBLIC)
 
 # Build Docker image
@@ -36,16 +34,18 @@ build:
 
 # Tag Docker image
 tag:
-	@docker tag $(ECR_REPO):$(IMAGE_TAG) $(ECR_REGISTRY)/$(ECR_REPO):$(IMAGE_TAG)
+# @docker tag $(ECR_REPO):$(IMAGE_TAG) $(ECR_REGISTRY)/$(ECR_REPO):$(IMAGE_TAG)
+	@docker tag $(ECR_REPO):$(IMAGE_TAG) public.ecr.aws/$(ECR_REPO_PUBLIC)/$(ECR_REPO):$(IMAGE_TAG)
 
 # Push Docker image to ECR
 push:
-	@docker push $(ECR_REGISTRY)/$(ECR_REPO):$(IMAGE_TAG)
+# @docker push $(ECR_REGISTRY)/$(ECR_REPO):$(IMAGE_TAG)
+	@docker push public.ecr.aws/$(ECR_REPO_PUBLIC)/$(ECR_REPO):$(IMAGE_TAG)
 
 # Force ECS to use the latest pushed image
 serve:
 	@aws ecs update-service --cluster $(ECS_CLUSTER) --service $(ECS_SERVICE) --force-new-deployment
 
-# Full deployment pipeline: build, tag, push, serve
-deploy: build tag push serve
+# Full deployment pipeline: login, build, tag, push, serve
+deploy: login build tag push serve
 	@echo Deployment completed!

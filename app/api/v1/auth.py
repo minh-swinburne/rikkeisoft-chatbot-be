@@ -90,6 +90,13 @@ async def authenticate_google(
     new_user = False
     user = await UserService.get_user_by_email(db, user_info.get("email"))
     if not user:
+        # Try to find the user by the Google sub
+        user = await UserService.get_user_by_provider_sub(
+            db, "google", user_info.get("sub")
+        )
+
+    if not user:
+        # Create a new user
         user_data = UserBase(
             email=user_info.get("email"),
             firstname=user_info.get("given_name"),
@@ -106,6 +113,7 @@ async def authenticate_google(
             user_id=user.id,
             provider="google",
             sub=user_info.get("sub"),
+            email=user_info.get("email"),
         )
         await UserService.create_sso(db, sso_data)
 
@@ -138,6 +146,13 @@ async def authenticate_microsoft(
     new_user = False
     user = await UserService.get_user_by_email(db, user_info.get("email"))
     if not user:
+        # Try to find the user by the Google sub
+        user = await UserService.get_user_by_provider_sub(
+            db, "microsoft", user_info.get("sub")
+        )
+
+    if not user:
+        # Create a new user
         from app.aws import s3
         import io
         import os
@@ -174,6 +189,7 @@ async def authenticate_microsoft(
                 user_id=user.id,
                 provider="microsoft",
                 sub=user_info.get("sub"),
+                email=user_info.get("email"),
             )
             print("\nCreating new Microsoft SSO entry...\n")
             await UserService.create_sso(db, sso_data)

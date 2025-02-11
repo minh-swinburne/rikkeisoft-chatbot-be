@@ -29,6 +29,28 @@ def generate_presigned_url(object_name: str, expiration=3600):
         return None
 
 
+def get_file(object_name: str) -> bytes:
+    """Download a file from the S3 bucket."""
+    try:
+        response = client.get_object(Bucket=bucket_name, Key=object_name)
+        print("📥 Downloaded file from S3 successfully.")
+        return response["Body"].read()
+    except (ClientError, NoCredentialsError) as e:
+        print(f"❌ S3 Download Error: {e}")
+        raise e
+
+
+def put_file(object_name: str, file_data: bytes, extra_args: dict = None) -> bool:
+    """Upload a file to the S3 bucket."""
+    try:
+        client.put_object(Bucket=bucket_name, Key=object_name, Body=file_data, ExtraArgs=extra_args)
+        print("📤 Uploaded file to S3 successfully.")
+        return True
+    except (ClientError, NoCredentialsError) as e:
+        print(f"❌ S3 Upload Error: {e}")
+        return False
+
+
 def upload_file(object_name: str, file_obj: IO[bytes], extra_args: dict = None) -> str:
     """Uploads a file to S3 with a unique filename if necessary."""
     try:

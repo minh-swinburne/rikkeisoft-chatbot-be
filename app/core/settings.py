@@ -7,11 +7,12 @@ load_dotenv(override=True)
 
 
 class Settings(BaseSettings):
-    frontend_origins: str
-
     aws_region: str
     aws_s3_bucket: str
+
+    frontend_origins: str
     avatar_folder: str
+    config_folder: str
     upload_folder: str
     upload_max_size: int
 
