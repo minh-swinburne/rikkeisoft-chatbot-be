@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from app.core.security import setup_cors
 from app.core.database import setup_database
 from app.bot.vector_db import setup_vector_db
+from app.bot.chat import setup_chatbot
 from app.api import router
 
 
@@ -11,6 +12,7 @@ app.include_router(router, prefix="/api")
 setup_cors(app)
 setup_database()
 setup_vector_db()
+setup_chatbot()
 
 
 @app.get("/")

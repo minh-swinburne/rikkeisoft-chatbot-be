@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from groq.types.chat import ChatCompletion, ChatCompletionChunk
 from groq import Groq, Stream, RateLimitError
 from app.bot.vector_db import search_context
-from app.bot import config
+from app.bot.config import load_config
 from app.core.settings import settings
 from app.utils import extract_content
 from app.services import UserService, DocumentService
@@ -14,22 +14,29 @@ import re
 
 
 GROQ_API_KEYS = settings.groq_api_keys.split(",")
+
 current_key_index = 0
+client = None
 
 
-client = Groq(
-    api_key=GROQ_API_KEYS[0],
-    timeout=httpx.Timeout(
-        timeout=config["timeout"]["total"],
-        read=config["timeout"]["read"],
-        write=config["timeout"]["write"],
-        connect=config["timeout"]["connect"],
-    ),
-)
+def setup_chatbot():
+    global client
+
+    config = load_config()
+    client = Groq(
+        api_key=GROQ_API_KEYS[0],
+        timeout=httpx.Timeout(
+            timeout=config["timeout"]["total"],
+            read=config["timeout"]["read"],
+            write=config["timeout"]["write"],
+            connect=config["timeout"]["connect"],
+        ),
+    )
 
 
 async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: str):
     user_query = chat_history[-1]["content"]
+    config = load_config()
     context_results = search_context(user_query)
     doc_ids = {result["document_id"] for result in context_results}
     # print("Doc IDs:", doc_ids)
@@ -123,6 +130,7 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
 
 
 def suggest_questions(chat_history: list, context: str = None):
+    config = load_config()
     message_template = config["question_suggestion"]["message_template"]
 
     system_prompt = config["question_suggestion"]["system_prompt"].format(
@@ -151,6 +159,7 @@ def suggest_questions(chat_history: list, context: str = None):
 
 
 async def generate_name(chat_history: list):
+    config = load_config()
     system_prompt = config["name_generation"]["system_prompt"].format(
         chat_history=chat_history
     )
