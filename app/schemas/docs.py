@@ -38,8 +38,10 @@ class DocumentModel(DocumentBase):
 
     id: str
     categories: list[CategoryModel]  # Return categories as objects
-    creator_user: UserModel
-    uploader_user: UserModel
+    creator: Optional[str]
+    uploader: Optional[str]
+    creator_user: Optional[UserModel]
+    uploader_user: Optional[UserModel]
     uploaded_time: datetime
     last_modified: datetime
     status: DocumentStatusModel

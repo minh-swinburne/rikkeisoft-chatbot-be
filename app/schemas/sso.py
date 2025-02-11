@@ -8,3 +8,4 @@ class SSOModel(BaseModel):
     user_id: str
     provider: Literal["google", "microsoft"]
     sub: str
+    email: str

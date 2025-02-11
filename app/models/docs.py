@@ -58,12 +58,12 @@ class Document(Base):
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     creator = Column(
-        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     created_date = Column(Date, nullable=True)
     restricted = Column(Boolean, default=False, nullable=False)
     uploader = Column(
-        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     uploaded_time = Column(DateTime(timezone=True), server_default=func.now())
     last_modified = Column(

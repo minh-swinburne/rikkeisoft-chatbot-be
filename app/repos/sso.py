@@ -16,6 +16,7 @@ class SSORepository:
             user_id=sso_data.user_id,
             provider=sso_data.provider,
             sub=sso_data.sub,
+            email=sso_data.email,
         )
         db.add(sso)
         return await _commit_and_refresh(db, sso)
