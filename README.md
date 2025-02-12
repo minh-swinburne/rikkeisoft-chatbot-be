@@ -71,6 +71,27 @@ groq.RateLimitError
 
 ## AWS Deployment
 
+### Involved Services
+
+- EC2: Bastion Host, NAT Server, load balancer, target group for auto scaling
+- VPC: VPC, subnets, route tables, NACLs, security groups
+- RDS: subnet group, DB instance
+- S3: storing avatars, documents, backend files... and optionally static website hosting
+- ECR: pushing Docker images
+- ECS: cluster, task definition, service, task (Fargate)
+- CloudFront: HTTPS distribution to redirect to HTTP ALB and optionally serve static website
+- CloudFormation: create stack from template
+
+### Description:
+
+- User will access the website FE hosted by Vercel, which calls API from the CloudFront distribution (HTTPS)
+- IAM roles for secure access management.
+- ECS containers belong to WebServerSG security group in the private subnets. They receive requests from ALB, and access internet via NAT server.
+- RDS instance belongs to DBServerSG security group in private subnets, only receives traffic from WebServerSG and DevServerSG security group (Bastion Host)
+- NAT Server belongs to NATServerSG security group which accepts inbound traffic from WebServerSG security group and directs it to the internet.
+- The Application Load Balancer belongs to ELBSG security group which accepts inbound web traffic (HTTP) from the CloudFront distribution and distributes them between the ECS tasks on port 80 in the target group via a listener
+- ECS tasks have IAM role to access ECR (pull images) and S3 (read / write files)
+
 ### Bastion Host Setup
 
 - AMI: Amazon Linux 2 AMI (HVM), SSD Volume Type

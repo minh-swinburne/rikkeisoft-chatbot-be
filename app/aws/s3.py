@@ -40,10 +40,10 @@ def get_file(object_name: str) -> bytes:
         raise e
 
 
-def put_file(object_name: str, file_data: bytes, extra_args: dict = None) -> bool:
+def put_file(object_name: str, file_data: bytes, extra_args: dict = {}) -> bool:
     """Upload a file to the S3 bucket."""
     try:
-        client.put_object(Bucket=bucket_name, Key=object_name, Body=file_data, ExtraArgs=extra_args)
+        client.put_object(Bucket=bucket_name, Key=object_name, Body=file_data, **extra_args)
         print("📤 Uploaded file to S3 successfully.")
         return True
     except (ClientError, NoCredentialsError) as e:
