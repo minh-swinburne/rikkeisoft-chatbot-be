@@ -1,11 +1,15 @@
 select * from users;
 select * from chats;
-select * from messages;
+select * from messages where chat_id = '019497da-c6d2-7ee6-9af9-c7a8f9f8c3f3';
 select * from documents;
 -- select * from sso_providers;
 select * from sso;
 select * from roles;
 select * from user_roles where user_id = 'ba533d7e-6b6e-47d2-8252-25dfc8438b31';
+select * from document_categories;
+select * from document_status;
+
+delete from `documents` where filename = 'Lecture 0 - Unit Organization-7.pdf';
 
 SELECT CURRENT_TIMESTAMP;
 
@@ -113,3 +117,14 @@ alter table `user_roles` modify `user_id` char(36);
 
 alter table `users` modify `avatar_url` text default null;
 alter table `sso` add unique (`provider`, `sub`);
+
+ALTER TABLE `sso` 
+ADD COLUMN `email` VARCHAR(100) NOT NULL DEFAULT '' AFTER `sub`;
+
+UPDATE `sso` 
+JOIN `users` ON `sso`.`user_id` = `users`.`id`
+SET `sso`.`email` = `users`.`email`;
+
+ALTER TABLE `messages`
+ADD COLUMN `summary` TEXT;
+

@@ -16,11 +16,14 @@ class Config(BaseModel):
     params: ConfigParams
     system_prompt: str
     message_template: Optional[list[str]] = None
+    length_limit: Optional[int] = None
 
 
 class ConfigUpdate(BaseModel):
-    system_prompt: Optional[str] = None
+    system_prompt: str
+    model: str
+    max_tokens: int
+    temperature: float
+    stream: bool
     message_template: Optional[list[str]] = None
-    model: Optional[str] = None
-    max_tokens: Optional[int] = None
-    temperature: Optional[float] = None
+    length_limit: Optional[int] = None

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Depends, Path, Body
+from fastapi import APIRouter, HTTPException, status, Depends, Path, Query, Body
 from fastapi.responses import JSONResponse
 from app.api.dependencies import validate_access_token
 from app.bot.config import load_config, save_config
@@ -12,6 +12,7 @@ authorized_roles = ["admin", "system_admin"]
 @router.get("/{config_name}", response_model=Config)
 async def get_config(
     config_name: str = Path(..., title="The name of the configuration section"),
+    refresh: bool = Query(False, title="Refresh the configuration from S3"),
     token_payload: TokenModel = Depends(validate_access_token),
 ):
     """Retrieve a specific configuration section."""
@@ -22,7 +23,7 @@ async def get_config(
             detail="Insufficient permissions. Only admins can access the configuration.",
         )
 
-    config = load_config()
+    config = load_config(refresh)
     if config_name not in config:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -65,14 +66,16 @@ async def update_config(
             "model": updates.model,
             "max_tokens": updates.max_tokens,
             "temperature": updates.temperature,
+            "stream": updates.stream,
         }
     )
 
     if updates.message_template:
         config[config_name]["message_template"] = updates.message_template
+    if updates.length_limit:
+        config[config_name]["length_limit"] = updates.length_limit
 
     save_config(config)
-
     return JSONResponse(
         {
             "success": True,

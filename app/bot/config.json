@@ -28,7 +28,12 @@
       "stop": null,
       "stream": false
     },
-    "system_prompt": "Instructions:\n  * Summarize the content provided in the user's message.\n  * Keep the summary concise while preserving key information.\n  * Do not include any new information or details that were not present in the original answer.\n  * State the summary as if you were the one saying them.\n  * DO NOT add clarifications like 'Here is the summary...' or 'If you need further assistance...'."
+    "model_options": [
+      "llama-3.2-1b-preview",
+      "llama-3.2-3b-preview",
+      "mixtral-8x7b-32768"
+    ],
+    "system_prompt": "Instructions:\n  * Summarize the content provided in the user's message.\n  * Keep the summary concise while preserving key information.\n  * Do not include any new information or details that were not present in the original answer.\n  * State the summary as if you were the one saying them.\n  * DO NOT add clarifications like 'Here is the summary...' or 'If you need further assistance...'.\nTesting refresh"
   },
   "question_suggestion": {
     "params": {
@@ -39,6 +44,11 @@
       "stop": null,
       "stream": false
     },
+    "model_options": [
+      "llama-3.2-1b-preview",
+      "llama-3.2-3b-preview",
+      "mixtral-8x7b-32768"
+    ],
     "system_prompt": "Instructions:\n  * Suggest 3 to 4 helpful and contextually relevant questions that the user may ask next.\n  * Base your suggestions on the user's chat history and provided context.\n  * Keep the questions concise and relevant to the conversation.\n  * Return suggested questions as a simple ordered list of the questions themselves only, without any additional information, justification or formatting.\n\nFormat:\n  1. Question 1?\n  2. Question 2?\n  3. Question 3?\n\nChat History: {chat_history}\n{context}\nExamples: {message_template}",
     "message_template": [
       "What is the summary of the document?",
@@ -47,11 +57,6 @@
       "When was this document uploaded?",
       "Can you provide a detailed explanation?",
       "Who?"
-    ],
-    "model_options": [
-      "llama-3.2-1b-preview",
-      "llama-3.2-3b-preview",
-      "mixtral-8x7b-32768"
     ]
   },
   "name_generation": {
