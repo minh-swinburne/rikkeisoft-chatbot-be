@@ -88,12 +88,7 @@ async def authenticate_google(
     print(user_info)
 
     new_user = False
-    user = await UserService.get_user_by_email(db, user_info.get("email"))
-    if not user:
-        # Try to find the user by the Google sub
-        user = await UserService.get_user_by_provider_sub(
-            db, "google", user_info.get("sub")
-        )
+    user = await UserService.get_user_by_provider_sub(db, "google", user_info.get("sub"))
 
     if not user:
         # Create a new user
@@ -144,12 +139,7 @@ async def authenticate_microsoft(
         )
 
     new_user = False
-    user = await UserService.get_user_by_email(db, user_info.get("email"))
-    if not user:
-        # Try to find the user by the Google sub
-        user = await UserService.get_user_by_provider_sub(
-            db, "microsoft", user_info.get("sub")
-        )
+    user = await UserService.get_user_by_provider_sub(db, "microsoft", user_info.get("sub"))
 
     if not user:
         # Create a new user
