@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from groq.types.chat import ChatCompletion, ChatCompletionChunk
-from groq import Groq, Stream, RateLimitError
+from groq import Groq, Stream, RateLimitError, APIStatusError
 from app.bot.vector_db import search_context
 from app.bot.config import load_config
 from app.core.settings import settings
@@ -35,11 +35,15 @@ def setup_chatbot():
 
 
 async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: str):
-    user_query = chat_history[-1]["content"]
+    global current_key_index
+
     config = load_config()
-    context_results = search_context(user_query)
+    last_qa = [message["content"] for message in chat_history[-3:]]
+    context_results = search_context(last_qa)
+
     doc_ids = {result["document_id"] for result in context_results}
-    # print("Doc IDs:", doc_ids)
+    # print("Last QA:", last_qa)
+    print("Doc IDs:", doc_ids)
 
     user = await UserService.get_user_by_id(db, user_id)
     if not user:
@@ -49,7 +53,7 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
     documents: list[DocumentModel] = []
     context = ["| Title | Excerpt | Score |", "| --- | --- | --- |"]
     sources = [
-        "| Title | Description | Categories | Created by | Created date | Preview URL | Download URL | Last modified |",
+        "| Title | Description | Categories | Created by | Created date | Preview URL | Last modified |",
         "| --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
 
@@ -63,17 +67,18 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
             role in ["admin", "system_admin"] for role in user_roles
         ):
             categories = [cat.name for cat in document.categories]
-            download_url = await DocumentService.generate_document_url(db, doc_id)
-            preview_url = (
-                document.link_url
-                if document.link_url
-                else settings.doc_preview_url
-                + urllib.parse.quote(download_url, safe="")
-            )
+
+            if document.link_url:
+                preview_url = document.link_url
+            else:
+                url = await DocumentService.generate_document_url(db, doc_id)
+                preview_url = settings.doc_preview_url + urllib.parse.quote(
+                    url, safe=""
+                )
 
             documents.append(document)
             sources.append(
-                f"| {document.title} | {re.sub("\n", "<br>", document.description)} | {categories} | {document.creator_user.full_name} | {document.created_date} | {preview_url} | {download_url} | {document.last_modified} |"
+                f"| {document.title} | {re.sub("\n", "<br>", document.description)} | {categories} | {document.creator_user.full_name} | {document.created_date} | {preview_url} | {document.last_modified} |"
             )
 
     for result in context_results:
@@ -91,13 +96,18 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
     # print("\nSources:\n", sources)
 
     system_prompt = config["answer_generation"]["system_prompt"].format(
-        context="\n".join(context),
-        sources="\n".join(sources),
         user_info=f"- Name: {user.full_name}\n- Email: {user.email}\n- Roles: {', '.join(user_roles)}",
-        user_query=user_query,
+    )
+    chat_history[-1]["content"] = (
+        chat_history[-1]["content"]
+        + "Here is some relevant information:\n"
+        + "  - Context:\n"
+        + "\n".join(context)
+        + "\n  - Sources:\n"
+        + "\n".join(sources)
     )
 
-    for _ in range(len(GROQ_API_KEYS)):
+    for _ in range(len(GROQ_API_KEYS) + 1):
         try:
             chat_completion: Union[ChatCompletion, Stream[ChatCompletionChunk]] = (
                 client.chat.completions.create(
@@ -114,7 +124,28 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
             current_key_index += 1
             current_key_index %= len(GROQ_API_KEYS)
             client.api_key = GROQ_API_KEYS[current_key_index]
-
+        except APIStatusError as e:  # Request is too large
+            print("❌ API Status Error:", e)
+            print("System prompt length:", len(system_prompt))
+            print(
+                "Chat history length (excluding last message):",
+                sum(len(message["content"]) for message in chat_history[:-1]),
+            )
+            print(
+                "Last message length (including context & sources):",
+                len(chat_history[-1]["content"]),
+            )
+            length_limit = config["message_summarization"]["length_limit"]
+            for message in chat_history[:-1]:
+                old_length = len(message["content"])
+                if len(message["content"]) > length_limit:
+                    message["content"] = summarize_message(message["content"])
+                    print("Summarized message length:", old_length, "->", len(message["content"]))
+            print("Retrying...")
+            continue
+        except Exception as e:
+            print("❌ Error:", e)
+            break
 
     if isinstance(chat_completion, ChatCompletion):
         print("Chat Completion: ", chat_completion.choices[0].message.content)
@@ -127,6 +158,20 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
                 yield chunk.choices[0].delta.content
 
         return async_stream_generator()
+
+
+def summarize_message(answer: str):
+    config = load_config()
+    system_prompt = config["message_summarization"]["system_prompt"]
+    answer_completion: ChatCompletion = client.chat.completions.create(
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": answer},
+        ],
+        **config["message_summarization"]["params"],
+    )
+    bot_response = answer_completion.choices[0].message.content
+    return bot_response
 
 
 def suggest_questions(chat_history: list, context: str = None):

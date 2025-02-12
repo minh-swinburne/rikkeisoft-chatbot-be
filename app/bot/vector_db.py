@@ -1,4 +1,4 @@
-from pymilvus import MilvusClient, DataType, connections, db
+from pymilvus import MilvusClient, DataType, WeightedRanker, AnnSearchRequest, connections, db
 from app.bot.embedding import get_embedding
 from app.core.settings import settings
 
@@ -86,17 +86,28 @@ def delete_data(doc_id: str):
         return 0
 
 
-def search_context(user_query: str, top_k: int = 5) -> list[dict]:
+def search_context(messages: list[str], top_k: int = 5, weight: float = 0.8) -> list[dict]:
     context = []
-    query_embedding = get_embedding(user_query)
-    search_results = client.search(
+    weights = [(1 - weight)] * (len(messages) - 1)
+    weights.append(weight)
+    qa_embeddings = get_embedding(messages)
+    search_results = client.hybrid_search(
         collection_name=collection_name,
-        data=[query_embedding],
-        anns_field="embedding",
+        ranker=WeightedRanker(*weights),
         limit=top_k,
-        search_params={"metric_type": "COSINE"},
-        output_fields=["document_id", "text"],  # Fetch relevant fields for context
+        output_fields=["document_id", "text"],
+        reqs=[
+            AnnSearchRequest(
+                data=[embedding],
+                anns_field="embedding",
+                param={"metric_type": "COSINE", "params": {"nprobe": 10}},
+                limit=top_k,
+            )
+            for embedding in qa_embeddings
+        ],
     )
+    print(f"🔍 Found {len(search_results[0])} similar documents in Milvus.")
+    # print(qa_embeddings)
 
     for result in search_results[0]:
         context.append(

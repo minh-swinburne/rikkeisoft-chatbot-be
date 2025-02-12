@@ -54,8 +54,9 @@ async def update_config(
             detail=f"Config section '{config_name}' not found.",
         )
 
-    print(f"Replacing config for: {config_name}")  # Debugging output
-    print(updates)
+    # Debugging output
+    # print(f"Replacing config for: {config_name}")
+    # print(updates)
 
     # Update the configuration section
     config[config_name]["system_prompt"] = updates.system_prompt

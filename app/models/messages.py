@@ -14,5 +14,6 @@ class Message(Base):
     time = Column(DateTime(timezone=True), server_default=func.now())
     role = Column(String(50), nullable=False)
     content = Column(Text, nullable=False)
+    summary = Column(Text)
 
     chat = relationship("Chat", back_populates="messages")
