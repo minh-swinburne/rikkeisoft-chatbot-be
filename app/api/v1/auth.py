@@ -147,6 +147,7 @@ async def authenticate_microsoft(
         import io
         import os
 
+        avatar_url = None
         image_data = AuthService.get_microsoft_user_photo(auth_data.access_token)
         if image_data is not None:
             file_obj = io.BytesIO(image_data)

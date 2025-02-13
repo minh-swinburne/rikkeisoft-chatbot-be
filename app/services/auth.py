@@ -162,6 +162,6 @@ class AuthService:
         return {
             "sub": payload.get("sub"),
             "email": payload.get("email"),
-            "firstname": payload.get("given_name"),
-            "lastname": payload.get("family_name"),
+            "given_name": payload.get("given_name"),
+            "family_name": payload.get("family_name"),
         }
