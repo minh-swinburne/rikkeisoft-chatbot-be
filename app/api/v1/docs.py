@@ -42,16 +42,15 @@ async def list_documents(
     db: AsyncSession = Depends(get_db),
 ) -> list[DocumentModel]:
     """
-    List all documents.
+    List all documents. Users without the required roles will not see restricted documents.
     """
-    if not any(role in authorized_roles for role in token_payload.roles):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Insufficient permissions. Only admins can access the documents.",
-        )
-
     documents = await DocumentService.list_documents(db)
+
+    if not any(role in authorized_roles for role in token_payload.roles):
+        documents = [doc for doc in documents if not doc.restricted]
+
     return documents
+
 
 
 @router.post("")
@@ -276,11 +275,6 @@ async def download_document(
     db: AsyncSession = Depends(get_db),
 ):
     print("Download document")
-    if not any(role in authorized_roles for role in token_payload.roles):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Insufficient permissions. Only admins can download documents.",
-        )
 
     url = await DocumentService.generate_document_url(db, doc_id)
     if not url:
@@ -301,11 +295,6 @@ async def preview_document(
     import urllib.parse
 
     print("Preview document")
-    if not any(role in authorized_roles for role in token_payload.roles):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Insufficient permissions. Only admins can preview documents.",
-        )
 
     url = await DocumentService.generate_document_url(db, doc_id)
     if not url:
