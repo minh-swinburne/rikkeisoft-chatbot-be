@@ -142,6 +142,14 @@ async def unlink_sso_current_user(
             detail="SSO not found",
         )
 
+    user = await UserService.get_user_by_id(db, token_payload.sub)
+    all_sso = await UserService.list_sso_by_user_id(db, token_payload.sub)
+    if len(all_sso) == 1 and not (user.username and user.password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot unlink the only SSO linked to the account without setting a username and password",
+        )
+
     result = await UserService.delete_sso(db, token_payload.sub, provider)
     return JSONResponse({"success": result, "message": "SSO unlinked successfully"})
 

@@ -56,10 +56,10 @@ async def get_conversation(
     db: AsyncSession = Depends(get_db),
 ) -> list[MessageModel]:
     chat = await ChatService.get_chat_by_id(db, chat_id)
-    if token_payload.sub != chat.user_id:
+    if not chat or token_payload.sub != chat.user_id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You are not authorized to view this chat",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Chat not found or you are not authorized to view this chat",
         )
 
     messages = await ChatService.list_messages_by_chat_id(db, chat_id)
