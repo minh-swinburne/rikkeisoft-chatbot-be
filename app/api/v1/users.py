@@ -194,24 +194,39 @@ async def update_current_user(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
 
-    if bool(updates.new_password) ^ bool(updates.old_password):
-        if not updates.old_password:
+    if user.username != updates.username:
+        if user.username and not updates.old_password:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Old pasword must be provided",
+                detail="Current pasword must be provided",
+            )
+        if not user.username and not updates.new_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="New password must be provided",
             )
     if updates.old_password and not pwd_context.verify(
         updates.old_password, user.password
     ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect old password",
+            detail="Incorrect password",
         )
     if updates.new_password:
+        if user.username and not updates.old_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password must be provided",
+            )
         updates.new_password = pwd_context.hash(updates.new_password)
 
-    user = await UserService.update_user(db, token_payload.sub, updates)
-    return AuthService.grant_access(user, token_payload.provider)
+    try:
+        user = await UserService.update_user(db, token_payload.sub, updates)
+        return AuthService.grant_access(user, token_payload.provider)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        )
 
 
 @router.put(

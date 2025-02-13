@@ -8,7 +8,6 @@ from app.utils import extract_content
 from app.services import UserService, DocumentService
 from app.schemas import DocumentModel
 from typing import Union
-import urllib.parse
 import httpx
 import re
 
@@ -67,14 +66,7 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
             role in ["admin", "system_admin"] for role in user_roles
         ):
             categories = [cat.name for cat in document.categories]
-
-            if document.link_url:
-                preview_url = document.link_url
-            else:
-                url = await DocumentService.generate_document_url(db, doc_id)
-                preview_url = settings.doc_preview_url + urllib.parse.quote(
-                    url, safe=""
-                )
+            preview_url = await DocumentService.generate_document_url(db, doc_id, preview=True)
 
             documents.append(document)
             sources.append(

@@ -1,29 +1,41 @@
-import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
 from app.core.settings import settings
+from app.utils import parse_timedelta
 from app.aws import get_client
+from cachetools import TTLCache
 from typing import IO
-
+import botocore
 
 client = get_client("s3")
 bucket_name = settings.aws_s3_bucket
 
+url_expiry = parse_timedelta(settings.aws_s3_url_expires_in).total_seconds()
+presigned_url_cache = TTLCache(maxsize=1000, ttl=url_expiry - 10)
 
-def generate_presigned_url(object_name: str, expiration=3600):
+
+def generate_presigned_url(object_name: str):
+    """Generate or retrieve a cached presigned URL for an S3 object."""
+    if object_name in presigned_url_cache:
+        print(f"🔗 Using cached presigned URL for {object_name}")
+        return presigned_url_cache[object_name]
+
     try:
         response = client.head_object(Bucket=bucket_name, Key=object_name)
         file_name = response["Metadata"].get("filename")
         print(f"🔗 Generated presigned URL for {file_name}.")
 
-        return client.generate_presigned_url(
+        url = client.generate_presigned_url(
             "get_object",
             Params={
                 "Bucket": bucket_name,
                 "Key": object_name,
                 "ResponseContentDisposition": f"attachment; filename={file_name}",
             },  # noqa
-            ExpiresIn=expiration,
+            ExpiresIn=url_expiry,
         )
+
+        presigned_url_cache[object_name] = url # Cache the URL
+        return url
     except (ClientError, NoCredentialsError) as e:
         print(f"❌ S3 Presigned URL Error: {e}")
         return None

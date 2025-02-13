@@ -73,9 +73,10 @@ class UserRepository:
             if existing_user:
                 raise ValueError("Username already exists.")
 
-            delta: timedelta = datetime.now() - user.username_last_changed
-            if delta.days < 30:
-                raise ValueError("Username cannot be changed more than once in 30 days.")
+            if user.username_last_changed:
+                delta: timedelta = datetime.now() - user.username_last_changed
+                if delta.days < 30:
+                    raise ValueError("Username cannot be changed more than once in 30 days.")
             user.username_last_changed = datetime.now()
 
         for key, value in updates.model_dump(exclude_unset=True).items():

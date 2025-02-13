@@ -1,6 +1,7 @@
-from cachetools import TTLCache
 from app.core.settings import settings
+from app.utils import parse_timedelta
 from app.aws import s3
+from cachetools import TTLCache
 import json
 import os
 
@@ -8,7 +9,8 @@ FILE_NAME = "config.json"
 OBJECT_NAME = os.path.join(settings.config_folder, FILE_NAME)
 
 # Cache the config for 10 minutes
-config_cache = TTLCache(maxsize=1, ttl=10 * 60)
+cache_expiry = parse_timedelta(settings.config_cache_expires_in)
+config_cache = TTLCache(maxsize=1, ttl=cache_expiry.total_seconds())
 
 def load_config(refresh: bool = False) -> dict:
     """Load config from cache or S3 if expired."""
