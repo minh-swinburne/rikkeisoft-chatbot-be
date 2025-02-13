@@ -19,18 +19,6 @@ class UserService:
     @staticmethod
     async def create_user(db: AsyncSession, user_data: UserBase) -> UserModel:
         """Create a new user in the database."""
-        existing_user = await UserRepository.get_by_email(db, user_data.email)
-        if existing_user:
-            raise ValueError(f"User with email {user_data.email} already exists")
-
-        existing_user = (
-            await UserRepository.get_by_username(db, user_data.username)
-            if user_data.username
-            else None
-        )
-        if existing_user:
-            raise ValueError(f"User with username {user_data.username} already exists")
-
         user = await UserRepository.create(db, user_data)
         user = await UserService.assign_role(db, user.id, "employee")
         return UserModel.model_validate(user)
@@ -100,6 +88,8 @@ class UserService:
         db: AsyncSession, username: str
     ) -> Optional[UserModel]:
         """Retrieve a user by their username."""
+        if not username:
+            return None
         user = await UserRepository.get_by_username(db, username)
         # print(user.__dict__)
         return UserModel.model_validate(user) if user else None

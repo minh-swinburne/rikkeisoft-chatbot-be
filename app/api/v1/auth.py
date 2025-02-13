@@ -61,14 +61,14 @@ async def register_native(
     if user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already exists",
+            detail=f"User with username {user_data.username} already exists",
         )
 
     user = await UserService.get_user_by_email(db, user_data.email)
     if user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already exists",
+            detail="Email is already registered with another user",
         )
 
     user_data.password = pwd_context.hash(user_data.password)
