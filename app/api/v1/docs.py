@@ -298,8 +298,6 @@ async def preview_document(
     token_payload: TokenModel = Depends(validate_access_token),
     db: AsyncSession = Depends(get_db),
 ):
-    import urllib.parse
-
     print("Preview document")
     if not any(role in authorized_roles for role in token_payload.roles):
         raise HTTPException(
@@ -307,12 +305,10 @@ async def preview_document(
             detail="Insufficient permissions. Only admins can preview documents.",
         )
 
-    url = await DocumentService.generate_document_url(db, doc_id)
+    url = await DocumentService.generate_document_url(db, doc_id, preview=True)
     if not url:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
         )
-
-    url = settings.doc_preview_url + urllib.parse.quote(url, safe="")
     print("Preview URL:", url)
     return JSONResponse(content={"url": url})

@@ -9,12 +9,14 @@ load_dotenv(override=True)
 class Settings(BaseSettings):
     aws_region: str
     aws_s3_bucket: str
+    aws_s3_url_expires_in: str
 
     frontend_origins: str
     avatar_folder: str
-    config_folder: str
     upload_folder: str
     upload_max_size: int
+    config_folder: str
+    config_cache_expires_in: str
 
     tesseract_cmd: str
     doc_preview_url: str

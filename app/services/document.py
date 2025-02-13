@@ -63,13 +63,20 @@ class DocumentService:
         return await DocumentRepository.delete(db, doc_id)
 
     @staticmethod
-    async def generate_document_url(db: AsyncSession, doc_id: str) -> str:
+    async def generate_document_url(db: AsyncSession, doc_id: str, preview: bool = False) -> str:
         """Get the URL of a document for previewing."""
+        import urllib.parse
+
         document = await DocumentRepository.get_by_id(db, doc_id)
+        if preview and document.link_url:
+            return document.link_url
         object_name = os.path.join(
             settings.upload_folder, f"{doc_id}.{document.file_type}"
         )
-        return s3.generate_presigned_url(object_name)
+        url = s3.generate_presigned_url(object_name)
+        if preview:
+            url = settings.doc_preview_url + urllib.parse.quote(url, safe="")
+        return url
 
     @staticmethod
     async def upload_document(document: DocumentModel, file_content: bytes) -> str:

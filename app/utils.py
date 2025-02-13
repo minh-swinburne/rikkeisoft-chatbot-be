@@ -23,7 +23,7 @@ def extract_content(
     return re.findall(regex, text, flag)
 
 
-def parse_timedelta(time_str: str):
+def parse_timedelta(time_str: str) -> timedelta:
     """
     Parse a time string into a timedelta object.
 

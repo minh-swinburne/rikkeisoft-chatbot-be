@@ -128,3 +128,5 @@ SET `sso`.`email` = `users`.`email`;
 ALTER TABLE `messages`
 ADD COLUMN `summary` TEXT;
 
+ALTER TABLE `users` DROP INDEX `email`;
+
