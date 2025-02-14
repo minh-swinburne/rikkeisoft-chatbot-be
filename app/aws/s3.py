@@ -3,8 +3,7 @@ from app.core.settings import settings
 from app.utils import parse_timedelta
 from app.aws import get_client
 from cachetools import TTLCache
-from typing import IO
-import botocore
+from typing import IO, Union
 
 client = get_client("s3")
 bucket_name = settings.aws_s3_bucket
@@ -34,7 +33,7 @@ def generate_presigned_url(object_name: str):
             ExpiresIn=url_expiry,
         )
 
-        presigned_url_cache[object_name] = url # Cache the URL
+        presigned_url_cache[object_name] = url  # Cache the URL
         return url
     except (ClientError, NoCredentialsError) as e:
         print(f"❌ S3 Presigned URL Error: {e}")
@@ -52,10 +51,26 @@ def get_file(object_name: str) -> bytes:
         raise e
 
 
+def download_file(object_name: str, file: Union[IO[bytes], str]) -> bool:
+    """Download a file from the S3 bucket."""
+    try:
+        if isinstance(file, str):
+            client.download_file(bucket_name, object_name, file)
+        else:
+            client.download_fileobj(bucket_name, object_name, file)
+        print("📥 Downloaded file from S3 successfully.")
+        return True
+    except (ClientError, NoCredentialsError) as e:
+        print(f"❌ S3 Download Error: {e}")
+        return False
+
+
 def put_file(object_name: str, file_data: bytes, extra_args: dict = {}) -> bool:
     """Upload a file to the S3 bucket."""
     try:
-        client.put_object(Bucket=bucket_name, Key=object_name, Body=file_data, **extra_args)
+        client.put_object(
+            Bucket=bucket_name, Key=object_name, Body=file_data, **extra_args
+        )
         print("📤 Uploaded file to S3 successfully.")
         return True
     except (ClientError, NoCredentialsError) as e:
@@ -63,22 +78,25 @@ def put_file(object_name: str, file_data: bytes, extra_args: dict = {}) -> bool:
         return False
 
 
-def upload_file(object_name: str, file_obj: IO[bytes], extra_args: dict = None) -> str:
-    """Uploads a file to S3 with a unique filename if necessary."""
+def upload_file(
+    object_name: str, file: Union[IO[bytes], str], extra_args: dict = None
+) -> bool:
+    """Uploads a file or file-like object to the S3 bucket."""
     try:
-        # if not overwrite:
-        #     object_name = get_unique_filename(object_name)
-        client.upload_fileobj(
-            file_obj,
-            bucket_name,
-            object_name,
-            ExtraArgs=extra_args,
-        )
+        if isinstance(file, str):
+            client.upload_file(file, bucket_name, object_name, ExtraArgs=extra_args)
+        else:
+            client.upload_fileobj(
+                file,
+                bucket_name,
+                object_name,
+                ExtraArgs=extra_args,
+            )
         print("📤 Uploaded file to S3 successfully.")
-        return object_name
+        return True
     except (ClientError, NoCredentialsError) as e:
         print(f"❌ S3 Upload Error: {e}")
-        raise e
+        return False
 
 
 def delete_file(object_name: str) -> bool:

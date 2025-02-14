@@ -23,6 +23,7 @@ class Settings(BaseSettings):
 
     embedding_model: str
     embedding_dimension: int
+    embedding_vectors_file: str
     groq_api_keys: str
 
     jwt_secret_key: str

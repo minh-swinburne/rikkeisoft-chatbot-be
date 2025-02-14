@@ -19,6 +19,7 @@ with open(jsonl_file, "w", encoding="utf-8") as fp:
         expr="embedding_id >= 0",
         output_fields=["embedding", "document_id", "text"]
     )
+    fp.write("[\n")  # Write as JSON list
 
     while True:
         result = iterator.next()
@@ -31,8 +32,10 @@ with open(jsonl_file, "w", encoding="utf-8") as fp:
             record["embedding"] = np.array(record["embedding"]).tolist()  # Convert vector to list
 
             # Write each record as a separate JSON line
-            fp.write(json.dumps(record) + "\n")
+            fp.write(json.dumps(record, indent=2) + ",\n")
 
         print(f"Exported {len(result)} records...")
+    fp.seek(fp.tell() - 3)  # Move cursor back to remove the last comma
+    fp.write("\n]\n")
 
 print(f"Data export completed! Saved to {jsonl_file}")

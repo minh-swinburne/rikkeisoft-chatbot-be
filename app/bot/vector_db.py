@@ -1,6 +1,9 @@
-from pymilvus import MilvusClient, DataType, WeightedRanker, AnnSearchRequest, connections, db
+from pymilvus import MilvusClient, DataType, WeightedRanker, AnnSearchRequest
 from app.bot.embedding import get_embedding
 from app.core.settings import settings
+from app.aws import s3
+import json
+import os
 
 collection_name = settings.milvus_collection
 
@@ -119,3 +122,58 @@ def search_context(messages: list[str], top_k: int = 5, weight: float = 0.8) -> 
         )
 
     return context
+
+
+def export_data() -> bool:
+    import numpy as np
+
+    try:
+        iterator = client.query_iterator(
+            collection_name=collection_name,
+            batch_size=100,
+            expr="embedding_id >= 0",
+            output_fields=["embedding", "document_id", "text"],
+        )
+
+        file_name = settings.embedding_vectors_file
+        with open(file_name, "w", encoding="utf-8") as fp:
+            fp.write("[\n")  # Write as JSON list
+            while True:
+                result = iterator.next()
+                if not result:
+                    iterator.close()
+                    break
+
+                for record in result:
+                    record["embedding"] = np.array(record["embedding"]).tolist()
+                    fp.write(json.dumps(record) + "\n")
+
+                print(f"📤 Exported {len(result)} records...")
+            fp.seek(fp.tell() - 3)  # Move cursor back to remove the last comma
+            fp.write("\n]\n")
+        print(f"✅ Data export completed! Saved to {file_name}")
+
+        # Upload to S3
+        object_name = os.path.join(settings.config_folder, file_name)
+        s3.upload_file(object_name, file_name)
+        os.remove(file_name) # Remove the local file after uploading
+
+        print(f"✅ Exported data to S3 successfully.")
+        return True
+    except Exception as e:
+        print(f"❌ Failed to export data from Milvus to S3: {e}")
+        return False
+
+
+def import_data() -> int:
+    try:
+        file_name = settings.embedding_vectors_file
+        object_name = os.path.join(settings.config_folder, file_name)
+        s3.download_file(object_name, file_name)
+        with open(file_name, "r", encoding="utf-8") as fp:
+            data = json.load(fp)
+        os.remove(file_name) # Remove the local file after downloading
+        return insert_data(data)
+    except Exception as e:
+        print(f"❌ Failed to import data from S3 to Milvus: {e}")
+        return 0
