@@ -38,11 +38,19 @@ class DocumentRepository:
         return await _commit_and_refresh(db, document)
 
     @staticmethod
-    async def list(db: AsyncSession) -> list[Document]:
+    async def list_all(db: AsyncSession) -> list[Document]:
         """
         List all documents.
         """
         result = await db.execute(select(Document))
+        return result.scalars().unique().all()
+    
+    @staticmethod
+    async def list_by_creator(db: AsyncSession, creator: str) -> list[Document]:
+        """
+        List all documents by a specific creator.
+        """
+        result = await db.execute(select(Document).where(Document.creator == creator))
         return result.scalars().unique().all()
 
     @staticmethod
