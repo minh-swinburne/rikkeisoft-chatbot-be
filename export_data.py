@@ -30,7 +30,7 @@ with open(jsonl_file, "w", encoding="utf-8") as fp:
         # Convert NumPy float32 to JSON-compatible format
         for record in result:
             record["embedding"] = np.array(record["embedding"]).tolist()  # Convert vector to list
-
+            del record["embedding_id"]
             # Write each record as a separate JSON line
             fp.write(json.dumps(record, indent=2) + ",\n")
 

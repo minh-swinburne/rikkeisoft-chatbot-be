@@ -1,5 +1,6 @@
 # Milvus generated files
 volumes/
+exported_vectors.json
 
 .env*
 .venv_Acer/

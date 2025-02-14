@@ -77,12 +77,20 @@ def insert_data(data):
 
 def delete_data(doc_id: str):
     try:
-        result = client.delete(
-            collection_name=collection_name,
-            filter=f"document_id == '{doc_id}'",
-        )
+        if doc_id:
+            result = client.delete(
+                collection_name=collection_name,
+                filter=f"document_id == '{doc_id}'",
+            )
 
-        print(f"🗑️ Deleted {result["delete_count"]} embeddings of document with ID '{doc_id}' from collection '{collection_name}' of Milvus.")
+            print(f"🗑️ Deleted {result["delete_count"]} embeddings of document with ID '{doc_id}' from collection '{collection_name}' of Milvus.")
+        else:
+            result = client.delete(
+                collection_name=collection_name,
+                filter="embedding_id >= 0",
+            )
+
+            print(f"🗑️ Deleted all embeddings from collection '{collection_name}' of Milvus.")
         return result["delete_count"]
     except Exception as e:
         print(f"❌ Failed to delete data from Milvus: {e}")
@@ -146,6 +154,7 @@ def export_data() -> bool:
 
                 for record in result:
                     record["embedding"] = np.array(record["embedding"]).tolist()
+                    del record["embedding_id"]
                     fp.write(json.dumps(record) + "\n")
 
                 print(f"📤 Exported {len(result)} records...")
