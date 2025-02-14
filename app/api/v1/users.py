@@ -178,6 +178,24 @@ async def read_user(
     return user
 
 
+@router.get("/{user_id}/docs", response_model_include={"id", "title", "description", "categories"})
+async def list_user_docs(
+    user_id: str = Path(...),
+    token_payload: TokenModel = Depends(validate_access_token),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.services import DocumentService
+
+    if not any(role in ["admin", "system_admin"] for role in token_payload.roles):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not have permission to view this user's documents",
+        )
+
+    docs = await DocumentService.list_documents_by_creator(db, user_id)
+    return docs
+
+
 @router.put(
     "/me",
     response_model=AuthModel,
