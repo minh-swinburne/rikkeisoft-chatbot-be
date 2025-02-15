@@ -127,7 +127,7 @@ groq.RateLimitError
 - Subnet: Public subnet, routed to an IGW
 - Security Group: Allow SSH (22), HTTP (80), HTTPS (443), and outbound access
 - Enable IP Forwarding: Go to EC2 Console → Select your instance → Actions → Networking → Change Source/Destination Check → Disable.
-- SSH into the instance and run these commands:
+- SSH into the instance and run these commands (or pass as user data):
 
   ```
   sudo sysctl -w net.ipv4.ip_forward=1

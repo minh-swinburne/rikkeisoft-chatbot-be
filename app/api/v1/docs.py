@@ -24,10 +24,9 @@ from app.schemas import (
     TokenModel,
 )
 from app.utils import get_file_type
-from datetime import date, datetime
+from datetime import date
 from bs4 import BeautifulSoup
 from typing import Optional
-import subprocess
 import requests
 import re
 
@@ -49,8 +48,16 @@ async def list_documents(
     if not any(role in authorized_roles for role in token_payload.roles):
         documents = [doc for doc in documents if not doc.restricted]
 
-    return documents
-
+    return [
+        doc.model_dump(
+            exclude={
+                "creator_user": {"password", "username_last_changed"},
+                "uploader_user": {"password", "username_last_changed"},
+            },
+            exclude_unset=True,
+        )
+        for doc in documents
+    ]
 
 
 @router.post("")

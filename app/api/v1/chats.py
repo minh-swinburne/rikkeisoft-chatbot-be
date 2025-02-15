@@ -101,7 +101,7 @@ async def send_query(
     if isinstance(message, MessageModel):
         return message
     else:
-        return StreamingResponse(content=message, media_type="text/plain")
+        return StreamingResponse(content=message, media_type="text/event-stream")
 
 
 @router.get("/{chat_id}/name", response_model=None)
