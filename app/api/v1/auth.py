@@ -24,7 +24,7 @@ router = APIRouter()
     "/native",
     response_model=AuthModel,
     status_code=status.HTTP_200_OK,
-    summary="Authenticate native users using username / email and password",
+    summary="Authenticate native users using username and password",
 )
 async def authenticate_native(
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -32,8 +32,6 @@ async def authenticate_native(
     db: AsyncSession = Depends(get_db),
 ) -> AuthModel:
     user = await UserService.get_user_by_username(db, form_data.username)
-    if not user:
-        user = await UserService.get_user_by_email(db, form_data.username)
 
     if not user or not pwd_context.verify(form_data.password, user.password):
         raise HTTPException(
