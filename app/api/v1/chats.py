@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Depends, Path, Body
+from fastapi import APIRouter, HTTPException, status, Depends, Path, Query, Body
 from fastapi.responses import StreamingResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import validate_access_token
@@ -69,6 +69,7 @@ async def get_conversation(
 @router.post("/{chat_id}", response_model=None)
 async def send_query(
     chat_id: str = Path(...),
+    type: str = Query("general"),
     message_data: MessageBase = Body(...),
     token_payload: TokenModel = Depends(validate_access_token),
     db: AsyncSession = Depends(get_db),
@@ -91,7 +92,7 @@ async def send_query(
         )
 
     try:
-        message = await ChatService.create_message(db, message_data)
+        message = await ChatService.create_message(db, message_data, type)
     except:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

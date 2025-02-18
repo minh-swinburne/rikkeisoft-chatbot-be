@@ -33,10 +33,10 @@ def setup_chatbot():
     )
 
 
-async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: str):
+async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: str, type: str):
     global current_key_index
 
-    config = load_config()
+    config = load_config()["answer_generation"][type]
     last_qa = [message["content"] for message in chat_history[-3:]]
     context_results = search_context(last_qa)
 
@@ -87,7 +87,7 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
     # print("\nContext:\n", context)
     # print("\nSources:\n", sources)
 
-    system_prompt = config["answer_generation"]["system_prompt"].format(
+    system_prompt = config["system_prompt"].format(
         user_info=f"- Name: {user.full_name}\n- Email: {user.email}\n- Roles: {', '.join(user_roles)}",
     )
     chat_history[-1]["content"] = (
@@ -107,7 +107,7 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
                         {"role": "system", "content": system_prompt},
                         *chat_history,  # Include the last 10 messages in the chat history including the new query
                     ],
-                    **config["answer_generation"]["params"],
+                    **config["params"],
                 )
             )
             break
@@ -153,24 +153,24 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
 
 
 def summarize_message(answer: str):
-    config = load_config()
-    system_prompt = config["message_summarization"]["system_prompt"]
+    config = load_config()["message_summarization"]
+    system_prompt = config["system_prompt"]
     answer_completion: ChatCompletion = client.chat.completions.create(
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": answer},
         ],
-        **config["message_summarization"]["params"],
+        **config["params"],
     )
     bot_response = answer_completion.choices[0].message.content
     return bot_response
 
 
 def suggest_questions(chat_history: list, context: str = None):
-    config = load_config()
-    message_template = config["question_suggestion"]["message_template"]
+    config = load_config()["question_suggestion"]
+    message_template = config["message_template"]
 
-    system_prompt = config["question_suggestion"]["system_prompt"].format(
+    system_prompt = config["system_prompt"].format(
         chat_history=chat_history,
         context=f"\nContext: {context}\n" if context else "",
         message_template="\n".join(
@@ -186,7 +186,7 @@ def suggest_questions(chat_history: list, context: str = None):
             },
             {"role": "user", "content": ""},
         ],
-        **config["question_suggestion"]["params"],
+        **config["params"],
     )
 
     bot_response = question_completion.choices[0].message.content
@@ -196,8 +196,8 @@ def suggest_questions(chat_history: list, context: str = None):
 
 
 async def generate_name(chat_history: list):
-    config = load_config()
-    system_prompt = config["name_generation"]["system_prompt"].format(
+    config = load_config()["name_generation"]
+    system_prompt = config["system_prompt"].format(
         chat_history=chat_history
     )
 
@@ -210,7 +210,7 @@ async def generate_name(chat_history: list):
                 },
                 {"role": "user", "content": ""},
             ],
-            **config["name_generation"]["params"],
+            **config["params"],
         )
     )
 

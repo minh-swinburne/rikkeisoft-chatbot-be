@@ -19,7 +19,7 @@ class ChatService:
 
     @staticmethod
     async def create_message(
-        db: AsyncSession, message_data: MessageBase
+        db: AsyncSession, message_data: MessageBase, type: str
     ) -> MessageModel | AsyncGenerator[str, None]:
         """Create a new message in the database."""
         from app.bot.chat import generate_answer, summarize_message
@@ -44,7 +44,7 @@ class ChatService:
         try:
             # raise ValueError("Test error")
             # Generate a response based on the chat history
-            answer = await generate_answer(chat_history, db, chat.user_id)
+            answer = await generate_answer(chat_history, db, chat.user_id, type)
 
             if isinstance(answer, str):
                 # Complete response: Add message to the database and return

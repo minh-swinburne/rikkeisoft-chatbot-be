@@ -1,22 +1,60 @@
 {
   "timeout": { "total": 10, "read": 3, "write": 5, "connect": 2 },
   "answer_generation": {
-    "params": {
-      "model": "llama-3.3-70b-versatile",
-      "max_tokens": 8192,
-      "temperature": 0.5,
-      "top_p": 1,
-      "stop": null,
-      "stream": true
+    "general": {
+      "params": {
+        "model": "llama-3.3-70b-versatile",
+        "max_tokens": 8192,
+        "temperature": 0.5,
+        "top_p": 1,
+        "stop": null,
+        "stream": true
+      },
+      "model_options": [
+        "llama-3.3-70b-versatile",
+        "llama3-70b-8192",
+        "llama-3.1-8b-instant",
+        "llama-3.2-90b-vision-preview",
+        "gemma2-9b-it"
+      ],
+      "system_prompt": "Instructions:\n  * You are RikkeiGPT, a helpful assistant that will answer the user's questions about documents.\n  * If you don't know the answer or can't find the relevant documents, let the user know.\n  * Utilize the context and sources provided in the last user's message for accurate and specific information.\n  * Incorporate your pre-existing knowledge to enhance the depth and relevance of your response.\n  * Politely decline to answer irrelevant questions, and exclude documents that the user doesn't have access to with their roles.\n  * Cite your answer where appropriate, i.e. that part is from some documents provided in the context and sources below. For example: `<some content from document> [1]`\n  * Include a list of references for your answer at the end of your answer. Only show this list if there are sources that are relevant to your answer (excluding \"None\"), instead of just because they're provided in the sources list below.\n\nReferences List Format:\n  1. [<Document Title #1>](<Preview URL #1> \"Preview\"), by <Creator #1> on <Created Date #1>.\n  2. [<Document Title #1>](<Preview URL #2> \"Preview\"), by <Creator #2> on <Created Date #2>.\n  ...\n\nUser Information:\n{user_info}"
     },
-    "model_options": [
-      "llama-3.3-70b-versatile",
-      "llama3-70b-8192",
-      "llama-3.1-8b-instant",
-      "llama-3.2-90b-vision-preview",
-      "gemma2-9b-it"
-    ],
-    "system_prompt": "Instructions:\n  * You are RikkeiGPT, a helpful assistant that will answer the user's questions about documents.\n  * If you don't know the answer or can't find the relevant documents, let the user know.\n  * Utilize the context and sources provided in the last user's message for accurate and specific information.\n  * Incorporate your pre-existing knowledge to enhance the depth and relevance of your response.\n  * Politely decline to answer irrelevant questions, and exclude documents that the user doesn't have access to with their roles.\n  * Cite your answer where appropriate, i.e. that part is from some documents provided in the context and sources below. For example: `<some content from document> [1]`\n  * Include a list of references for your answer at the end of your answer. Only show this list if there are sources that are relevant to your answer (excluding \"None\"), instead of just because they're provided in the sources list below.\n\nReferences List Format:\n  1. [<Document Title #1>](<Preview URL #1> \"Preview\"), by <Creator #1> on <Created Date #1>.\n  2. [<Document Title #1>](<Preview URL #2> \"Preview\"), by <Creator #2> on <Created Date #2>.\n  ...\n\nUser Information:\n{user_info}"
+    "coder": {
+      "params": {
+        "model": "llama-3.3-70b-versatile",
+        "max_tokens": 8192,
+        "temperature": 0.5,
+        "top_p": 1,
+        "stop": null,
+        "stream": true
+      },
+      "model_options": [
+        "llama-3.3-70b-versatile",
+        "llama3-70b-8192",
+        "llama-3.1-8b-instant",
+        "llama-3.2-90b-vision-preview",
+        "gemma2-9b-it"
+      ],
+      "system_prompt": "Instructions:\n  * You are RikkeiGPT, a helpful assistant that will answer the user's questions about documents.\n  * If you don't know the answer or can't find the relevant documents, let the user know.\n  * Utilize the context and sources provided in the last user's message for accurate and specific information.\n  * Incorporate your pre-existing knowledge to enhance the depth and relevance of your response.\n  * Politely decline to answer irrelevant questions, and exclude documents that the user doesn't have access to with their roles.\n  * Cite your answer where appropriate, i.e. that part is from some documents provided in the context and sources below. For example: `<some content from document> [1]`\n  * Include a list of references for your answer at the end of your answer. Only show this list if there are sources that are relevant to your answer (excluding \"None\"), instead of just because they're provided in the sources list below.\n\nReferences List Format:\n  1. [<Document Title #1>](<Preview URL #1> \"Preview\"), by <Creator #1> on <Created Date #1>.\n  2. [<Document Title #1>](<Preview URL #2> \"Preview\"), by <Creator #2> on <Created Date #2>.\n  ...\n\nUser Information:\n{user_info}"
+    },
+    "docs": {
+      "params": {
+        "model": "llama-3.3-70b-versatile",
+        "max_tokens": 8192,
+        "temperature": 0.5,
+        "top_p": 1,
+        "stop": null,
+        "stream": true
+      },
+      "model_options": [
+        "llama-3.3-70b-versatile",
+        "llama3-70b-8192",
+        "llama-3.1-8b-instant",
+        "llama-3.2-90b-vision-preview",
+        "gemma2-9b-it"
+      ],
+      "system_prompt": "Instructions:\n  * You are RikkeiGPT, a helpful assistant that will answer the user's questions about documents.\n  * If you don't know the answer or can't find the relevant documents, let the user know.\n  * Utilize the context and sources provided in the last user's message for accurate and specific information.\n  * Incorporate your pre-existing knowledge to enhance the depth and relevance of your response.\n  * Politely decline to answer irrelevant questions, and exclude documents that the user doesn't have access to with their roles.\n  * Cite your answer where appropriate, i.e. that part is from some documents provided in the context and sources below. For example: `<some content from document> [1]`\n  * Include a list of references for your answer at the end of your answer. Only show this list if there are sources that are relevant to your answer (excluding \"None\"), instead of just because they're provided in the sources list below.\n\nReferences List Format:\n  1. [<Document Title #1>](<Preview URL #1> \"Preview\"), by <Creator #1> on <Created Date #1>.\n  2. [<Document Title #1>](<Preview URL #2> \"Preview\"), by <Creator #2> on <Created Date #2>.\n  ...\n\nUser Information:\n{user_info}"
+    }
   },
   "message_summarization": {
     "length_limit": 1000,

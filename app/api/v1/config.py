@@ -12,6 +12,10 @@ authorized_roles = ["admin", "system_admin"]
 @router.get("/{config_name}", response_model=Config)
 async def get_config(
     config_name: str = Path(..., title="The name of the configuration section"),
+    tab: str = Query(
+        "general",
+        title="The tab to display in the configuration editor (for Answer Generation only)",
+    ),
     refresh: bool = Query(False, title="Refresh the configuration from S3"),
     token_payload: TokenModel = Depends(validate_access_token),
 ):
@@ -31,7 +35,12 @@ async def get_config(
         )
 
     print(f"Loading config for: {config_name}")  # Debugging output
-    return config[config_name]
+    # print(config[config_name])  # Debugging output
+    return (
+        config[config_name][tab]
+        if config_name == "answer_generation" and tab
+        else config[config_name]
+    )
 
 
 @router.put("/{config_name}")
@@ -97,5 +106,5 @@ async def check_stream(
             detail=f"Config section '{config_name}' not found.",
         )
 
-    print(f"Loading config for: {config_name}")  # Debugging output
+    # print(f"Loading config for: {config_name}")  # Debugging output
     return config[config_name]["params"]["stream"]
