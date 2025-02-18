@@ -67,6 +67,71 @@ async def get_current_user(
     return user
 
 
+@router.put(
+    "/me",
+    response_model=AuthModel,
+)
+async def update_current_user(
+    updates: UserUpdate = Body(...),
+    token_payload: TokenModel = Depends(validate_access_token),
+    pwd_context: CryptContext = Depends(get_pwd_context),
+    db: AsyncSession = Depends(get_db),
+) -> AuthModel:
+    user = await UserService.get_user_by_id(db, token_payload.sub)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+    if user.username != updates.username:
+        if user.username and not updates.old_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current pasword must be provided",
+            )
+        if not user.username and not updates.new_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="New password must be provided",
+            )
+    if updates.old_password and not pwd_context.verify(
+        updates.old_password, user.password
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect password",
+        )
+    if updates.new_password:
+        if user.username and not updates.old_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password must be provided",
+            )
+        updates.new_password = pwd_context.hash(updates.new_password)
+
+    try:
+        user = await UserService.update_user(db, token_payload.sub, updates)
+        return AuthService.grant_access(user, token_payload.provider)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.delete("/me", response_class=JSONResponse)
+async def delete_current_user(
+    token_payload: TokenModel = Depends(validate_access_token),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    user_id = token_payload.sub
+    result = await UserService.delete_user(db, user_id)
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+    return JSONResponse(
+        content={"success": result, "message": "User deleted successfully"}
+    )
+
+
 @router.get("/me/sso", response_model=list[SSOModel])
 async def list_sso_current_user(
     token_payload: TokenModel = Depends(validate_access_token),
@@ -154,6 +219,39 @@ async def unlink_sso_current_user(
     return JSONResponse({"success": result, "message": "SSO unlinked successfully"})
 
 
+@router.post("/me/avatar")
+async def upload_avatar(
+    avatar_file: UploadFile = File(...),
+    token_payload: TokenModel = Depends(validate_access_token),
+):
+    from PIL import Image
+
+    file_obj = io.BytesIO(await avatar_file.read())
+    avatar_image = Image.open(file_obj).convert("RGB")
+    avatar_image.save(file_obj, format="JPEG")
+    file_obj.seek(0)
+
+    object_name = os.path.join(settings.avatar_folder, f"{token_payload.sub}.jpg")
+    avatar_url = f"https://{settings.aws_s3_bucket}.s3.amazonaws.com/{object_name}"
+
+    s3.upload_file(
+        object_name,
+        file_obj,
+        extra_args={"ContentType": "image/jpeg"},
+    )
+    return {"url": avatar_url}
+
+
+@router.delete("/me/avatar")
+async def delete_avatar(
+    token_payload: TokenModel = Depends(validate_access_token),
+) -> JSONResponse:
+    object_name = os.path.join(settings.avatar_folder, f"{token_payload.sub}.jpg")
+    result = s3.delete_file(object_name)
+
+    return JSONResponse({"success": result, "message": "Avatar deleted successfully"})
+
+
 @router.get(
     "/{user_id}",
     response_model=UserModel,
@@ -178,7 +276,32 @@ async def read_user(
     return user
 
 
-@router.get("/{user_id}/docs", response_model_include={"id", "title", "description", "categories"})
+@router.delete("/{user_id}", response_class=JSONResponse)
+async def delete_user(
+    user_id: str = Path(...),
+    token_payload: TokenModel = Depends(validate_access_token),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    if not "system_admin" in token_payload.roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not have permission to delete this user",
+        )
+
+    result = await UserService.delete_user(db, user_id)
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+    return JSONResponse(
+        content={"success": result, "message": "User deleted successfully"}
+    )
+
+
+@router.get(
+    "/{user_id}/docs",
+    response_model_include={"id", "title", "description", "categories"},
+)
 async def list_user_docs(
     user_id: str = Path(...),
     token_payload: TokenModel = Depends(validate_access_token),
@@ -194,57 +317,6 @@ async def list_user_docs(
 
     docs = await DocumentService.list_documents_by_creator(db, user_id)
     return docs
-
-
-@router.put(
-    "/me",
-    response_model=AuthModel,
-)
-async def update_current_user(
-    updates: UserUpdate = Body(...),
-    token_payload: TokenModel = Depends(validate_access_token),
-    pwd_context: CryptContext = Depends(get_pwd_context),
-    db: AsyncSession = Depends(get_db),
-) -> AuthModel:
-    user = await UserService.get_user_by_id(db, token_payload.sub)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
-
-    if user.username != updates.username:
-        if user.username and not updates.old_password:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Current pasword must be provided",
-            )
-        if not user.username and not updates.new_password:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="New password must be provided",
-            )
-    if updates.old_password and not pwd_context.verify(
-        updates.old_password, user.password
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect password",
-        )
-    if updates.new_password:
-        if user.username and not updates.old_password:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Current password must be provided",
-            )
-        updates.new_password = pwd_context.hash(updates.new_password)
-
-    try:
-        user = await UserService.update_user(db, token_payload.sub, updates)
-        return AuthService.grant_access(user, token_payload.provider)
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        )
 
 
 @router.put(
@@ -295,52 +367,3 @@ async def revoke_role_from_user(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
     return user
-
-
-@router.delete("/me", response_class=JSONResponse)
-async def delete_current_user(
-    token_payload: TokenModel = Depends(validate_access_token),
-    db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
-    user_id = token_payload.sub
-    result = await UserService.delete_user(db, user_id)
-    if not result:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
-    return JSONResponse(
-        content={"success": result, "message": "User deleted successfully"}
-    )
-
-
-@router.post("/me/avatar")
-async def upload_avatar(
-    avatar_file: UploadFile = File(...),
-    token_payload: TokenModel = Depends(validate_access_token),
-):
-    from PIL import Image
-
-    file_obj = io.BytesIO(await avatar_file.read())
-    avatar_image = Image.open(file_obj).convert("RGB")
-    avatar_image.save(file_obj, format="JPEG")
-    file_obj.seek(0)
-
-    object_name = os.path.join(settings.avatar_folder, f"{token_payload.sub}.jpg")
-    avatar_url = f"https://{settings.aws_s3_bucket}.s3.amazonaws.com/{object_name}"
-
-    s3.upload_file(
-        object_name,
-        file_obj,
-        extra_args={"ContentType": "image/jpeg"},
-    )
-    return {"url": avatar_url}
-
-
-@router.delete("/me/avatar")
-async def delete_avatar(
-    token_payload: TokenModel = Depends(validate_access_token),
-) -> JSONResponse:
-    object_name = os.path.join(settings.avatar_folder, f"{token_payload.sub}.jpg")
-    result = s3.delete_file(object_name)
-
-    return JSONResponse({"success": result, "message": "Avatar deleted successfully"})
