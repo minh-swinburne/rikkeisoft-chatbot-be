@@ -33,71 +33,73 @@ def setup_chatbot():
     )
 
 
-async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: str, type: str):
+async def generate_answer(
+    chat_history: list[dict], db: AsyncSession, user_id: str, type: str
+):
     global current_key_index
 
     config = load_config()["answer_generation"][type]
-    last_qa = [message["content"] for message in chat_history[-3:]]
-    context_results = search_context(last_qa)
-
-    doc_ids = {result["document_id"] for result in context_results}
-    # print("Last QA:", last_qa)
-    print("Doc IDs:", doc_ids)
 
     user = await UserService.get_user_by_id(db, user_id)
     if not user:
         raise ValueError("User not found")
 
     user_roles = [role.name for role in user.roles]
-    documents: list[DocumentModel] = []
-    context = ["| Title | Excerpt | Score |", "| --- | --- | --- |"]
-    sources = [
-        "| Title | Description | Categories | Created by | Created date | Preview URL | Last modified |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- |",
-    ]
-
-    for doc_id in doc_ids:
-        document = await DocumentService.get_document_by_id(db, doc_id)
-        if not document:
-            continue
-
-        restricted = document.restricted
-        if not restricted or any(
-            role in ["admin", "system_admin"] for role in user_roles
-        ):
-            categories = [cat.name for cat in document.categories]
-            preview_url = await DocumentService.generate_document_url(db, doc_id, preview=True)
-
-            documents.append(document)
-            sources.append(
-                f"| {document.title} | {re.sub("\n", "<br>", document.description)} | {categories} | {document.creator_user.full_name} | {document.created_date} | {preview_url} | {document.last_modified} |"
-            )
-
-    for result in context_results:
-        document_id = result["document_id"]
-        document = next((doc for doc in documents if doc.id == document_id), None)
-        if not document:
-            continue
-
-        context.append(
-            f"| {document.title} | {re.sub("\n", "<br>", result["text"])} | {result["score"]} |"
-        )
-
-    # print(len(context_results))
-    # print("\nContext:\n", context)
-    # print("\nSources:\n", sources)
-
     system_prompt = config["system_prompt"].format(
         user_info=f"- Name: {user.full_name}\n- Email: {user.email}\n- Roles: {', '.join(user_roles)}",
     )
-    chat_history[-1]["content"] = (
-        chat_history[-1]["content"]
-        + "Here is some relevant information:\n"
-        + "  - Context:\n"
-        + "\n".join(context)
-        + "\n  - Sources:\n"
-        + "\n".join(sources)
-    )
+
+    if type == "docs":
+        last_qa = [message["content"] for message in chat_history[-3:]]
+        context_results = search_context(last_qa)
+
+        doc_ids = {result["document_id"] for result in context_results}
+        # print("Last QA:", last_qa)
+        print("Doc IDs:", doc_ids)
+
+        documents: list[DocumentModel] = []
+        context = ["| Title | Excerpt | Score |", "| --- | --- | --- |"]
+        sources = [
+            "| Title | Description | Categories | Created by | Created date | Preview URL | Last modified |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- |",
+        ]
+
+        for doc_id in doc_ids:
+            document = await DocumentService.get_document_by_id(db, doc_id)
+            if not document:
+                continue
+
+            restricted = document.restricted
+            if not restricted or any(
+                role in ["admin", "system_admin"] for role in user_roles
+            ):
+                categories = [cat.name for cat in document.categories]
+                preview_url = await DocumentService.generate_document_url(
+                    db, doc_id, preview=True
+                )
+
+                documents.append(document)
+                sources.append(
+                    f"| {document.title} | {re.sub("\n", "<br>", document.description)} | {categories} | {document.creator_user.full_name} | {document.created_date} | {preview_url} | {document.last_modified} |"
+                )
+
+        for result in context_results:
+            document_id = result["document_id"]
+            document = next((doc for doc in documents if doc.id == document_id), None)
+            if not document:
+                continue
+
+            context.append(
+                f"| {document.title} | {re.sub("\n", "<br>", result["text"])} | {result["score"]} |"
+            )
+        chat_history[-1]["content"] = (
+            chat_history[-1]["content"]
+            + "Here is some relevant information:\n"
+            + "  - Context:\n"
+            + "\n".join(context)
+            + "\n  - Sources:\n"
+            + "\n".join(sources)
+        )
 
     for _ in range(len(GROQ_API_KEYS) + 1):
         try:
@@ -132,7 +134,12 @@ async def generate_answer(chat_history: list[dict], db: AsyncSession, user_id: s
                 old_length = len(message["content"])
                 if len(message["content"]) > length_limit:
                     message["content"] = summarize_message(message["content"])
-                    print("Summarized message length:", old_length, "->", len(message["content"]))
+                    print(
+                        "Summarized message length:",
+                        old_length,
+                        "->",
+                        len(message["content"]),
+                    )
             print("Retrying...")
             continue
         except Exception as e:
@@ -172,7 +179,7 @@ def suggest_questions(chat_history: list, context: str = None):
 
     system_prompt = config["system_prompt"].format(
         chat_history=chat_history,
-        context=f"\nContext: {context}\n" if context else "",
+        context=context if context else "",
         message_template="\n".join(
             f"{i+1}. {question}" for i, question in enumerate(message_template)
         ),
@@ -197,9 +204,7 @@ def suggest_questions(chat_history: list, context: str = None):
 
 async def generate_name(chat_history: list):
     config = load_config()["name_generation"]
-    system_prompt = config["system_prompt"].format(
-        chat_history=chat_history
-    )
+    system_prompt = config["system_prompt"].format(chat_history=chat_history)
 
     name_completion: Union[ChatCompletion, Stream[ChatCompletionChunk]] = (
         client.chat.completions.create(

@@ -9,6 +9,19 @@ router = APIRouter()
 authorized_roles = ["admin", "system_admin"]
 
 
+@router.get("")
+async def list_configs(token_payload: TokenModel = Depends(validate_access_token)):
+    """List all available configuration sections."""
+    if not any(role in authorized_roles for role in token_payload.roles):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions. Only admins can access the configuration.",
+        )
+
+    config = load_config()
+    return [key for key in config.keys() if key != "timeout"]
+
+
 @router.get("/{config_name}", response_model=Config)
 async def get_config(
     config_name: str = Path(..., title="The name of the configuration section"),
@@ -46,6 +59,7 @@ async def get_config(
 @router.put("/{config_name}")
 async def update_config(
     config_name: str = Path(...),
+    tab: str = Query("general"),
     updates: ConfigUpdate = Body(...),
     token_payload: TokenModel = Depends(validate_access_token),
 ):
@@ -67,10 +81,15 @@ async def update_config(
     # Debugging output
     # print(f"Replacing config for: {config_name}")
     # print(updates)
+    config_section = (
+        config[config_name][tab]
+        if config_name == "answer_generation"
+        else config[config_name]
+    )
 
     # Update the configuration section
-    config[config_name]["system_prompt"] = updates.system_prompt
-    config[config_name]["params"].update(
+    config_section["system_prompt"] = updates.system_prompt
+    config_section["params"].update(
         {
             "model": updates.model,
             "max_tokens": updates.max_tokens,
@@ -80,9 +99,9 @@ async def update_config(
     )
 
     if updates.message_template:
-        config[config_name]["message_template"] = updates.message_template
+        config_section["message_template"] = updates.message_template
     if updates.length_limit:
-        config[config_name]["length_limit"] = updates.length_limit
+        config_section["length_limit"] = updates.length_limit
 
     save_config(config)
     return JSONResponse(
@@ -96,6 +115,7 @@ async def update_config(
 @router.get("/{config_name}/stream")
 async def check_stream(
     config_name: str = Path(..., title="The name of the configuration section"),
+    tab: str = Query("general"),
     token_payload: TokenModel = Depends(validate_access_token),
 ) -> bool:
     """Check whether the configuration section supports streaming."""
@@ -107,4 +127,8 @@ async def check_stream(
         )
 
     # print(f"Loading config for: {config_name}")  # Debugging output
-    return config[config_name]["params"]["stream"]
+    return (
+        config[config_name][tab]["params"]["stream"]
+        if config_name == "answer_generation"
+        else config[config_name]["params"]["stream"]
+    )
