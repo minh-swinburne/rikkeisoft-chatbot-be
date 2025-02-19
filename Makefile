@@ -1,4 +1,5 @@
 AWS_REGION=ap-southeast-2
+AWS_PROFILE=default
 ECR_REGISTRY=590183769116.dkr.ecr.$(AWS_REGION).amazonaws.com
 ECR_REPO_PUBLIC=v7s8u3o1
 # ECR_REPO=rikkeisoft-chatbot/backend
@@ -9,13 +10,14 @@ ECS_SERVICE=rikkeigpt-service
 
 .PHONY: clear-env load-creds login login-public build tag push update-ecs deploy
 
-# Clear AWS environment variables to use .aws/credentials
+# Clear AWS environment variables
 clear-env:
 	@echo Clearing AWS environment variables...
 	@set AWS_ACCESS_KEY_ID=
 	@set AWS_SECRET_ACCESS_KEY=
 	@set AWS_SESSION_TOKEN=
 
+# Load AWS credentials from .aws/credentials
 load-creds:
 	@echo Loading AWS credentials...
 	@set AWS_SHARED_CREDENTIALS_FILE=%CD%\.aws\credentials
@@ -24,8 +26,8 @@ load-creds:
 
 # Authenticate Docker to AWS ECR
 # If using ECR public, we need to delete `"credsStore": "desktop",` in `~/.docker/config.json` to use this command
-login: clear-env load-creds
-	@aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(ECR_REGISTRY)
+login:
+	@aws ecr get-login-password --region $(AWS_REGION) --profile $(AWS_PROFILE) | docker login --username AWS --password-stdin $(ECR_REGISTRY)
 # @aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/$(ECR_REPO_PUBLIC)
 
 # Build Docker image
