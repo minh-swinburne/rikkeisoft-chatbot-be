@@ -1,111 +1,69 @@
-Folder PATH listing for volume Acer
-Volume serial number is B680-DD4E
-C:\USERS\XMAS4\ONEDRIVE - SWINBURNE UNIVERSITY\PROJECTS\RIKKEISOFT - EMPLOYEE CHATBOT\RIKKEISOFT-CHATBOT-BE\APP
-|   main.py
-|   tree.txt
-|   utils.py
-|   __init__.py
-|
-+---api
-|   |   __init__.py
-|   |
-|   +---v1
-|   |   |   auth.py
-|   |   |   chats.py
-|   |   |   docs.py
-|   |   |   users.py
-|   |   |   __init__.py
-|   |   |
-|   |   \---__pycache__
-|   |           auth.cpython-312.pyc
-|   |           chat.cpython-312.pyc
-|   |           chats.cpython-312.pyc
-|   |           docs.cpython-312.pyc
-|   |           document.cpython-312.pyc
-|   |           d�c.cpython-312.pyc
-|   |           users.cpython-312.pyc
-|   |           __init__.cpython-312.pyc
-|   |
-|   \---__pycache__
-|           __init__.cpython-312.pyc
-|
-+---bot
-|   |   chat.py
-|   |   milvus.py
-|   |   rag.py
-|   |   __init__.py
-|   |
-|   \---__pycache__
-|           chat.cpython-312.pyc
-|           milvus.cpython-312.pyc
-|           rag.cpython-312.pyc
-|           __init__.cpython-312.pyc
-|
-+---core
-|   |   config.py
-|   |   database.py
-|   |   security.py
-|   |   __init__.py
-|   |
-|   \---__pycache__
-|           config.cpython-312.pyc
-|           database.cpython-312.pyc
-|           security.cpython-312.pyc
-|           __init__.cpython-312.pyc
-|
-+---models
-|   |   base.py
-|   |   chats.py
-|   |   docs.py
-|   |   messages.py
-|   |   users.py
-|   |   __init__.py
-|   |
-|   \---__pycache__
-|           base.cpython-312.pyc
-|           chats.cpython-312.pyc
-|           docs.cpython-312.pyc
-|           messages.cpython-312.pyc
-|           users.cpython-312.pyc
-|           __init__.cpython-312.pyc
-|
-+---repos
-|   |   chat.py
-|   |   document.py
-|   |   user.py
-|   |   __init__.py
-|   |
-|   \---__pycache__
-|           chat.cpython-312.pyc
-|           __init__.cpython-312.pyc
-|
-+---schemas
-|   |   auth.py
-|   |   chats.py
-|   |   docs.py
-|   |   messages.py
-|   |   users.py
-|   |   __init__.py
-|   |
-|   \---__pycache__
-|           auth.cpython-312.pyc
-|           chat.cpython-312.pyc
-|           chats.cpython-312.pyc
-|           docs.cpython-312.pyc
-|           message.cpython-312.pyc
-|           messages.cpython-312.pyc
-|           __init__.cpython-312.pyc
-|
-\---services
-    |   chats.py
-    |   docs.py
-    |   users.py
-    |   __init__.py
-    |
-    \---__pycache__
-            chat.cpython-312.pyc
-            chats.cpython-312.pyc
-            docs.cpython-312.pyc
-            users.cpython-312.pyc
-            __init__.cpython-312.pyc
-
+📂 app/
+├── main.py               # Entry point for FastAPI application
+├── utils.py              # Utility functions
+├── __init__.py
+│
+├── api/                  # API Layer - HTTP routes
+│   ├── dependencies.py   # Shared dependencies
+│   ├── v1/               # Versioned API routes
+│   │   ├── auth.py       # Authentication & authorization routes
+│   │   ├── chats.py      # Chatbot interactions
+│   │   ├── config.py     # System configurations
+│   │   ├── docs.py       # Document management
+│   │   ├── users.py      # User management
+│   │   ├── __init__.py
+│
+├── aws/                  # AWS Integration
+│   ├── s3.py             # AWS S3 interactions
+│   ├── __init__.py
+│
+├── bot/                  # Chatbot & Vector Database
+│   ├── chat.py           # Chatbot logic
+│   ├── embedding.py      # Embedding model for vector search
+│   ├── vector_db.py      # Vector database integration
+│   ├── config.json       # Configuration file
+│   ├── debug.log         # Debugging logs
+│   ├── __init__.py
+│
+├── core/                 # Core Application Configurations
+│   ├── database.py       # Database connection & session management
+│   ├── security.py       # Security & authentication
+│   ├── settings.py       # App settings & environment variables
+│   ├── __init__.py
+│
+├── models/               # ORM Models (SQLAlchemy)
+│   ├── base.py           # Base model class
+│   ├── users.py          # User model
+│   ├── chats.py          # Chat history model
+│   ├── docs.py           # Document metadata model
+│   ├── messages.py       # Messages model
+│   ├── sso.py            # Single Sign-On model
+│   ├── status.py         # Status tracking model
+│   ├── __init__.py
+│
+├── repos/                # Repository Layer (Data Access)
+│   ├── user.py           # User repository
+│   ├── chat.py           # Chat repository
+│   ├── document.py       # Document repository
+│   ├── role.py           # Role management repository
+│   ├── sso.py            # SSO repository
+│   ├── category.py       # Category repository
+│   ├── message.py        # Message repository
+│   ├── __init__.py
+│
+├── schemas/              # Pydantic Schemas (Data Validation)
+│   ├── users.py          # User schemas
+│   ├── chats.py          # Chat schemas
+│   ├── docs.py           # Document schemas
+│   ├── roles.py          # Role schemas
+│   ├── messages.py       # Message schemas
+│   ├── auth.py           # Authentication schemas
+│   ├── sso.py            # SSO schemas
+│   ├── __init__.py
+│
+├── services/             # Business Logic (Service Layer)
+│   ├── auth.py           # Authentication service
+│   ├── chat.py           # Chat service
+│   ├── document.py       # Document service
+│   ├── user.py           # User service
+│   ├── __init__.py
